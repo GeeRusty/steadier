@@ -42,6 +42,41 @@ export function useFocusTones(
     };
   }, []);
 
+  // Phones pause web apps when the screen sleeps, which would silence the
+  // check-ins, so keep the screen awake while a booked Calendar task runs here.
+  const keepAwake =
+    !!focus?.running &&
+    focus.remaining > 0 &&
+    ownsTimer &&
+    isBookedClockTimedCalendarSchedule(task?.schedule);
+  useEffect(() => {
+    if (!keepAwake) return;
+    const nav = navigator as Navigator & {
+      wakeLock?: { request: (type: "screen") => Promise<{ release: () => Promise<void> }> };
+    };
+    if (!nav.wakeLock) return;
+    let lock: { release: () => Promise<void> } | null = null;
+    let cancelled = false;
+    const acquire = () => {
+      if (document.visibilityState !== "visible") return;
+      nav.wakeLock!
+        .request("screen")
+        .then(l => {
+          if (cancelled) l.release().catch(() => undefined);
+          else lock = l;
+        })
+        .catch(() => undefined);
+    };
+    acquire();
+    // The browser drops the lock when the app is hidden; take it again on return.
+    document.addEventListener("visibilitychange", acquire);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", acquire);
+      lock?.release().catch(() => undefined);
+    };
+  }, [keepAwake]);
+
   useEffect(() => {
     if (!focus) {
       previous.current = null;
@@ -71,17 +106,21 @@ export function useFocusTones(
     const timerEnded = before.remaining > 0 && focus.remaining === 0;
     if (missedCheckins.length > 0) {
       const timerToneSettings = alwaysOnFocusToneSettings(settings);
-      missedCheckins.forEach((_, index) => {
+      // One chime per check-in, but at most two when catching up after sleep.
+      missedCheckins.slice(-2).forEach((_, index) => {
         window.setTimeout(
           () => playTone("chime", timerToneSettings),
           index * 450
         );
       });
-      const repeatedTitle = automaticCheckInSpeech(
-        title,
-        missedCheckins.length,
-        voice.speechSupported
-      );
+      const repeatedTitle = timerEnded
+        ? automaticCheckInSpeech(title, missedCheckins.length, voice.speechSupported)
+        : automaticCheckInSpeech(
+            title,
+            missedCheckins.length,
+            voice.speechSupported,
+            focus.remaining
+          );
       if (timerEnded) {
         const endMessage =
           task?.state === "done"
@@ -89,7 +128,7 @@ export function useFocusTones(
             : `Focus time is up for ${title}. You can mark it done, take a short break, or start another block.`;
         window.setTimeout(
           () => playTone("end", timerToneSettings),
-          missedCheckins.length * 450
+          Math.min(2, missedCheckins.length) * 450
         );
         const speech = [
           repeatedTitle,

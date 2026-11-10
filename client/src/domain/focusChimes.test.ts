@@ -7,6 +7,7 @@ import {
   crossedFocusChimeBoundary,
   crossedFocusChimeBoundaries,
   focusChimeInterval,
+  spokenTimeToGo,
   isBookedClockTimedCalendarSchedule,
 } from "./focusChimes";
 import { emptyRepeat, emptyTaskSchedule } from "./time";
@@ -41,8 +42,9 @@ describe("focus task chimes", () => {
 
   it("uses quarter-hour chimes below an hour and hourly chimes at or above an hour", () => {
     expect(focusChimeInterval(59 * 60)).toBe(15 * 60);
-    expect(focusChimeInterval(60 * 60)).toBe(60 * 60);
-    expect(focusChimeInterval(2 * 60 * 60)).toBe(60 * 60);
+    expect(focusChimeInterval(60 * 60)).toBe(15 * 60);
+    expect(focusChimeInterval(61 * 60)).toBe(30 * 60);
+    expect(focusChimeInterval(2 * 60 * 60)).toBe(30 * 60);
     expect(focusChimeInterval(0)).toBeNull();
   });
 
@@ -66,7 +68,9 @@ describe("focus task chimes", () => {
       30 * 60,
     ]);
     expect(crossedFocusChimeBoundaries(2 * 60 * 60, 2 * 60 * 60, 0)).toEqual([
+      30 * 60,
       60 * 60,
+      90 * 60,
     ]);
     expect(
       automaticCalendarChimeBoundaries(
@@ -122,5 +126,21 @@ describe("focus task chimes", () => {
       "Skeeti Paint cleaning. Skeeti Paint cleaning. Skeeti Paint cleaning"
     );
     expect(automaticCheckInSpeech("Skeeti Paint cleaning", 0, true)).toBeNull();
+  });
+
+  it("says the task and the time left, once, at each check-in", () => {
+    expect(automaticCheckInSpeech("Uber shift", 1, true, 45 * 60 - 1)).toBe(
+      "Uber shift. 45 minutes to go."
+    );
+    expect(automaticCheckInSpeech("Uber shift", 3, true, 90 * 60)).toBe(
+      "Uber shift. 1 hour 30 minutes to go."
+    );
+    expect(automaticCheckInSpeech("Uber shift", 1, true, 120 * 60)).toBe(
+      "Uber shift. 2 hours to go."
+    );
+    expect(automaticCheckInSpeech("Uber shift", 1, false, 45 * 60)).toBeNull();
+    expect(spokenTimeToGo(60)).toBe("1 minute to go");
+    expect(spokenTimeToGo(61 * 60)).toBe("1 hour 1 minute to go");
+    expect(spokenTimeToGo(10)).toBeNull();
   });
 });

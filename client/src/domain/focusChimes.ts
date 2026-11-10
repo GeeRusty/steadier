@@ -2,13 +2,27 @@ import { isBookedAnchorSchedule, type TaskSchedule } from "./time";
 
 const HOUR_SECONDS = 60 * 60;
 const QUARTER_HOUR_SECONDS = 15 * 60;
+const HALF_HOUR_SECONDS = 30 * 60;
 
-/** Short focus blocks get quarter-hour chimes; longer blocks get hourly chimes. */
+/** Jobs of up to an hour get quarter-hour check-ins; longer jobs get half-hourly ones. */
 export function focusChimeInterval(durationSeconds: number): number | null {
   if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return null;
-  return durationSeconds < HOUR_SECONDS
+  return durationSeconds <= HOUR_SECONDS
     ? QUARTER_HOUR_SECONDS
-    : HOUR_SECONDS;
+    : HALF_HOUR_SECONDS;
+}
+
+/** "45 minutes to go", "1 hour 30 minutes to go"; null when under half a minute is left. */
+export function spokenTimeToGo(remainingSeconds: number): string | null {
+  if (!Number.isFinite(remainingSeconds)) return null;
+  const minutes = Math.round(remainingSeconds / 60);
+  if (minutes <= 0) return null;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  const parts: string[] = [];
+  if (hours) parts.push(`${hours} ${hours === 1 ? "hour" : "hours"}`);
+  if (mins) parts.push(`${mins} ${mins === 1 ? "minute" : "minutes"}`);
+  return `${parts.join(" ")} to go`;
 }
 
 /** Recurring booked tasks may keep their clock time on the series template. */
@@ -104,14 +118,23 @@ export function automaticTaskTitleSpeech(
   return speechSupported && title ? title : null;
 }
 
+/**
+ * What to say at a check-in: the task title and the time left, said once even
+ * when several check-ins were missed while the phone was asleep.
+ */
 export function automaticCheckInSpeech(
   title: string,
   boundaryCount: number,
-  speechSupported: boolean
+  speechSupported: boolean,
+  remainingSeconds?: number
 ): string | null {
   const cleanTitle = title.trim();
   if (!cleanTitle || !speechSupported || !Number.isFinite(boundaryCount))
     return null;
   const count = Math.min(100, Math.max(0, Math.floor(boundaryCount)));
-  return count ? Array.from({ length: count }, () => cleanTitle).join(". ") : null;
+  if (!count) return null;
+  if (remainingSeconds === undefined)
+    return Array.from({ length: count }, () => cleanTitle).join(". ");
+  const toGo = spokenTimeToGo(remainingSeconds);
+  return toGo ? `${cleanTitle}. ${toGo}.` : cleanTitle;
 }
