@@ -14,6 +14,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    env: { PUBLIC_ORIGIN: "https://steadier.test" },
     include: [
       "server/**/*.test.ts",
       "server/**/*.spec.ts",

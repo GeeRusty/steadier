@@ -1,5 +1,5 @@
 /**
- * Address search for saved places (v2.7), through the Manus Maps proxy.
+ * Address search for saved places, through OpenStreetMap Nominatim.
  * Only the typed search text (and an optional rough area to search near)
  * is sent; nothing is stored.
  */
@@ -29,37 +29,38 @@ export async function searchPlaces(
   near: string | null,
   fetcher: typeof fetch = fetch
 ): Promise<PlaceSearchResult[]> {
-  const base = process.env.MANUS_API_URL;
-  const key = process.env.MANUS_API_KEY;
-  if (!base || !key) throw new Error("MAPS_UNAVAILABLE");
-  const url = new URL(
-    `${base.replace(/\/$/, "")}/v1/maps/proxy/maps/api/place/textsearch/json`
-  );
-  url.searchParams.set("query", query);
-  url.searchParams.set("location", near ?? ADELAIDE);
-  url.searchParams.set("radius", "50000");
-  url.searchParams.set("region", "au");
-  url.searchParams.set("key", key);
+  const base = (process.env.GEOCODER_URL || "https://nominatim.openstreetmap.org").replace(/\/$/, "");
+  const [lat, lng] = (near ?? ADELAIDE).split(",").map(Number);
+  const url = new URL(`${base}/search`);
+  url.searchParams.set("q", query);
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("limit", "6");
+  url.searchParams.set("addressdetails", "0");
+  // Prefer results within roughly 50 km, without excluding others.
+  url.searchParams.set("viewbox", `${lng - 0.5},${lat + 0.5},${lng + 0.5},${lat - 0.5}`);
+  url.searchParams.set("bounded", "0");
   const response = await fetcher(url, {
+    headers: {
+      // Nominatim's usage policy requires an identifying User-Agent.
+      "User-Agent": `Steadier self-hosted (${process.env.PUBLIC_ORIGIN ?? "unknown"})`,
+      "Accept-Language": "en",
+    },
     signal: AbortSignal.timeout(8000),
   });
   if (!response.ok) throw new Error("MAPS_FAILED");
   const body = (await response.json()) as {
-    status?: string;
-    results?: {
-      name?: string;
-      formatted_address?: string;
-      geometry?: { location?: { lat?: number; lng?: number } };
-    }[];
-  };
-  if (body.status && !["OK", "ZERO_RESULTS"].includes(body.status))
-    throw new Error("MAPS_FAILED");
-  return (body.results ?? [])
+    name?: string;
+    display_name?: string;
+    lat?: string;
+    lon?: string;
+  }[];
+  if (!Array.isArray(body)) throw new Error("MAPS_FAILED");
+  return body
     .map(r => ({
-      name: String(r.name ?? "").slice(0, 120),
-      address: String(r.formatted_address ?? "").slice(0, 300),
-      lat: Number(r.geometry?.location?.lat),
-      lng: Number(r.geometry?.location?.lng),
+      name: String(r.name || String(r.display_name ?? "").split(",")[0]).slice(0, 120),
+      address: String(r.display_name ?? "").slice(0, 300),
+      lat: Number(r.lat),
+      lng: Number(r.lon),
     }))
     .filter(
       r =>

@@ -484,7 +484,7 @@ describe("native Compass MCP route", () => {
     const missing = await post(endpoint);
     expect(missing.status).toBe(401);
     expect(missing.headers.get("www-authenticate")).toBe(
-      'Bearer resource_metadata="https://steadier-9wkmejo8.manus.space/.well-known/oauth-protected-resource/api/compass/mcp"'
+      'Bearer resource_metadata="https://steadier.test/.well-known/oauth-protected-resource/api/compass/mcp"'
     );
     expect(missing.headers.get("cache-control")).toContain("private");
 

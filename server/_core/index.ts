@@ -14,6 +14,8 @@ import { registerCompassConnectionDiagnostics } from "../steadier/connectionDiag
 
 async function startServer() {
   const app = express();
+  // Behind Caddy on the same machine: trust its X-Forwarded-* headers for client IPs.
+  app.set("trust proxy", "loopback, uniquelocal");
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, steadierLocalCredentials, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -54,7 +54,10 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
+    } else if (
+      user.openId === ENV.ownerOpenId ||
+      (ENV.ownerEmail && user.email?.toLowerCase() === ENV.ownerEmail)
+    ) {
       values.role = 'admin';
       updateSet.role = 'admin';
     }
@@ -89,3 +92,78 @@ export async function getUserByOpenId(openId: string) {
 }
 
 // TODO: add feature queries here as your schema grows.
+
+async function requireDb() {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  return db;
+}
+
+export async function getLocalCredentialByEmail(email: string) {
+  const db = await requireDb();
+  const rows = await db
+    .select()
+    .from(steadierLocalCredentials)
+    .where(eq(steadierLocalCredentials.email, email))
+    .limit(1);
+  return rows[0];
+}
+
+export async function getUserById(id: number) {
+  const db = await requireDb();
+  const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return rows[0];
+}
+
+/** Create a user and their password in one transaction. Throws "EMAIL_TAKEN". */
+export async function createLocalUser(input: {
+  openId: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+}) {
+  const db = await requireDb();
+  return db.transaction(async tx => {
+    const existing = await tx
+      .select({ userId: steadierLocalCredentials.userId })
+      .from(steadierLocalCredentials)
+      .where(eq(steadierLocalCredentials.email, input.email))
+      .limit(1);
+    if (existing.length) throw new Error("EMAIL_TAKEN");
+    const isOwner = ENV.ownerEmail !== "" && input.email === ENV.ownerEmail;
+    await tx.insert(users).values({
+      openId: input.openId,
+      name: input.name,
+      email: input.email,
+      loginMethod: "password",
+      role: isOwner ? "admin" : "user",
+      lastSignedIn: new Date(),
+    });
+    const [user] = await tx
+      .select()
+      .from(users)
+      .where(eq(users.openId, input.openId))
+      .limit(1);
+    try {
+      await tx.insert(steadierLocalCredentials).values({
+        userId: user.id,
+        email: input.email,
+        passwordHash: input.passwordHash,
+      });
+    } catch (error) {
+      const e = error as { code?: string; cause?: { code?: string } };
+      if ((e?.code ?? e?.cause?.code) === "ER_DUP_ENTRY")
+        throw new Error("EMAIL_TAKEN");
+      throw error;
+    }
+    return user;
+  });
+}
+
+export async function setLocalPassword(userId: number, passwordHash: string) {
+  const db = await requireDb();
+  await db
+    .update(steadierLocalCredentials)
+    .set({ passwordHash })
+    .where(eq(steadierLocalCredentials.userId, userId));
+}

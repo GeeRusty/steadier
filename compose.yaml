@@ -1,0 +1,55 @@
+# Steadier: app + its own MySQL database.
+#   Start/update:  docker compose up -d --build
+#   Logs:          docker compose logs -f app
+name: steadier
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    command:
+      - --innodb-buffer-pool-size=128M
+      - --performance-schema=OFF
+    environment:
+      MYSQL_DATABASE: steadier
+      MYSQL_USER: steadier
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set in .env}
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  app:
+    build: .
+    image: steadier:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: mysql://steadier:${MYSQL_PASSWORD}@db:3306/steadier
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?set in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?set in .env}
+      OWNER_EMAIL: ${OWNER_EMAIL:-}
+      ALLOW_SIGNUP: ${ALLOW_SIGNUP:-true}
+      SIGNUP_CODE: ${SIGNUP_CODE:-}
+    # Apply any new database migrations, then start the server.
+    command: ["sh", "-c", "pnpm db:migrate && exec node dist/index.js"]
+    ports:
+      - "127.0.0.1:3001:3000"   # only reachable through Caddy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  db-data:

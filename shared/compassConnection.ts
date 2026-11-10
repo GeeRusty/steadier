@@ -1,4 +1,11 @@
-export const COMPASS_PUBLIC_ORIGIN = "https://steadier-9wkmejo8.manus.space";
+// The site's public address. The browser uses its own origin; the server reads
+// PUBLIC_ORIGIN (e.g. https://steadier.example.com) from its environment.
+export const COMPASS_PUBLIC_ORIGIN: string = (
+  typeof window !== "undefined"
+    ? window.location.origin
+    : (globalThis as { process?: { env?: Record<string, string | undefined> } })
+        .process?.env?.PUBLIC_ORIGIN ?? "http://localhost:3000"
+).replace(/\/+$/, "");
 export const COMPASS_MCP_PATH = "/api/compass/mcp";
 export const COMPASS_MCP_URL = `${COMPASS_PUBLIC_ORIGIN}${COMPASS_MCP_PATH}`;
 export const COMPASS_OAUTH_BASE = "/api/compass/oauth";

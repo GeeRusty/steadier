@@ -9,10 +9,10 @@ import { COOKIE_NAME } from "../shared/const";
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 describe("current platform integration", () => {
   it("exposes only named public runtime configuration", () => {
-    const env = { MANUS_PROJECT_ID: "project-test", MANUS_API_KEY: "server-only-test", MANUS_JWT_SECRET: "signing-only-test", DATABASE_URL: "db-only-test", MANUS_API_BROWSER_KEY: "public-browser-test", MANUS_ANALYTICS_ENDPOINT: "https://analytics.example", MANUS_ANALYTICS_WEBSITE_ID: "site-test" };
-    expect(publicPlatformConfig(env)).toMatchObject({ projectId: "project-test", apiBrowserKey: "public-browser-test" });
+    const env = { SESSION_SECRET: "signing-only-test", DATABASE_URL: "db-only-test", SIGNUP_CODE: "invite-only-test", MANUS_API_KEY: "server-only-test" };
+    expect(publicPlatformConfig(env)).toEqual({});
     const script = publicPlatformScript(env);
-    for (const value of [env.MANUS_API_KEY, env.MANUS_JWT_SECRET, env.DATABASE_URL]) expect(script).not.toContain(value);
+    for (const value of [env.MANUS_API_KEY, env.SESSION_SECRET, env.DATABASE_URL, env.SIGNUP_CODE]) expect(script).not.toContain(value);
     const appended: unknown[] = [];
     const fakeDocument = { createElement: () => ({ setAttribute() {} }), head: { appendChild: (node: unknown) => appended.push(node) } };
     new Function("window", "document", script)({}, fakeDocument);
@@ -44,11 +44,11 @@ describe("current platform integration", () => {
     expect(getSessionCookieOptions({ protocol: "http", headers: {} } as never)).toMatchObject({ secure: true, httpOnly: true, sameSite: "none" });
   });
   it("binds signed app sessions to this project and accepts an empty display name", async () => {
-    vi.stubEnv("MANUS_PROJECT_ID", "project-test");
-    vi.stubEnv("MANUS_JWT_SECRET", "unit-test-signing-key-never-deployed");
+    vi.stubEnv("APP_ID", "project-test");
+    vi.stubEnv("SESSION_SECRET", "unit-test-signing-key-never-deployed");
     const token = await sdk.signSession({ openId: "user-test", appId: "project-test", name: "" });
     expect(await sdk.verifySession(token)).toMatchObject({ openId: "user-test" });
-    vi.stubEnv("MANUS_PROJECT_ID", "different-project");
+    vi.stubEnv("APP_ID", "different-project");
     expect(await sdk.verifySession(token)).toBeNull();
   });
 });

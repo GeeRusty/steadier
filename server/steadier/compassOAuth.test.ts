@@ -956,7 +956,7 @@ describe("Compass OAuth", () => {
         await redeem(baseUrl, {
           ...validRequest(invalidResource.code, invalidResource.verifier),
           resource:
-            "https://steadier-9wkmejo8.manus.space/not-the-mcp-resource",
+            "https://steadier.test/not-the-mcp-resource",
         })
       ).status
     ).toBe(400);
