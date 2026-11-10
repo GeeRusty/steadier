@@ -1,0 +1,29 @@
+{
+  "base": "https://steadier-9wkmejo8.manus.space",
+  "checks": [
+    "public dynamic registration uses canonical read-only OAuth metadata",
+    "authorization opens owner permission instead of auto-granting",
+    "anonymous permission request cannot read account counts",
+    "permission shows only signed-in synthetic owner records",
+    "another account cannot claim the displayed permission request",
+    "another account cannot approve this owner grant",
+    "explicit authenticated approval produces a one-time callback",
+    "callback preserves the client anti-forgery state",
+    "persisted one-time PKCE code exchanges for a reader credential",
+    "issued OAuth credential has only read scope and bounded lifetime",
+    "code replay is rejected by persisted atomic consumption",
+    "authenticated MCP initialize stays private and uncached",
+    "Claude-compatible legacy MCP handshake succeeds",
+    "authenticated MCP tools/list stays private and uncached",
+    "all four advertised MCP tools are read-only",
+    "authenticated MCP tools/call stays private and uncached",
+    "OAuth-issued reader sees its own latest saved task context",
+    "MCP context gives the current saved revision",
+    "authenticated known Claude origin is compatible without permitting hostile origins",
+    "consent and MCP reads do not change the saved workspace",
+    "consent mints exactly one revocable synthetic reader key",
+    "normal app revocation disables the OAuth-issued reader",
+    "revoked OAuth credential immediately loses MCP discovery/read access"
+  ],
+  "data": "synthetic only; credentials excluded"
+}

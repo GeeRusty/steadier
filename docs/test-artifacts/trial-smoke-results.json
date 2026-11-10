@@ -1,0 +1,46 @@
+[
+  {
+    "check": "Outcome and evidence",
+    "result": "milestone/evidence saved without falsely achieving the project"
+  },
+  {
+    "check": "Linked responsibility",
+    "result": "capture holds its purpose, role/pattern and outcome link"
+  },
+  {
+    "check": "Matrix emphasis",
+    "result": "chosen setting persists; role is not a value ranking"
+  },
+  {
+    "check": "Remembered intention and re-entry",
+    "result": "Compass wording, chosen step and paused focus survive reload"
+  },
+  {
+    "check": "Full dated backup",
+    "result": "download contains identities, project/milestone/evidence, weights, intention and focus"
+  },
+  {
+    "check": "Invalid backup rejection",
+    "result": "malformed workspace rejected without replacing live records"
+  },
+  {
+    "check": "Restore preflight and cancel",
+    "result": "selection alone does not change data; cancel preserves it"
+  },
+  {
+    "check": "Exact full restore",
+    "result": "original IDs and all workspace fields restored; pre-restore collection recoverable locally"
+  },
+  {
+    "check": "Meaningful completion",
+    "result": "draft evidence is retained and contributes to outcome without claiming achievement"
+  },
+  {
+    "check": "Trial phone layouts",
+    "result": "projects and backup/restore controls reflow at 390px and 320px"
+  },
+  {
+    "check": "Legacy upgrade",
+    "result": "v1 task IDs/notes preserved, neutral fields added, original v1 bytes unchanged"
+  }
+]

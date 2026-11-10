@@ -1,0 +1,22 @@
+[
+  {
+    "check": "Malformed new selection invalidates old destructive candidate",
+    "result": "passed"
+  },
+  {
+    "check": "Overlapping restore reads remain bound to latest selection",
+    "result": "passed"
+  },
+  {
+    "check": "Partial provisional edit stays provisional until explicit confirmation",
+    "result": "passed"
+  },
+  {
+    "check": "Captured old focus tick cannot write into selected workspace",
+    "result": "passed"
+  },
+  {
+    "check": "Unconvertible legacy data protected without invalid v2 write or misleading full backup",
+    "result": "passed"
+  }
+]

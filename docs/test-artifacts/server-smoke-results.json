@@ -1,0 +1,46 @@
+[
+  {
+    "check": "Anonymous and query-token reads rejected",
+    "result": "passed"
+  },
+  {
+    "check": "Server saves complete v2 data and isolates different authenticated owners",
+    "result": "passed"
+  },
+  {
+    "check": "Malformed, cross-site-header and stale-revision writes cannot replace saved records",
+    "result": "passed"
+  },
+  {
+    "check": "Read-only AI context and full sheet preserve identity, local planning timezone, freshness and CSV formula safety",
+    "result": "passed"
+  },
+  {
+    "check": "AI key cannot write; another owner cannot revoke it; revocation removes read access",
+    "result": "passed"
+  },
+  {
+    "check": "Focus ownership requires deliberate handover and checked replacement preserves server recovery",
+    "result": "passed"
+  },
+  {
+    "check": "Connecting does not silently upload or overwrite original browser records",
+    "result": "passed"
+  },
+  {
+    "check": "Explicit transfer retains IDs and original bytes; a second device reads the same server collection",
+    "result": "passed"
+  },
+  {
+    "check": "Phone/laptop edits propagate through the shared authenticated server",
+    "result": "passed"
+  },
+  {
+    "check": "Authenticated saved sheet downloads and scrolls within a phone layout",
+    "result": "passed"
+  },
+  {
+    "check": "Conflicting device edits preserve the server version until an explicit recovery choice",
+    "result": "passed"
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "check": "Conflicting device edits preserve both versions and resolve only by explicit choice",
+    "result": "passed"
+  },
+  {
+    "check": "UI issues read-only key once without browser persistence and successfully revokes it",
+    "result": "passed"
+  },
+  {
+    "check": "Offline edit is recoverably pending, excluded from server context, then confirmed after reconnect",
+    "result": "passed"
+  }
+]

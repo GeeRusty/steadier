@@ -1,0 +1,11 @@
+# Shared-server release handoff
+
+The checked application stores a personal v2 workspace in private managed MySQL, scoped to the real authenticated Manus user. Original browser data and local demo remain separate. Existing Preview records need a deliberate initial transfer or full-backup restore on the new published origin. The full backup remains essential.
+
+Validated: TypeScript, frontend/server production build, 56 software tests, 19 synthetic authenticated server/device/safety/draft checks, and 22 local capture/voice/focus/offline checks. Earlier trial/backup regressions also passed after the initial integration. Tests never imported the real owner's records; credentials and synthetic downloads remain ignored locally. The additive migration was applied and the existing port 3000 Preview and database health were verified.
+
+Private AI paths are GET /api/compass/context and GET /api/compass/sheet.csv using Authorization: Bearer <private expiring read-only key>. Create/revoke a key inside Server & Compass. Context/sheet derive from the same saved database record and include all areas, temporal provenance, outcomes and freshness. Unsynced browser changes are excluded. Compass cannot edit through this capability; the actual AI client still needs configuration.
+
+Account-bound HTTP requests, exact CAS acknowledgements, retained pending drafts, checked replacement recovery and explicit focus ownership guard multi-device changes. Task/project drafts cannot silently erase intervening server changes. Mandatory opt-in voice and gentle intention/refocus remain; there is no always-on listening or automatic drift detector. Actual human OAuth, Android microphone/provider usability and configured Compass-client retrieval remain user-side checks.
+
+Published application version `54bea3d678d7a65c552ffa4bca47551131940b59` is confirmed at https://steadier-9wkmejo8.manus.space. Live health and anonymous access rejection passed; a temporary synthetic private capability successfully read the complete current JSON framework and CSV sheet without browser login, then was revoked and rejected. No real owner data or credentials were used. This documentation-only receipt update does not require republishing the unchanged app. See Shared-Server-Guide.md for safe transfer and connection instructions.

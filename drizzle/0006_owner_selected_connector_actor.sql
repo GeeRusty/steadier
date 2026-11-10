@@ -1,0 +1,1 @@
+ALTER TABLE `steadier_compass_oauth_codes` ADD `connectorActor` enum('claude','chatgpt','connector') DEFAULT 'connector' NOT NULL;

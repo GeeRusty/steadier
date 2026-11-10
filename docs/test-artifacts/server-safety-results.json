@@ -1,0 +1,14 @@
+[
+  {
+    "check": "Cookie account swap cannot read/write into a different owner and preserves the original owner pending cache",
+    "result": "passed"
+  },
+  {
+    "check": "Unrelated corrupt original browser bytes remain protected without blocking a healthy server edit",
+    "result": "passed"
+  },
+  {
+    "check": "Normal Start does not steal remote focus; explicit acknowledged takeover enables controlled pause",
+    "result": "passed"
+  }
+]

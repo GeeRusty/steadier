@@ -1,0 +1,90 @@
+[
+  {
+    "check": "200-task home",
+    "result": "exactly five explained recommendations; full 200 count visible"
+  },
+  {
+    "check": "Desktop layout",
+    "result": "no horizontal overflow at 1440px"
+  },
+  {
+    "check": "Read-aloud controls",
+    "result": "simulated synthesis: summary and explicit stop"
+  },
+  {
+    "check": "Capture, focus and drift recovery",
+    "result": "personal task and chosen paused entry step survive reload"
+  },
+  {
+    "check": "Voice command and undo",
+    "result": "simulated transcript does not complete until confirmed; undo restores"
+  },
+  {
+    "check": "Voice permission failure",
+    "result": "simulated denial exposes useful error and preserves tasks"
+  },
+  {
+    "check": "Waiting capture validation",
+    "result": "anonymous waiting cannot save; named blocker saves"
+  },
+  {
+    "check": "Scenario few",
+    "result": "5 tasks; 5 suggestions; personal collection unchanged"
+  },
+  {
+    "check": "Scenario fifty",
+    "result": "50 tasks; 5 suggestions; personal collection unchanged"
+  },
+  {
+    "check": "Scenario twohundred",
+    "result": "200 tasks; 5 suggestions; personal collection unchanged"
+  },
+  {
+    "check": "Scenario fivehundred",
+    "result": "500 tasks; 5 suggestions; personal collection unchanged"
+  },
+  {
+    "check": "Scenario deadlines",
+    "result": "16 tasks; 5 suggestions; personal collection unchanged"
+  },
+  {
+    "check": "Scenario overdue",
+    "result": "16 tasks; 5 suggestions; personal collection unchanged"
+  },
+  {
+    "check": "Scenario undated",
+    "result": "16 tasks; 5 suggestions; personal collection unchanged"
+  },
+  {
+    "check": "Scenario quiet",
+    "result": "16 tasks; 5 suggestions; personal collection unchanged"
+  },
+  {
+    "check": "Search and detail",
+    "result": "find undated garage task and save a concrete next step"
+  },
+  {
+    "check": "Android-width layout",
+    "result": "no horizontal overflow at 390px"
+  },
+  {
+    "check": "Narrow / zoom-reflow layout",
+    "result": "no horizontal overflow at 320px"
+  },
+  {
+    "check": "Browser runtime",
+    "result": "no uncaught page errors"
+  },
+  {
+    "check": "Unsupported browser",
+    "result": "explicit fallback rather than fake recognition"
+  },
+  {
+    "check": "Corrupt storage protection",
+    "result": "invalid saved state is read-only and original bytes are preserved"
+  },
+  {
+    "check": "Production offline shell",
+    "result": "built app reloads offline after online service-worker installation"
+  }
+]

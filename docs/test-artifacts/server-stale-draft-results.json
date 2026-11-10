@@ -1,0 +1,10 @@
+[
+  {
+    "check": "Stale outcome draft cannot erase new server evidence and remains downloadable",
+    "result": "passed"
+  },
+  {
+    "check": "Stale task draft cannot overwrite refreshed server fields and remains downloadable",
+    "result": "passed"
+  }
+]
