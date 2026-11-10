@@ -40,6 +40,10 @@ services:
       OWNER_EMAIL: ${OWNER_EMAIL:-}
       ALLOW_SIGNUP: ${ALLOW_SIGNUP:-true}
       SIGNUP_CODE: ${SIGNUP_CODE:-}
+      ANDROID_PACKAGE: com.geerusty.steadier
+      ANDROID_CERT_SHA256: ${ANDROID_CERT_SHA256:-}
+    volumes:
+      - ./downloads:/app/downloads:ro   # steadier.apk is served from here
     # Apply any new database migrations, then start the server.
     command: ["sh", "-c", "pnpm db:migrate && exec node dist/index.js"]
     ports:

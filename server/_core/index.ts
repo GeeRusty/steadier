@@ -3,6 +3,7 @@ import express from "express";
 import { createServer } from "http";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
+import { registerAndroidAppRoutes } from "./androidApp";
 import { publicPlatformScript } from "./publicConfig";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -27,6 +28,7 @@ async function startServer() {
       .send(publicPlatformScript());
   });
   registerOAuthRoutes(app);
+  registerAndroidAppRoutes(app);
   // Owner-scoped data routes must be registered before the Vite/static SPA fallback.
   registerSteadierRoutes(app);
   registerCompassConnectionDiagnostics(app);

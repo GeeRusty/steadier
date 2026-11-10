@@ -118,3 +118,4 @@ docs/test-artifacts/synthetic-trial-backup.json
 # Local Python test runtime artifacts
 __pycache__/
 *.py[cod]
+downloads/
