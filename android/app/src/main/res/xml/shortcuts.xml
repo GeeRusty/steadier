@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press shortcuts. The URL host must match steadierHost in gradle.properties. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="voice"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/voice_short"
+        android:shortcutLongLabel="@string/voice_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.geerusty.steadier"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:data="https://steadier.31-97-110-46.sslip.io/voice" />
+    </shortcut>
+</shortcuts>
