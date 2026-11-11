@@ -1,4 +1,5 @@
 import { emptyTaskCompass } from "./compass";
+import { isCardTask, isSetUp, setUpReason } from "./taskCard";
 import type {
   AttentionItem,
   AttentionResult,
@@ -244,6 +245,19 @@ export function derivedState(
   tasks: Task[],
   now?: string
 ): DerivedState {
+  const base = baseDerivedState(task, tasks, now);
+  // Card tasks are ready only when all three dots are lit (see taskCard.ts).
+  if ((base === "ready" || base === "inbox") && isCardTask(task)) {
+    return isSetUp(task, tasks) ? "ready" : "inbox";
+  }
+  return base;
+}
+
+function baseDerivedState(
+  task: Task,
+  tasks: Task[],
+  now?: string
+): DerivedState {
   if (task.state === "done" || task.state === "someday") return task.state;
 
   const byId = new Map(tasks.map(item => [item.id, item]));
@@ -421,13 +435,16 @@ export function attention(
         };
       }
     } else if (state === "inbox") {
+      const clarifyText = isCardTask(task)
+        ? `${setUpReason(task, tasks)} Tap Set up.`
+        : "Choose the next physical action.";
       item = {
         task,
         kind: "clarify",
         reason:
           review !== null && review <= 0
-            ? `${relativeReviewReason(review)} Choose the next physical action.`
-            : "Choose the next physical action.",
+            ? `${relativeReviewReason(review)} ${clarifyText}`
+            : clarifyText,
         estimateForFilter: 5,
         deadlineDays: deadline,
         reviewDays: review,

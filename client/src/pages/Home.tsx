@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import ClaudeConsent from "../components/steadier/ClaudeConsent";
 import {
   OrphanBanner,
@@ -103,6 +104,8 @@ import {
   Compass,
   CircleDot,
   ListTodo,
+  Lightbulb,
+  Shuffle,
   RefreshCw,
   Clock3,
   CalendarDays,
@@ -149,6 +152,7 @@ import {
   today,
   addDays,
   repeatRuleOf,
+  createTask,
 } from "../domain/engine";
 import type { Context, Task, View, Workspace } from "../domain/types";
 import AttentionView from "../components/steadier/AttentionView";
@@ -212,10 +216,24 @@ import CredentialRenewalsView from "../components/steadier/CredentialRenewalsVie
 import InvoicesView from "../components/steadier/InvoicesView";
 import CommandCentreView from "../components/steadier/CommandCentreView";
 import PageNavigation from "../components/steadier/PageNavigation";
+import TaskCard, { type CardChange } from "../components/steadier/TaskCard";
+import { DatedTodayCard, IdeasShelf, SortView } from "../components/steadier/SetupViews";
+import {
+  bringBackIdea,
+  ideaToTask,
+  ideas as ideaList,
+  isIdea,
+  keepIdea,
+  letGoIdea,
+  notReadyTasks,
+  settleCardState,
+} from "../domain/taskCard";
 const nav: { id: View; title: string; Icon: typeof CircleDot }[] = [
   { id: "attention", title: "My life today", Icon: CircleDot },
   { id: "command-centre", title: "Command Centre", Icon: ClipboardCheck },
   { id: "all", title: "All work", Icon: ListTodo },
+  { id: "sort", title: "Sort", Icon: Shuffle },
+  { id: "ideas", title: "Ideas", Icon: Lightbulb },
   { id: "calendar", title: "Calendar", Icon: CalendarDays },
   { id: "review", title: "Review due / unplaced", Icon: RefreshCw },
   { id: "near", title: "Near me", Icon: MapPin },
@@ -720,6 +738,45 @@ export default function Home() {
       );
       return false;
     }
+    return true;
+  };
+  // Task card: apply one change to a saved task, settled against its dots.
+  const applyCard = (taskId: string, change: CardChange): boolean => {
+    if (!allowed()) return false;
+    const accepted = store.mutate(w => ({
+      ...w,
+      tasks: w.tasks.map(t => (t.id === taskId ? settleCardState(change(t, w.tasks), w.tasks) : t)),
+    }));
+    if (!accepted) toast.error("That was not saved. Check sync and try again.");
+    return Boolean(accepted);
+  };
+  const changeIdea = (id: string, fn: (task: Task, stamp: string, all: Task[]) => Task, message: string): boolean => {
+    if (!allowed()) return false;
+    const stamp = adelaideTimestamp();
+    const accepted = store.mutate(w => ({
+      ...w,
+      tasks: w.tasks.map(t => (t.id === id ? fn(t, stamp, w.tasks) : t)),
+    }));
+    if (!accepted) {
+      toast.error("That was not saved. Check sync and try again.");
+      return false;
+    }
+    toast.success(message);
+    return true;
+  };
+  const makeIdeaTask = (id: string) => changeIdea(id, (t, stamp, all) => ideaToTask(t, stamp, all), "Made into a task. It's waiting in Sort.");
+  const keepIdeaOnShelf = (id: string) => changeIdea(id, (t, stamp) => keepIdea(t, stamp), "Kept on the Ideas shelf.");
+  const letIdeaGo = (id: string) => changeIdea(id, (t, stamp) => letGoIdea(t, stamp), "Let go. It's archived, not deleted.");
+  const bringIdeaBack = (id: string) => changeIdea(id, (t, stamp) => bringBackIdea(t, stamp), "Back on the Ideas shelf.");
+  const addIdea = (title: string): boolean => {
+    if (!allowed()) return false;
+    const idea: Task = { ...createTask({ title, state: "someday", reviewDate: null }), actionConfirmed: false };
+    const accepted = store.mutate(w => ({ ...w, tasks: [...w.tasks, idea] }));
+    if (!accepted) {
+      toast.error("That idea was not saved. Check sync and try again.");
+      return false;
+    }
+    toast.success("Idea saved.");
     return true;
   };
   const saveEvidence = (input: EvidenceInput): boolean => {
@@ -2359,6 +2416,7 @@ export default function Home() {
                         />
                       }
                     />
+                    <DatedTodayCard tasks={tasks} today={now} onOpen={openTaskView} />
                     <V2FoldableCard
                       title="Pillars"
                       count={`${todayPillarCount} of ${PILLAR_SLOTS} set`}
@@ -2387,6 +2445,10 @@ export default function Home() {
                     <TodayNow
                       workspace={store.workspace}
                       tasks={tasks}
+                      sortCount={notReadyTasks(tasks).length}
+                      ideaCount={ideaList(tasks).length}
+                      onSort={() => navigate("sort")}
+                      onIdeas={() => navigate("ideas")}
                       result={liveResult}
                       orphanCount={orphanReport(tasks).count}
                       readOnly={store.readOnly}
@@ -2693,6 +2755,28 @@ export default function Home() {
                   />
                 ) : view === "moveEnergy" ? (
                   <MoveEnergyView day={now} />
+                ) : view === "sort" ? (
+                  <SortView
+                    workspace={store.workspace}
+                    today={now}
+                    readOnly={store.readOnly}
+                    voice={voice}
+                    onApply={applyCard}
+                    onFinish={() => {
+                      setTodayTab("today");
+                      navigate("attention");
+                    }}
+                  />
+                ) : view === "ideas" ? (
+                  <IdeasShelf
+                    tasks={tasks}
+                    readOnly={store.readOnly}
+                    onMakeTask={makeIdeaTask}
+                    onKeep={keepIdeaOnShelf}
+                    onLetGo={letIdeaGo}
+                    onBringBack={bringIdeaBack}
+                    onAddIdea={addIdea}
+                  />
                 ) : view === "weather" ? (
                   <WeatherView />
                 ) : view === "people" ? (
@@ -2941,6 +3025,21 @@ export default function Home() {
                 }
                 onConfirmAll={confirmAllSuggestedSubtasks}
                 onRead={voice.read}
+                card={
+                  selectedTask.state !== "done" && !isIdea(selectedTask) && !selectedTask.droppedAt
+                    ? (more: ReactNode) => (
+                        <TaskCard
+                          task={selectedTask}
+                          workspace={store.workspace}
+                          today={now}
+                          readOnly={store.readOnly}
+                          voice={voice}
+                          onApply={change => applyCard(selectedTask.id, change)}
+                          more={more}
+                        />
+                      )
+                    : undefined
+                }
               />
             )}
             {selectedTask && taskPanelMode === "edit" && (

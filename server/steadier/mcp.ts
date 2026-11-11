@@ -1,3 +1,4 @@
+import { taskSetup } from "./cardOps";
 import type { Express, Request, Response } from "express";
 import { toNodeHandler } from "@modelcontextprotocol/node";
 import {
@@ -288,6 +289,7 @@ export function createCompassMcpServer(
           schemaVersion: "steadier-compass-task-v1",
           dataNotice: UNTRUSTED_DATA_RULE,
           task: presentTask(task),
+          setup: taskSetup(task, record.workspace.tasks),
           project: (() => {
             const linked = task.projectId
               ? record.workspace.projects.find(

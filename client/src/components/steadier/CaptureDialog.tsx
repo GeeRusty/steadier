@@ -15,6 +15,9 @@ import {
 } from "../ui/dialog";
 import { installCaptureDraftFlush, parseCapture } from "../../domain/capture";
 import { createTask } from "../../domain/engine";
+import { CATCH_ALL_LABEL, type CatchAll } from "../../domain/compass";
+import { looksLikeAction, settleCardState } from "../../domain/taskCard";
+import CardDotsMark from "./CardDotsMark";
 import {
   adelaideClock,
   describeFlexibleWindow,
@@ -127,6 +130,10 @@ export default function CaptureDialog({
     [quick]
   );
   const [projectId, setProjectId] = useState(initialProjectId);
+  // Capture asks one thing after the title: Idea or Task (Task by default).
+  const [kind, setKind] = useState<"task" | "idea">("task");
+  const [actionOk, setActionOk] = useState(false);
+  const [catchAll, setCatchAll] = useState<CatchAll | "">("");
   const [role, setRole] = useState<LifeRole | "">("");
   const [pattern, setPattern] = useState<LifePattern | "">("");
   const project = projects.find(p => p.id === projectId);
@@ -159,13 +166,40 @@ export default function CaptureDialog({
       area: area || parsed.area || "Personal",
       state: capturedState,
     });
-    return {
-      ...task,
+    if (kind === "idea") {
+      // An idea: on the shelf, no review date, no placement, no timers.
+      return {
+        ...task,
+        state: "someday" as const,
+        reviewDate: null,
+        actionConfirmed: false,
+        id: identity.id,
+        createdAt: identity.createdAt,
+        history: identity.history,
+      };
+    }
+    const placed: Task = catchAll && !project
+      ? {
+          ...task,
+          compass: {
+            ...task.compass,
+            catchAll,
+            catchAllConfirmed: true,
+            catchAllSince: task.createdAt,
+          },
+        }
+      : task;
+    return settleCardState({
+      ...placed,
+      actionConfirmed: actionOk,
       id: identity.id,
       createdAt: identity.createdAt,
       history: identity.history,
-    };
+    });
   }, [
+    actionOk,
+    catchAll,
+    kind,
     area,
     identity,
     nextAction,
@@ -591,6 +625,28 @@ export default function CaptureDialog({
               placeholder="Call Sam tomorrow 3pm for 30 min every Tue, remind me 15 min before"
             />
           </label>
+          {!command && !unsupportedVoiceCommand && (
+            <div className="capture-kind" role="radiogroup" aria-label="Idea or task">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={kind === "task"}
+                className={`card-btn card-btn--wide${kind === "task" ? " is-picked" : ""}`}
+                onClick={() => setKind("task")}
+              >
+                Task
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={kind === "idea"}
+                className={`card-btn card-btn--wide${kind === "idea" ? " is-picked" : ""}`}
+                onClick={() => setKind("idea")}
+              >
+                Idea
+              </button>
+            </div>
+          )}
           {manualReviewOnly && (
             <label className="field">
               Source text copied into task notes (editable)
@@ -685,8 +741,58 @@ export default function CaptureDialog({
                   )}
                 </div>
               )}
+              {kind === "idea" ? (
+                <p className="small muted capture-idea-note">
+                  Saved to the Ideas shelf. No timers or warnings. Make it a task whenever you're ready.
+                </p>
+              ) : (
+                <>
+              <div className="capture-dots">
+                <CardDotsMark task={draftTask} tasks={tasks} showLabels />
+                <span className="small muted">Light all three now, or later in Sort. Nothing stops you saving.</span>
+              </div>
+              <div className="capture-action">
+                <button
+                  type="button"
+                  className={`card-btn${actionOk ? " is-picked" : ""}`}
+                  aria-pressed={actionOk}
+                  disabled={!text.trim()}
+                  onClick={() => setActionOk(v => !v)}
+                >
+                  {actionOk ? "✓ It's an action" : "It's an action"}
+                </button>
+                {text.trim() && !actionOk && (
+                  <span className="task-card-hint">
+                    {looksLikeAction(parsed.title) ? "Reads like an action." : "Tip: start with a doing word, like “Call…”."}
+                  </span>
+                )}
+              </div>
               <label className="field">
-                Next physical step (optional)
+                Place
+                <select
+                  aria-label="Capture place"
+                  value={projectId ? `p:${projectId}` : catchAll ? `c:${catchAll}` : ""}
+                  onChange={e => {
+                    const v = e.target.value;
+                    setProjectId(v.startsWith("p:") ? v.slice(2) : "");
+                    setCatchAll(v.startsWith("c:") ? (v.slice(2) as CatchAll) : "");
+                  }}
+                >
+                  <option value="">Choose later</option>
+                  {(["life-admin", "erosion-guard"] as CatchAll[]).map(c => (
+                    <option key={c} value={`c:${c}`}>{CATCH_ALL_LABEL[c]}</option>
+                  ))}
+                  {projects
+                    .filter(p => p.status === "active")
+                    .map(p => (
+                      <option key={p.id} value={`p:${p.id}`}>
+                        {p.title}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label className="field">
+                First step (optional)
                 <input
                   value={nextAction}
                   onChange={e => setNextAction(e.target.value)}
@@ -697,6 +803,19 @@ export default function CaptureDialog({
                   }
                 />
               </label>
+              <button
+                type="button"
+                className="text-button"
+                disabled={!parsed.title.trim()}
+                onClick={() => {
+                  setNextAction(parsed.title);
+                  setActionOk(true);
+                }}
+              >
+                Title is the step
+              </button>
+              <details className="detail-section">
+                <summary>More</summary>
               <div className="form-pair">
                 <label className="field">
                   Area
@@ -714,10 +833,8 @@ export default function CaptureDialog({
                     onChange={e => setState(e.target.value as TaskState | "")}
                   >
                     <option value="">Use detected state</option>
-                    <option value="ready">Ready to act</option>
-                    <option value="inbox">Needs a next step</option>
+                    <option value="inbox">Not ready yet</option>
                     <option value="waiting">Waiting</option>
-                    <option value="someday">Someday</option>
                   </select>
                 </label>
               </div>
@@ -734,58 +851,12 @@ export default function CaptureDialog({
                   />
                 </label>
               )}
-              <details className="detail-section" open={!!initialProjectId}>
-                <summary>Place it in My Life (optional)</summary>
                 <p className="small muted">
-                  Save first if you are unsure. Suggestions are editable, and
-                  Compass remains your decision guide.
+                  Role, pattern and Imperative links are set in the Weekly Review.
                 </p>
-                <label className="field">
-                  Project / ongoing responsibility
-                  <select
-                    aria-label="Capture project"
-                    value={projectId}
-                    onChange={e => setProjectId(e.target.value)}
-                  >
-                    <option value="">Standalone</option>
-                    {projects
-                      .filter(p => p.status === "active")
-                      .map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.title}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-                <div className="form-pair">
-                  <label className="field">
-                    Role
-                    <select
-                      aria-label="Capture role"
-                      value={role}
-                      onChange={e => setRole(e.target.value as LifeRole | "")}
-                    >
-                      <option value="">Use suggestion / clarify later</option>
-                      <option value="direction">Direction</option>
-                      <option value="support">Support</option>
-                    </select>
-                  </label>
-                  <label className="field">
-                    Attention pattern
-                    <select
-                      aria-label="Capture attention pattern"
-                      value={pattern}
-                      onChange={e =>
-                        setPattern(e.target.value as LifePattern | "")
-                      }
-                    >
-                      <option value="">Use suggestion / clarify later</option>
-                      <option value="timely">Timely</option>
-                      <option value="sustained">Sustained</option>
-                    </select>
-                  </label>
-                </div>
               </details>
+                </>
+              )}
               {error && (
                 <p className="error" role="alert">
                   {error}
@@ -837,9 +908,11 @@ export default function CaptureDialog({
                   ? "No task focused"
                   : voiceTranscriptPending
                     ? "Waiting for speech"
-                    : manualReviewOnly || voiceOriginated
-                      ? "Create task"
-                      : "Save & close"}
+                    : kind === "idea"
+                      ? "Save idea"
+                      : manualReviewOnly || voiceOriginated
+                        ? "Create task"
+                        : "Save & close"}
               <ArrowRight size={16} />
             </button>
           </div>

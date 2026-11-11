@@ -487,11 +487,13 @@ describe("connector tools by approved scope", () => {
       "list_my_life_pending_deletes",
       "read_my_life_compass_map",
       "read_my_life_context",
+      "read_my_life_ideas",
       "read_my_life_notes",
       "read_my_life_project",
       "read_my_life_sheet",
       "read_my_life_shopping_lists",
       "read_my_life_task",
+      "read_my_life_task_setup",
       "read_steadier_guide",
     ]);
   });
@@ -514,11 +516,13 @@ describe("connector tools by approved scope", () => {
       "list_my_life_pending_deletes",
       "read_my_life_compass_map",
       "read_my_life_context",
+      "read_my_life_ideas",
       "read_my_life_notes",
       "read_my_life_project",
       "read_my_life_sheet",
       "read_my_life_shopping_lists",
       "read_my_life_task",
+      "read_my_life_task_setup",
       "read_steadier_guide",
       "request_my_life_delete",
       "set_my_life_next_thing",
@@ -1410,5 +1414,49 @@ describe("Daily Log connector tools", () => {
     const read = await client.callTool({ name: "read_my_life_notes", arguments: { query: "rattl" } });
     const notes = (read.structuredContent as { notes: { date: string; text: string }[] }).notes;
     expect(notes).toEqual([expect.objectContaining({ date: "2026-11-11", text: "Car is making a rattling noise" })]);
+  });
+});
+
+describe("Task card and Ideas connector rules", () => {
+  it("creates tasks as faded cards and never lets Claude make one ready", async () => {
+    const store = new MemoryStore();
+    store.addKey(WRITE_TOKEN, "steadier:read steadier:write");
+    const client = await connect(store, WRITE_TOKEN);
+    const created = await client.callTool({
+      name: "create_my_life_task",
+      arguments: { title: "Book the rego check", nextAction: "Ring the garage", state: "ready" },
+    });
+    expect(created.isError).toBeFalsy();
+    const task = (created.structuredContent as { task: { id: string; state: string; actionConfirmed: boolean } }).task;
+    expect(task.state).toBe("inbox");
+    expect(task.actionConfirmed).toBe(false);
+
+    const forced = await client.callTool({
+      name: "update_my_life_task",
+      arguments: { taskId: task.id, state: "ready" },
+    });
+    const after = (forced.structuredContent as { task?: { state: string } } | undefined)?.task;
+    if (after) expect(after.state).toBe("inbox");
+
+    const setup = await client.callTool({ name: "read_my_life_task_setup", arguments: {} });
+    const rows = (setup.structuredContent as { tasks: { taskId: string; ready: boolean; missing: string[] }[] }).tasks;
+    expect(rows.find(r => r.taskId === task.id)).toMatchObject({ ready: false, missing: ["Action", "Place"] });
+  });
+
+  it("reads Ideas but cannot let one go", async () => {
+    const store = new MemoryStore();
+    store.addKey(WRITE_TOKEN, "steadier:read steadier:write");
+    const client = await connect(store, WRITE_TOKEN);
+    const created = await client.callTool({
+      name: "create_my_life_task",
+      arguments: { title: "Trailer hire side business", state: "someday" },
+    });
+    const id = (created.structuredContent as { task: { id: string } }).task.id;
+    const shelf = await client.callTool({ name: "read_my_life_ideas", arguments: {} });
+    expect((shelf.structuredContent as { ideas: { title: string }[] }).ideas.map(i => i.title)).toContain(
+      "Trailer hire side business"
+    );
+    const letGo = await client.callTool({ name: "update_my_life_task", arguments: { taskId: id, dropped: true } });
+    expect(letGo.isError).toBe(true);
   });
 });

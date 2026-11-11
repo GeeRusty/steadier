@@ -57,7 +57,9 @@ export type View =
   | "weather"
   | "people"
   | "credentialRenewals"
-  | "invoices";
+  | "invoices"
+  | "sort"
+  | "ideas";
 export type LifeRole = "direction" | "support";
 export type LifePattern = "timely" | "sustained";
 export type LabelSource = "unclassified" | "suggested" | "confirmed";
@@ -253,6 +255,11 @@ export interface Task {
   passOverCount?: number;
   /** Timestamp of an owner-kept Dropped decision; never means deletion. */
   droppedAt?: string | null;
+  /**
+   * Task card Action dot: false until the owner confirms the title reads as
+   * an action. Absent on tasks made before the card (they keep the old rule).
+   */
+  actionConfirmed?: boolean;
   purpose: string;
   role: LifeRole | null;
   pattern: LifePattern | null;

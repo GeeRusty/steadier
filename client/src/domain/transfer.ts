@@ -784,9 +784,14 @@ function validateTask(value: unknown, label: string, requireV2 = false): Task {
     "passOverCount"
   );
   const hasDroppedAt = Object.prototype.hasOwnProperty.call(value, "droppedAt");
+  const hasActionConfirmed = Object.prototype.hasOwnProperty.call(
+    value,
+    "actionConfirmed"
+  );
   const shapeRecord = { ...value };
   delete shapeRecord.passOverCount;
   delete shapeRecord.droppedAt;
+  delete shapeRecord.actionConfirmed;
   const baseShapes = [
     LEGACY_TASK_KEYS,
     TASK_KEYS,
@@ -855,6 +860,9 @@ function validateTask(value: unknown, label: string, requireV2 = false): Task {
       : {}),
     ...(hasDroppedAt
       ? { droppedAt: nullableInstantField(value, "droppedAt") }
+      : {}),
+    ...(hasActionConfirmed
+      ? { actionConfirmed: booleanField(value, "actionConfirmed") }
       : {}),
     // Legacy fields are deliberately neutral: migration never fabricates a
     // deadline, a confirmed classification, or an outcome relationship.

@@ -32,6 +32,8 @@ export interface TaskViewPanelProps {
   onDismissSuggestion: (id: string, expectedParentId: string) => boolean | void;
   onConfirmAll: (parentId: string) => boolean | void;
   onRead?: (text: string) => void;
+  /** The task card; the rest of this view goes inside its "More" section. */
+  card?: (more: React.ReactNode) => React.ReactNode;
 }
 
 function taskWhen(task: Task, today: string): string {
@@ -96,6 +98,7 @@ export default function TaskViewPanel({
   onDismissSuggestion,
   onConfirmAll,
   onRead,
+  card,
 }: TaskViewPanelProps) {
   const currentTask = tasks.find(candidate => candidate.id === selectedTask.id);
   const task = currentTask ?? selectedTask;
@@ -174,6 +177,9 @@ export default function TaskViewPanel({
               : "Task details. Use Edit to change the task; uncheck Done to reopen a completed task. Checking a subtask saves that completion immediately."}
         </DialogDescription>
 
+        {(() => {
+          const details = (
+            <>
         <section className="task-view-timing" aria-label="Task timing and placement">
           <div className="task-view-detail-line">
             <CalendarDays size={17} aria-hidden="true" />
@@ -325,6 +331,10 @@ export default function TaskViewPanel({
           )}
         </section>
 
+            </>
+          );
+          return card ? card(details) : details;
+        })()}
         <div className="task-view-actions task-view-sticky-actions" role="group" aria-label="Task actions">
           {onRead && (
             <button

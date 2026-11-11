@@ -7,7 +7,7 @@ export const PAGE_NAVIGATION_SECTIONS: readonly {
 }[] = [
   {
     title: "Start here",
-    ids: ["attention", "all", "calendar", "review", "weekly", "command-centre"],
+    ids: ["attention", "all", "sort", "ideas", "calendar", "review", "weekly", "command-centre"],
   },
   {
     title: "Direction",

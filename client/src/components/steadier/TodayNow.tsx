@@ -6,6 +6,7 @@ import {
   Check,
   ChevronDown,
   Compass,
+  Lightbulb,
   X,
 } from "lucide-react";
 import type { AttentionResult, Task, Workspace } from "../../domain/types";
@@ -63,6 +64,11 @@ interface Props {
   onCommitments: () => void;
   onCalendar: () => void;
   onImperatives: () => void;
+  /** Faded (not set up) tasks waiting in Sort. */
+  sortCount?: number;
+  ideaCount?: number;
+  onSort?: () => void;
+  onIdeas?: () => void;
 }
 
 type NowMode = "block" | "focus" | "focusDone";
@@ -126,6 +132,7 @@ export default function TodayNow(p: Props) {
     label: string;
     onClick: () => void;
   }[] = [
+    { key: "sort", n: p.sortCount ?? 0, label: "Sort", onClick: () => p.onSort?.() },
     { key: "place", n: p.orphanCount, label: "To place", onClick: p.onOpenOrphans },
     { key: "review", n: p.result.reviewDue.length, label: "Needs review", onClick: p.onReview },
     { key: "due", n: p.result.commitments.length, label: "Due soon", onClick: p.onCommitments },
@@ -244,6 +251,14 @@ export default function TodayNow(p: Props) {
         <span>{blocksToday ? `${blocksToday} booked anchor${blocksToday === 1 ? "" : "s"} today` : "No booked anchors today"}</span>
         <ArrowRight size={14} />
       </button>
+      {p.onIdeas && (
+        <button className="line-link" onClick={p.onIdeas}>
+          <Lightbulb size={15} aria-hidden="true" />
+          <b>Ideas</b>
+          <span>{p.ideaCount ? `${p.ideaCount} on the shelf` : "Shelf is empty"}</span>
+          <ArrowRight size={14} />
+        </button>
+      )}
       <button className="line-link" onClick={p.onImperatives}>
         <Compass size={15} aria-hidden="true" />
         <b>Imperatives</b>

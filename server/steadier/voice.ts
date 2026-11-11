@@ -336,6 +336,9 @@ export function todaySpeech(workspace: Workspace, now: Date = new Date()): strin
 export function planVoiceTask(workspace: Workspace, p: TaskDraft, now: Date) {
   const planned = planCreateTask(workspace, { title: p.title }, "Added by voice.", now, "claude");
   const task = planned.result.task;
+  // The owner heard the title read back and said yes, so the Action dot is lit.
+  // Place and First step are still to do (Sort), so the card starts faded.
+  task.actionConfirmed = true;
   if (p.date) {
     task.schedule = {
       ...task.schedule,

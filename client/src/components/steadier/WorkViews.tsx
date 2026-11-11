@@ -14,6 +14,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { nestRows } from "../../domain/subtasks";
+import { isFaded, notReadyTasks } from "../../domain/taskCard";
+import CardDotsMark from "./CardDotsMark";
 import { isTaskAnchor, pastDueTasks } from "../../domain/anchorPlanning";
 import type { Task, View, Project } from "../../domain/types";
 import { identityLabel } from "../../domain/life";
@@ -110,6 +112,7 @@ export default function WorkViews(p: Props) {
   };
   const [title, sub] = headings[p.view] || headings.all;
   const pastDueIds = new Set(pastDueTasks(p.tasks, today()).map(t => t.id));
+  const notReadyCount = notReadyTasks(p.tasks).length;
   const list = p.tasks.filter(task => {
     const state = derivedState(task, p.tasks);
     if (p.view === "progress" ? task.state !== "done" : task.state === "done")
@@ -136,6 +139,8 @@ export default function WorkViews(p: Props) {
     } else if (p.filter === "unclassified") {
       if (task.role && task.pattern && task.labelSource === "confirmed")
         return false;
+    } else if (p.filter === "notready") {
+      if (!isFaded(task, p.tasks)) return false;
     } else if (p.filter === "pastdue") {
       if (!pastDueIds.has(task.id)) return false;
     } else if (p.filter === "preparation") {
@@ -188,7 +193,7 @@ export default function WorkViews(p: Props) {
     return (
       <article
         key={task.id}
-        className={`work-row${row.depth ? " is-subtask" : ""}${kindOf(task)}`}
+        className={`work-row${row.depth ? " is-subtask" : ""}${kindOf(task)}${isFaded(task, p.tasks) ? " work-row--faded" : ""}`}
         style={
           row.depth
             ? { marginLeft: `${Math.min(row.depth, 4) * 1.25}rem` }
@@ -233,6 +238,7 @@ export default function WorkViews(p: Props) {
           onClick={() => p.onOpen(task)}
         >
           <strong>{task.title}</strong>
+          {isFaded(task, p.tasks) && <CardDotsMark task={task} tasks={p.tasks} />}
           {task.droppedAt && (
             <span className="dropped-decision-tag">Dropped — kept decision</span>
           )}
@@ -422,12 +428,12 @@ export default function WorkViews(p: Props) {
           <option value="active">Active (scheduled or chosen)</option>
           <option value="suggested">Suggested</option>
           <option value="ready">Can start</option>
-          <option value="inbox">Needs clarity</option>
+          <option value="notready">Not ready ({notReadyCount})</option>
           <option value="waiting">Waiting</option>
           <option value="blocked">Blocked</option>
           <option value="scheduled">Not available yet</option>
           <option value="deferred">Set aside</option>
-          <option value="someday">Someday</option>
+          <option value="someday">Ideas (Someday)</option>
           <option value="direction">Direction</option>
           <option value="support">Support</option>
           <option value="timely">Timely</option>

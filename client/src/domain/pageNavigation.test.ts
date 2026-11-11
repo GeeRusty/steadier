@@ -44,7 +44,7 @@ describe("full page navigation groups", () => {
   it("puts daily, work and weekly-review routes first", () => {
     expect(PAGE_NAVIGATION_SECTIONS[0]).toEqual({
       title: "Start here",
-      ids: ["attention", "all", "calendar", "review", "weekly", "command-centre"],
+      ids: ["attention", "all", "sort", "ideas", "calendar", "review", "weekly", "command-centre"],
     });
     expect(PAGE_NAVIGATION_SECTIONS[1].title).toBe("Direction");
   });

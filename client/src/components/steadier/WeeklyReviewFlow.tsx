@@ -37,6 +37,8 @@ import { mapGaps } from "../../domain/goals";
 import { groupByStable, monthGroup } from "../../domain/accordionGroups";
 import AccordionSection from "./AccordionSection";
 import TimingShapeMark from "./TimingShapeMark";
+import { IdeasShelf } from "./SetupViews";
+import { bringBackIdea, ideaToTask, keepIdea, letGoIdea } from "../../domain/taskCard";
 
 interface Props {
   workspace: Workspace;
@@ -51,6 +53,7 @@ interface Props {
 const STEPS = [
   "Start",
   "Unplaced",
+  "Ideas",
   "Money",
   "Action",
   "Capacity",
@@ -550,6 +553,24 @@ export default function WeeklyReviewFlow({
         readOnly={readOnly}
         limit={20}
         reviewMode
+      />
+    );
+  } else if (step === "Ideas") {
+    const ideaChange = (id: string, fn: (t: Task, stamp: string, all: Task[]) => Task) => {
+      if (readOnly) return false;
+      const stamp = adelaideTimestamp();
+      const ok = onMutate(w => ({ ...w, tasks: w.tasks.map(t => (t.id === id ? fn(t, stamp, w.tasks) : t)) }));
+      return ok !== false;
+    };
+    body = (
+      <IdeasShelf
+        tasks={workspace.tasks}
+        readOnly={readOnly}
+        reviewMode
+        onMakeTask={id => ideaChange(id, (t, stamp, all) => ideaToTask(t, stamp, all))}
+        onKeep={id => ideaChange(id, (t, stamp) => keepIdea(t, stamp))}
+        onLetGo={id => ideaChange(id, (t, stamp) => letGoIdea(t, stamp))}
+        onBringBack={id => ideaChange(id, (t, stamp) => bringBackIdea(t, stamp))}
       />
     );
   } else if (step === "Imperatives") {

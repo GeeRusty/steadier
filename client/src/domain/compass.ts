@@ -426,7 +426,8 @@ export function hasOwnPlacement(task: Task): boolean {
  * A suggested parent does not count until the owner confirms it.
  */
 export function isUnplaced(task: Task, all?: Task[]): boolean {
-  if (task.state === "done") return false;
+  // Ideas (Someday) never get orphan flags or timers.
+  if (task.state === "done" || task.state === "someday") return false;
   if (hasOwnPlacement(task)) return false;
   if (all && task.parent && !task.parent.suggested) {
     const seen = new Set([task.id]);

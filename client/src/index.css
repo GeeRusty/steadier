@@ -11931,3 +11931,88 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
   .today-pool-title { min-height: 48px; }
   .work-row-done-tick { min-width: 76px; }
 }
+
+/* Task card: three dots, faded until set up, solid when ready */
+.card-dots { display: inline-flex; align-items: center; gap: 5px; vertical-align: middle; }
+.card-dot { display: inline-block; flex: none; width: 12px; height: 12px; border: 2px solid var(--v2-muted); border-radius: 50%; background: transparent; }
+.card-dot.is-lit { background: var(--v2-accent); border-color: var(--v2-accent); }
+.card-dot--none { border-style: dashed; opacity: .45; }
+.card-dots--labelled { gap: 12px; flex-wrap: wrap; }
+.card-dots--labelled .card-dot { position: relative; width: auto; height: auto; min-height: 22px; padding: 2px 10px 2px 22px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--v2-muted); }
+.card-dots--labelled .card-dot::before { content: ""; position: absolute; left: 6px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border: 2px solid currentColor; border-radius: 50%; box-sizing: border-box; }
+.card-dots--labelled .card-dot.is-lit { color: var(--v2-accent); background: color-mix(in srgb, var(--v2-accent) 14%, transparent); }
+.card-dots--labelled .card-dot.is-lit::before { background: currentColor; }
+.card-dot-label { white-space: nowrap; }
+
+.task-card { display: flex; flex-direction: column; gap: 4px; margin: 0 0 12px; padding: 14px; color: var(--v2-text); background: var(--v2-card); border: 2px dashed var(--v2-border); border-radius: 14px; }
+.task-card.is-faded { background: color-mix(in srgb, var(--v2-card) 70%, var(--v2-page)); }
+.task-card.is-faded .task-card-title strong { opacity: .78; }
+.task-card.is-solid { border-style: solid; border-color: var(--v2-accent); box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+.task-card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 6px; }
+.task-card-status { font-size: 13px; color: var(--v2-muted); }
+.task-card-status.is-ready { color: var(--v2-accent); font-weight: 800; }
+.task-card-row { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--v2-border); }
+.task-card-row > .card-dot { margin-top: 4px; }
+.task-card-row-body { display: flex; flex: 1; flex-direction: column; gap: 8px; min-width: 0; }
+.task-card-label { font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--v2-muted); }
+.task-card-optional { font-weight: 500; text-transform: none; letter-spacing: 0; }
+.task-card-title { display: inline-flex; align-items: center; gap: 8px; padding: 0; color: var(--v2-text); font-size: 18px; text-align: left; background: none; border: 0; }
+.task-card-value { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; font-size: 15px; }
+.task-card-hint { font-size: 13px; color: var(--v2-muted); }
+.task-card-actions, .task-card-choices { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.task-card-inline { display: flex; gap: 8px; align-items: stretch; }
+.task-card-inline input { flex: 1; min-width: 0; min-height: 48px; padding: 8px 12px; font-size: 16px; color: var(--v2-text); background: var(--v2-page); border: 1px solid var(--v2-border); border-radius: 10px; }
+.task-card-when { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.task-card-when label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--v2-muted); }
+.task-card-when input { min-height: 48px; padding: 6px 10px; font-size: 16px; color: var(--v2-text); background: var(--v2-page); border: 1px solid var(--v2-border); border-radius: 10px; }
+.task-card-undo { align-self: flex-start; font-size: 13px; }
+.task-card-more { margin-top: 6px; border-top: 1px solid var(--v2-border); }
+.task-card-more > summary { min-height: 48px; display: flex; align-items: center; font-weight: 800; cursor: pointer; }
+.task-card-more-body { padding-top: 4px; }
+
+/* Big buttons: usable with gloves or dirty hands */
+.card-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; min-width: 52px; padding: 10px 16px; font-size: 16px; font-weight: 700; color: var(--v2-text); background: var(--v2-page); border: 2px solid var(--v2-border); border-radius: 12px; cursor: pointer; }
+.card-btn:hover:not(:disabled) { border-color: var(--v2-accent); }
+.card-btn:focus-visible { outline: 3px solid var(--v2-accent); outline-offset: 2px; }
+.card-btn:disabled { opacity: .45; cursor: default; }
+.card-btn--main { color: var(--v2-page); background: var(--v2-accent); border-color: var(--v2-accent); }
+.card-btn.is-picked { color: var(--v2-page); background: var(--v2-accent); border-color: var(--v2-accent); }
+.card-btn--catchall { border-style: dashed; }
+.card-btn--icon { padding: 10px; }
+.card-btn--icon.is-listening { color: #fff; background: #B4532A; border-color: #B4532A; }
+.card-btn--wide { flex: 1; }
+.card-btn--quiet { color: var(--v2-muted); }
+.card-select { min-height: 52px; padding: 8px 12px; font-size: 16px; color: var(--v2-text); background: var(--v2-page); border: 2px solid var(--v2-border); border-radius: 12px; }
+.task-card--sort .card-btn { min-height: 60px; font-size: 17px; }
+
+/* Sort */
+.sort-view { max-width: 640px; }
+.sort-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.sort-count { font-weight: 800; color: var(--v2-muted); }
+.sort-actions { position: sticky; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 12px; padding: 8px 0; background: var(--v2-page); }
+.sort-empty { display: flex; align-items: center; gap: 8px; font-size: 18px; }
+
+/* Ideas */
+.ideas-shelf { max-width: 640px; }
+.ideas-shelf h1 { display: flex; align-items: center; gap: 8px; }
+.ideas-add { margin: 8px 0 14px; }
+.ideas-list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.idea-card { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--v2-card); border: 1px solid var(--v2-border); border-radius: 12px; }
+.idea-card.is-gone { flex-direction: row; align-items: center; justify-content: space-between; opacity: .8; }
+.idea-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ideas-gone { margin-top: 14px; }
+.ideas-empty { color: var(--v2-muted); }
+
+/* Capture */
+.capture-kind { display: flex; gap: 10px; margin: 8px 0; }
+.capture-dots { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+.capture-action { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 8px; }
+
+/* Faded rows in All work, and Today's dated list */
+.work-row--faded { opacity: .72; border-style: dashed; }
+.work-row--faded .card-dots { margin-left: 6px; }
+.dated-today { margin: 12px 0; padding: 12px; background: var(--v2-card); border: 1px solid var(--v2-border); border-radius: 12px; }
+.dated-today ul { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; }
+.dated-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dated-row.is-faded .dated-main strong { opacity: .75; }
+.dated-main { display: flex; flex: 1; flex-direction: column; align-items: flex-start; min-width: 0; padding: 4px 0; color: var(--v2-text); text-align: left; background: none; border: 0; }

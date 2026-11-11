@@ -68,6 +68,7 @@ import { describeReview, reviewStatus } from "../../client/src/domain/review";
 import type { ConnectorActor } from "../../shared/cloud";
 import { connectorName } from "./connectorOps";
 import { findNotes, planAddNote } from "./notesOps";
+import { ideasView, setupView } from "./cardOps";
 import { guideFor } from "./guide";
 import {
   planAddShoppingItems,
@@ -575,6 +576,64 @@ export function registerBackupReadTools(
       const guide = guideFor(parsed.data.topic);
       if (!guide) return failure("UNAVAILABLE", "The guide isn't available right now.");
       return { content: [{ type: "text", text: guide }] };
+    }
+  );
+
+  server.registerTool(
+    "read_my_life_ideas",
+    {
+      title: "Read My Life Ideas shelf",
+      description: `Read the owner's Ideas shelf (ideas they captured but have not made into tasks), newest first. Read-only: only the owner can make an idea a task or let it go, in Steadier. Optional: includeLetGo (also list ideas that were let go; they are archived, never deleted). ${UNTRUSTED_DATA_RULE}`,
+      inputSchema: fromJsonSchema({
+        type: "object",
+        properties: { includeLetGo: { type: "boolean" } },
+        additionalProperties: false,
+      }),
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z.object({ includeLetGo: z.boolean().optional() }).strict().safeParse(input ?? {});
+      if (!parsed.success) return invalid(parsed.error);
+      try {
+        const stored = await changes.readWorkspace(userId);
+        if (!stored) return failure("NO_WORKSPACE", "There is no shared My Life workspace yet.");
+        return result({ ...ideasView(stored.workspace, parsed.data.includeLetGo ?? false), dataNotice: UNTRUSTED_DATA_RULE });
+      } catch {
+        return failure("UNAVAILABLE", "The Ideas shelf is unavailable right now.");
+      }
+    }
+  );
+
+  server.registerTool(
+    "read_my_life_task_setup",
+    {
+      title: "Read which My Life tasks are set up",
+      description: `Each task card has three dots: Action (owner confirmed the title reads as an action), Place (confirmed project, Life Admin or Erosion Guard) and First step (a next action). A task is ready only when all three are lit; until then it is "not ready" (a faded card waiting in Sort). Read-only. With taskId, returns that task; otherwise every not-ready open task (limit default 50, max 200). You may suggest a Place (suggest_my_life_link / set_my_life_placement) or a First step (update_my_life_task nextAction), but only the owner can confirm them and make a task ready. ${UNTRUSTED_DATA_RULE}`,
+      inputSchema: fromJsonSchema({
+        type: "object",
+        properties: {
+          taskId: { type: "string", minLength: 1, maxLength: 128 },
+          limit: { type: "integer", minimum: 1, maximum: 200 },
+        },
+        additionalProperties: false,
+      }),
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z
+        .object({ taskId: z.string().min(1).max(128).optional(), limit: z.number().int().min(1).max(200).optional() })
+        .strict()
+        .safeParse(input ?? {});
+      if (!parsed.success) return invalid(parsed.error);
+      try {
+        const stored = await changes.readWorkspace(userId);
+        if (!stored) return failure("NO_WORKSPACE", "There is no shared My Life workspace yet.");
+        const view = setupView(stored.workspace, parsed.data.taskId ?? null, parsed.data.limit ?? 50);
+        if (!view) return failure("NOT_FOUND", "Task not found.");
+        return result({ ...view, dataNotice: UNTRUSTED_DATA_RULE });
+      } catch {
+        return failure("UNAVAILABLE", "Task setup is unavailable right now.");
+      }
     }
   );
 

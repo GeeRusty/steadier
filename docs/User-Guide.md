@@ -11,6 +11,8 @@ Steadier holds everything you're responsible for, then shows you a manageable fe
 - **Patterns**: every task is either **Timely** (has a moment that matters) or **Sustained** (needs regular attention over time).
 - **Imperatives** are the few focus areas that matter most right now.
 - **Compass** is your bigger picture: **Pillars** (the big parts of your life), **Goals** under them, and **Goal Outcomes** that projects work towards.
+- **The task card** has three dots: **Action** (you've confirmed the title reads as something to do), **Place** (a project, Life Admin or Erosion Guard) and **First step** (one small physical action, or tap **Title is the step**). **When** (a date or deadline) is optional and has no dot. While any dot is unlit the card is **faded** (not ready). When all three are lit it turns **solid** and the task is ready. A missing dot never stops you saving.
+- **Ideas** are things you might do one day. They sit on the **Ideas shelf** with no timers or warnings.
 - **Suggestions** Steadier makes (like a role or a project link) stay marked as suggested until you confirm them.
 
 ## Getting around
@@ -24,6 +26,7 @@ The orange **microphone button** in the bottom-right corner opens the voice assi
 ### My life today
 Your home screen. Use the **Today / Overview** switch at the top.
 - **Today** shows today's timeline of booked items, then your **Next thing**.
+- Anything with a planned day, deadline or preparation date of today or earlier is always listed under **Dated for today or overdue**, faded or solid. Faded ones have a **Set up** button.
 - Steadier suggests at most five things to look at, and explains why. Real deadlines that are close or have passed always stay visible.
 - Choose one task as your Next thing, then tap **Done** when it's finished or **Not now** to put it back.
 - The green **+** button adds a task.
@@ -35,7 +38,13 @@ Day, week and month views of your booked anchors (tasks with a day and a clock t
 - Month view also shows bills and renewals due, birthdays, and anchors you've marked as major.
 
 ### All work
-Every task in one list. Search, filter and open any task to edit it.
+Every task in one list. Search, filter and open any task to edit it. Choose the **Not ready** filter to see only faded cards.
+
+### Sort
+One minute a day. When you have faded tasks, **Needs attention** on Overview shows **Sort** with a count. Sort shows one faded card at a time: tap a big **Place** button (recent projects first, then Life Admin and Erosion Guard), say or type the **First step**, tap **It's an action**, then **Done** or **Skip**. After the last card you go back to Today.
+
+### Ideas
+The Ideas shelf: open it from Overview (**Ideas**) or the menu. Each idea has **Make it a task** (it becomes a faded task waiting in Sort), **Keep**, or **Let go**. Let go archives it and never deletes it; **Show ideas you let go** lets you bring one back. The Weekly Reality Review has an **Ideas** step too.
 
 ### Review due / unplaced
 Quick tidy-up: tasks due for a review, and tasks that don't have a place yet. It's for quick maintenance. The full weekly process is Weekly Reality Review.
@@ -135,11 +144,15 @@ Things you can say:
 
 ## Claude connector
 
+Claude can see your Ideas and which tasks are set up, and can suggest a Place or First step, but only you can make a task ready or let an idea go. Tasks Claude creates start as faded cards.
+
 Claude can read and change your Steadier when you ask it to in a chat. For example: "What's on my calendar this week?", "Find duplicate tasks", "Add milk to the shopping list", or "What did I note about the car?" Claude always asks before changing anything, and Steadier saves a full backup before every change. Connect it in Claude under **Settings → Connectors**.
 
 ## How do I…
 
-- **Add a task?** Tap **+** on My life today, or tell the voice assistant.
+- **Add a task?** Tap **+** on My life today, or tell the voice assistant. After the title, choose **Task** or **Idea** (Task is the default).
+- **Set up a task / make it ready?** Open it, or use **Sort**, and light the three dots on its card: Action, Place, First step.
+- **Save an idea for later?** Tap **+**, type it, choose **Idea**. Or add it on the Ideas shelf.
 - **Give a task a time on the calendar?** Open the task and set its day and start time, or say "book X on Friday at 3".
 - **Change a booked time?** Open it from the Calendar and change the day or time, or say "move X to tomorrow at 9".
 - **Delete a task?** Steadier doesn't delete a whole task with one tap, so nothing vanishes by accident. If it's finished, mark it **Done**. If you've decided not to do it, choose **Dropped**: this shows as "Still on, or dropped?" when you pick a task you've passed over a few times, and the task leaves your suggestions but stays in **All work** so you can bring it back.

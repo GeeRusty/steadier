@@ -1,3 +1,4 @@
+import { isCardTask, isSetUp, settleCardState } from "../../client/src/domain/taskCard";
 import {
   addSubtask,
   releaseSubtasks,
@@ -215,6 +216,9 @@ export function planCreateTask(
   // A project link made by Claude is a suggestion until the owner confirms it.
   if (task.projectId)
     task.compass = { ...task.compass, projectSuggested: true };
+  // Connector-made tasks start as faded cards: only the owner can make them ready.
+  task.actionConfirmed = false;
+  if (task.state === "ready") task.state = "inbox";
   return {
     workspace: { ...workspace, tasks: [...workspace.tasks, task] },
     summary: `${connectorName(actor)}: created task ${quoted(task.title)}`,
@@ -237,6 +241,12 @@ export function planUpdateTask(
   const task = requireTask(workspace, taskId);
   checkProjectLink(workspace, fields.projectId);
   const patch = defined(fields);
+  if (patch.dropped === true && task.state === "someday" && !task.droppedAt) {
+    throw new ChangeError(
+      "INVALID_CHANGE",
+      "Ideas can only be let go by the owner, in Steadier."
+    );
+  }
   const changedKeys = (Object.keys(patch) as (keyof TaskFields)[]).filter(
     key =>
       key === "dropped"
@@ -311,8 +321,24 @@ export function planUpdateTask(
       },
     ],
   };
+  // A connector may suggest a title or first step, but never make a task
+  // ready: the owner re-confirms the card (see taskCard.ts).
+  const wordingChanged =
+    (patch.title !== undefined && patch.title !== task.title) ||
+    (patch.nextAction !== undefined && patch.nextAction !== task.nextAction);
+  const settled = (() => {
+    if (updated.state !== "ready" && updated.state !== "inbox") return updated;
+    const before = isSetUp(task, workspace.tasks);
+    const next: Task = wordingChanged || isCardTask(task) || updated.state !== task.state
+      ? { ...updated, actionConfirmed: wordingChanged ? false : (task.actionConfirmed ?? true) }
+      : updated;
+    const result = settleCardState(next, workspace.tasks);
+    // Never turn a not-ready task into a ready one.
+    if (!before && result.state === "ready") return { ...result, state: "inbox" as const };
+    return result;
+  })();
   let tasks = workspace.tasks.map(candidate =>
-    candidate.id === taskId ? updated : candidate
+    candidate.id === taskId ? settled : candidate
   );
   let focus = workspace.focus;
   if (completing) {
