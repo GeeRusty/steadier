@@ -142,6 +142,9 @@ Claude can read and change your Steadier when you ask it to in a chat. For examp
 - **Add a task?** Tap **+** on My life today, or tell the voice assistant.
 - **Give a task a time on the calendar?** Open the task and set its day and start time, or say "book X on Friday at 3".
 - **Change a booked time?** Open it from the Calendar and change the day or time, or say "move X to tomorrow at 9".
+- **Delete a task?** Steadier doesn't delete a whole task with one tap, so nothing vanishes by accident. If it's finished, mark it **Done**. If you've decided not to do it, choose **Dropped**: this shows as "Still on, or dropped?" when you pick a task you've passed over a few times, and the task leaves your suggestions but stays in **All work** so you can bring it back.
+- **Remove a task for good?** Ask Claude, for example "delete the task called old car rego". A **Delete / Keep it** card then appears on **My life today**. Tap **Delete** to confirm. A backup is saved first. The voice button can't delete.
+- **Delete a subtask?** Open the main task, find it under **Subtasks**, and tap **Delete**.
 - **Mark something done?** Tap **Done** on your Next thing, use the task's state, or say "done with X".
 - **Make a task repeat?** Open the task and set its repeat (daily, weekly, monthly, yearly, or a number of days after you finish).
 - **Find an old task?** Use **All work** and search.
