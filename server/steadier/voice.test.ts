@@ -29,6 +29,7 @@ const intent = (over: Partial<VoiceIntent>): VoiceIntent => ({
   shopping_items: [],
   note_text: null,
   note_date: null,
+  help_question: null,
   clarify: null,
   ...over,
 });

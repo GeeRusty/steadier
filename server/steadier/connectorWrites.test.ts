@@ -492,6 +492,7 @@ describe("connector tools by approved scope", () => {
       "read_my_life_sheet",
       "read_my_life_shopping_lists",
       "read_my_life_task",
+      "read_steadier_guide",
     ]);
   });
 
@@ -518,6 +519,7 @@ describe("connector tools by approved scope", () => {
       "read_my_life_sheet",
       "read_my_life_shopping_lists",
       "read_my_life_task",
+      "read_steadier_guide",
       "request_my_life_delete",
       "set_my_life_next_thing",
       "set_my_life_pass_over_threshold",

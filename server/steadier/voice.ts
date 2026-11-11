@@ -24,7 +24,9 @@ import { createProductionRepository } from "./repository";
 import { DEFAULT_SHOPPING_LIST, findShoppingList, planAddShoppingItems } from "./shoppingOps";
 import { planAddNote } from "./notesOps";
 
-export const VOICE_MODEL = "claude-opus-5-5";
+import { VOICE_MODEL } from "./voiceModel";
+import { claudeHelp, type HelpAnswerer } from "./guide";
+export { VOICE_MODEL };
 const MAX_CONTEXT_TASKS = 150;
 
 // ---------------------------------------------------------------------------
@@ -43,7 +45,7 @@ const SpokenTask = z.object({
 });
 
 export const VoiceIntent = z.object({
-  intent: z.enum(["add_tasks", "mark_done", "move_task", "shopping_add", "add_note", "whats_next", "today", "unclear"]),
+  intent: z.enum(["add_tasks", "mark_done", "move_task", "shopping_add", "add_note", "help", "whats_next", "today", "unclear"]),
   tasks: z.array(SpokenTask).describe("add_tasks only: one entry per separate thing to do. Empty otherwise."),
   task_id: z.string().nullable().describe("mark_done / move_task: the id of the matching open task from the list given. null otherwise."),
   new_date: z.string().nullable().describe("move_task: the new YYYY-MM-DD."),
@@ -53,6 +55,7 @@ export const VoiceIntent = z.object({
   shopping_items: z.array(z.string()).describe("shopping_add: one entry per item, e.g. ['eggs', 'bread']. Empty otherwise."),
   note_text: z.string().nullable().describe("add_note: the note in their words, without the word 'note'. null otherwise."),
   note_date: z.string().nullable().describe("add_note: YYYY-MM-DD only if the note is about another day, else null."),
+  help_question: z.string().nullable().describe("help: their question about using Steadier, tidied up. null otherwise."),
   clarify: z.string().nullable().describe("unclear only: one short spoken sentence asking what they meant."),
 });
 export type VoiceIntent = z.infer<typeof VoiceIntent>;
@@ -116,6 +119,7 @@ Intents:
 - move_task: they want an existing task at a different day or time ("push the coffee to tomorrow morning"). Pick task_id from the list and give the full new_date and new_time. If they only changed the day, keep its current time. "Morning" with no time means 09:00, "afternoon" 14:00, "evening" 18:00.
 - shopping_add: they want things on a shopping list ("add eggs and bread to the shopping list", "we need milk"). One entry per item, in their words, without quantities words like "some".
 - add_note: they want to note something down rather than do it ("note: car's making a rattle", "make a note that the plumber said Tuesday", "journal: good day today"). A note never becomes a task. Put their words in note_text.
+- help: they ask how to use Steadier or what part of it is for ("how do I move a task", "what's the Compass map", "where are my notes"). Put the question in help_question.
 - whats_next: "what's next", "what am I doing now".
 - today: "what's on today", "what have I got today".
 - unclear: anything else, with a short spoken question in clarify.
@@ -443,10 +447,11 @@ const NO_WORKSPACE_SPEECH = "Open Steadier and let it sync once, then try again.
 
 export function registerVoiceRoutes(
   app: Express,
-  deps: { changes?: WorkspaceChangeRepository; interpret?: Interpreter; now?: () => Date } = {}
+  deps: { changes?: WorkspaceChangeRepository; interpret?: Interpreter; help?: HelpAnswerer; now?: () => Date } = {}
 ) {
   const changes = deps.changes ?? createProductionRepository();
   const interpret = deps.interpret ?? claudeInterpreter;
+  const help = deps.help ?? claudeHelp;
   const now = deps.now ?? (() => new Date());
   const send = (res: Response, status: number, body: unknown) =>
     res.status(status).set("Cache-Control", "no-store").json(body);
@@ -484,6 +489,14 @@ export function registerVoiceRoutes(
       reply = { kind: "answer", speech: whatsNextSpeech(workspace, current) };
     } else if (intent.intent === "today") {
       reply = { kind: "answer", speech: todaySpeech(workspace, current) };
+    } else if (intent.intent === "help") {
+      let answer: string | null = null;
+      try {
+        answer = await help((intent.help_question?.trim() || text).slice(0, 500));
+      } catch (error) {
+        console.error("[Voice] help failed", error instanceof Anthropic.APIError ? `${error.status} ${error.message}` : error);
+      }
+      reply = { kind: "answer", speech: answer?.slice(0, 900) || "I'm not sure. Open the Guide page from the voice screen for the full manual." };
     } else {
       const outcome = proposalFromIntent(intent, workspace, today);
       if (outcome && "proposal" in outcome) {

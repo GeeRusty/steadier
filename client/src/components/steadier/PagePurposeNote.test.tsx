@@ -33,7 +33,7 @@ describe("PagePurposeNote", () => {
   });
 
   it("surfaces important local-only and credential safety boundaries", () => {
-    expect(render("journal")).toContain("not synced or backed up");
+    expect(render("journal")).toContain("included in backups");
     expect(render("moveEnergy")).toContain("outside sync and backup");
     expect(render("weather")).toContain("not backed up");
     expect(render("credentialRenewals")).toContain("do not store secret values");

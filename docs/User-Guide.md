@@ -1,0 +1,151 @@
+# Steadier user guide
+
+Steadier holds everything you're responsible for, then shows you a manageable few at a time. It helps you pick the next thing, stay with it, and come back when you drift. Everything is in Adelaide time.
+
+## The big ideas
+
+- **Tasks** are anything you need to do. Each task can have a next step, a life area, dates, a project, and notes.
+- **Booked anchors** are tasks with a set day and clock time, such as a shift, an appointment or a job. Only these appear as blocks on the Calendar, and only these get spoken check-ins.
+- **Next thing** is the one task you've chosen to do now. Finish it with **Done**, or put it back with **Not now**.
+- **Roles**: every task is either **Direction** (moves your life forward) or **Support** (keeps life running).
+- **Patterns**: every task is either **Timely** (has a moment that matters) or **Sustained** (needs regular attention over time).
+- **Imperatives** are the few focus areas that matter most right now.
+- **Compass** is your bigger picture: **Pillars** (the big parts of your life), **Goals** under them, and **Goal Outcomes** that projects work towards.
+- **Suggestions** Steadier makes (like a role or a project link) stay marked as suggested until you confirm them.
+
+## Getting around
+
+Open the menu to move between areas. The main ones are **My life today**, **Calendar**, **All work** and **Weekly Reality Review**. Most other pages show a short "What this page is for" note at the top.
+
+The orange **microphone button** in the bottom-right corner opens the voice assistant from any page.
+
+## Areas of the app
+
+### My life today
+Your home screen. Use the **Today / Overview** switch at the top.
+- **Today** shows today's timeline of booked items, then your **Next thing**.
+- Steadier suggests at most five things to look at, and explains why. Real deadlines that are close or have passed always stay visible.
+- Choose one task as your Next thing, then tap **Done** when it's finished or **Not now** to put it back.
+- The green **+** button adds a task.
+
+### Calendar
+Day, week and month views of your booked anchors (tasks with a day and a clock time).
+- This is where you **change a booked time**: open the task and change its day, time or length.
+- Untimed tasks and flexible windows are not shown as blocks.
+- Month view also shows bills and renewals due, birthdays, and anchors you've marked as major.
+
+### All work
+Every task in one list. Search, filter and open any task to edit it.
+
+### Review due / unplaced
+Quick tidy-up: tasks due for a review, and tasks that don't have a place yet. It's for quick maintenance. The full weekly process is Weekly Reality Review.
+
+### Waiting & blocked
+Tasks waiting on another person or on something else first. Decide when to check back.
+
+### Life areas
+Tasks grouped by area of life, such as Home, Work or Health. The grouping is for finding things, not an order to do them in.
+
+### Completed steps
+History of what you've finished. Good for looking back. It isn't your to-do list.
+
+### Project Outcomes
+Projects with their purpose, milestones and evidence. Connect each project to the Goal Outcome it serves. A project is marked achieved when you decide it is, not just because its tasks are done.
+
+### My life matrix
+Checks your balance across Direction/Support and Timely/Sustained, so one kind of work doesn't crowd out the rest.
+
+### Imperatives
+Your few current focus areas. Review them now and then, and retire ones that no longer deserve attention.
+
+### Compass view, Compass map, and Pillars & Goals
+- **Compass view**: active Imperatives and Projects at a glance, with status marks.
+- **Compass map**: traces Pillars, Goals, Outcomes and Projects, and shows where a purpose link is missing.
+- **Pillars & Goals**: where you add and edit the Pillar and Goal structure behind the map.
+
+### Command Centre
+A rules-based check-in on your current Imperatives and decisions. Open the real item to act on it.
+
+### Weekly Reality Review
+The full weekly decision process: look at what happened, what's waiting, and what to change. Decisions you make are saved to the **Decision Log**.
+
+### Decision Log
+Read-only list of decisions saved during Weekly Reality Reviews.
+
+### Evidence Feed
+Add dated evidence to a task or project, for example "spoke to the bank". Evidence never marks something Done by itself.
+
+### Time / plans
+Compares the time you have this week with the work you've planned, so you can see whether the plan fits.
+
+### Near me
+Tasks linked to saved places. Arrival alerts need location permission and Steadier open.
+
+### Obligations
+Bills, licences, renewals, insurance and tax dates, with lead time to prepare. It isn't accounting.
+
+### Shopping Lists
+Group shopping items into lists and tick them off. Use tasks for anything that needs follow-up.
+
+### Notes / Daily Log
+Notes to yourself, one or more per day. A note never becomes a task unless you choose **convert to task**. Notes sync with the rest of Steadier and are included in backups.
+
+### Site Cards
+Reference cards and links for useful places and websites.
+
+### Backups & trial
+- **Download full backup** saves everything to a file. This is the only format that restores exactly.
+- **Restore full backup** loads a backup file. It shows the counts first and only replaces after you confirm.
+- CSV export is a spreadsheet view, not a full backup.
+
+### Server & Compass
+Sync status, conflicts and connections.
+- Make sure **Use shared personal space** is chosen, so your phone and other devices share one copy on the server.
+- If the status strip mentions "this browser", your changes are only on this device.
+
+### Server sheet
+A spreadsheet-style snapshot of the last saved server copy, which you can view or download. It isn't a live editor.
+
+## Focus and check-ins
+
+- Start focus on your Next thing to run a timer. **I'm drifting** offers a two-minute restart, a break, or an honest change of plan.
+- When a booked calendar task's time starts, its timer starts on its own while Steadier is open.
+- **Spoken check-ins:** Steadier says the task and the time left every 15 minutes for jobs of an hour or less, and every 30 minutes for longer jobs. It keeps the screen on while a calendar task runs, because phones pause apps when the screen sleeps.
+- A timer never marks a task done by itself.
+
+## Reminders
+
+Give a booked task a reminder, for example 15 minutes before. Reminders work while Steadier is open. Calendar feed alerts depend on your calendar app's settings.
+
+## The voice assistant
+
+Tap the orange microphone, or long-press the Steadier app icon and choose **Talk**. Speak, then answer **yes**, **no**, or a correction such as "make it 5". Nothing is saved until you say yes.
+
+Things you can say:
+- **Add a task or booking:** "Uber shift Friday 4 till 8, remind me 15 minutes before."
+- **Several at once:** "I need to ring mum, pick up dog food tomorrow, and book the dentist for Friday at 10."
+- **Mark done:** "Done with the mechanic call."
+- **Move:** "Push the coffee to tomorrow morning." Repeating tasks have to be moved in the app.
+- **Shopping:** "Add eggs and bread to the shopping list."
+- **Notes:** "Note: the car's making a rattle."
+- **Check your day:** "What's next?" or "What's on today?"
+- **Ask how to use Steadier:** "How do I move a task?" or "What's the Compass map for?"
+
+"Morning" means 9 am, "afternoon" 2 pm, and "evening" 6 pm, unless you say a time.
+
+## Claude connector
+
+Claude can read and change your Steadier when you ask it to in a chat. For example: "What's on my calendar this week?", "Find duplicate tasks", "Add milk to the shopping list", or "What did I note about the car?" Claude always asks before changing anything, and Steadier saves a full backup before every change. Connect it in Claude under **Settings → Connectors**.
+
+## How do I…
+
+- **Add a task?** Tap **+** on My life today, or tell the voice assistant.
+- **Give a task a time on the calendar?** Open the task and set its day and start time, or say "book X on Friday at 3".
+- **Change a booked time?** Open it from the Calendar and change the day or time, or say "move X to tomorrow at 9".
+- **Mark something done?** Tap **Done** on your Next thing, use the task's state, or say "done with X".
+- **Make a task repeat?** Open the task and set its repeat (daily, weekly, monthly, yearly, or a number of days after you finish).
+- **Find an old task?** Use **All work** and search.
+- **Get my data onto a new phone?** Sign in, then choose **Server & Compass → Use shared personal space**.
+- **Make a backup?** **Backups & trial → Download full backup**. The server also keeps daily backups.
+- **See why something was suggested?** My life today shows a reason under each suggestion.
+- **Undo a mistake?** Use undo in the page menu right away. For bigger mistakes, a server backup from before each change can be restored.

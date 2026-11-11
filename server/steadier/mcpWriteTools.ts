@@ -68,6 +68,7 @@ import { describeReview, reviewStatus } from "../../client/src/domain/review";
 import type { ConnectorActor } from "../../shared/cloud";
 import { connectorName } from "./connectorOps";
 import { findNotes, planAddNote } from "./notesOps";
+import { guideFor } from "./guide";
 import {
   planAddShoppingItems,
   planCheckShoppingItems,
@@ -556,6 +557,27 @@ export function registerBackupReadTools(
   changes: WorkspaceChangeRepository,
   userId: number
 ): void {
+  server.registerTool(
+    "read_steadier_guide",
+    {
+      title: "Read the Steadier user guide",
+      description: "Read the Steadier user guide: what each area of the app is for and how to do things in it. Use it to explain the app or guide the owner step by step. Optional topic narrows it to matching sections (e.g. \"Calendar\", \"backup\", \"voice\").",
+      inputSchema: fromJsonSchema({
+        type: "object",
+        properties: { topic: { type: "string", maxLength: 100 } },
+        additionalProperties: false,
+      }),
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z.object({ topic: z.string().max(100).optional() }).strict().safeParse(input ?? {});
+      if (!parsed.success) return invalid(parsed.error);
+      const guide = guideFor(parsed.data.topic);
+      if (!guide) return failure("UNAVAILABLE", "The guide isn't available right now.");
+      return { content: [{ type: "text", text: guide }] };
+    }
+  );
+
   server.registerTool(
     "read_my_life_notes",
     {

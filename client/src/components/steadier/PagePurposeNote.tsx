@@ -26,7 +26,7 @@ export const SPECIALIST_PAGE_PURPOSES: Partial<Record<View, string>> = {
   "compass-directory": "Browse and maintain the Pillar–Goal hierarchy behind the Compass map.",
   near: "Find place-linked tasks; arrival alerts depend on location permission and Steadier being open.",
   obligations: "Track bill, licence, renewal, insurance and tax dates with preparation lead time; not accounting.",
-  journal: "Keep a separate daily note; this browser-only page is not synced or backed up.",
+  journal: "Keep notes to self by day; they sync with Steadier and are included in backups.",
   decisions: "Revisit read-only decisions saved during Weekly Reality Reviews.",
   evidence: "Add dated evidence to a task or project; evidence alone never marks it Done.",
   sites: "Keep reference cards and links for useful places; links open only when you choose.",

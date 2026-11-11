@@ -36,7 +36,7 @@ const PAGE = `<!doctype html>
 </style>
 </head>
 <body>
-<header><strong>Steadier Voice</strong><a href="/">Open Steadier</a></header>
+<header><strong>Steadier Voice</strong><span><a href="/guide">Guide</a> · <a href="/">Open Steadier</a></span></header>
 <main>
   <button id="mic" type="button" aria-live="polite">Tap and speak</button>
   <p id="heard"></p>
@@ -45,7 +45,7 @@ const PAGE = `<!doctype html>
     <button class="yes" id="yes" type="button">Yes, save</button>
     <button id="no" type="button">No</button>
   </div>
-  <p class="hint" id="hint">Try: "Uber shift Friday 4 till 8", "Done with the mechanic call", "Push the coffee to tomorrow morning", "Add eggs and bread to the shopping list", "Note: car's making a rattle", or just say everything on your mind.</p>
+  <p class="hint" id="hint">Try: "Uber shift Friday 4 till 8", "Done with the mechanic call", "Push the coffee to tomorrow morning", "Add eggs and bread to the shopping list", "Note: car's making a rattle", "How do I move a task?", or just say everything on your mind.</p>
 </main>
 <script>
 (() => {
