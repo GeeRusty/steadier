@@ -28,6 +28,7 @@ import {
   MAX_SHOPPING_ITEMS_TOTAL,
   MAX_SHOPPING_LISTS,
 } from "./shoppingLists";
+import { validateDailyLogEntries } from "./dailyLog";
 import {
   MAX_PEOPLE,
   MAX_PERSON_CONTEXT_LENGTH,
@@ -42,6 +43,7 @@ import {
 } from "./invoices";
 import type {
   Context,
+  DailyLogEntry,
   DailyIntention,
   FocusSession,
   LifePattern,
@@ -1033,6 +1035,14 @@ function siteCardsField(value: unknown): SiteCard[] {
   });
 }
 
+function dailyLogField(value: unknown): DailyLogEntry[] {
+  try {
+    return validateDailyLogEntries(value);
+  } catch (error) {
+    fail(error instanceof Error ? error.message : "dailyLog is not valid.");
+  }
+}
+
 function shoppingListsField(value: unknown): ShoppingList[] {
   if (!Array.isArray(value) || value.length > MAX_SHOPPING_LISTS) {
     fail(
@@ -1616,6 +1626,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
     "evidence",
     "siteCards",
     "shoppingLists",
+    "dailyLog",
     "assets",
     "people",
     "credentialRenewals",
@@ -1641,6 +1652,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
   const hasEvidence = hasKey("evidence");
   const hasSiteCards = hasKey("siteCards");
   const hasShoppingLists = hasKey("shoppingLists");
+  const hasDailyLog = hasKey("dailyLog");
   const hasAssets = hasKey("assets");
   const hasPeople = hasKey("people");
   const hasCredentialRenewals = hasKey("credentialRenewals");
@@ -1694,6 +1706,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
   const shoppingLists = hasShoppingLists
     ? shoppingListsField(value.shoppingLists)
     : undefined;
+  const dailyLog = hasDailyLog ? dailyLogField(value.dailyLog) : undefined;
   const assets = hasAssets ? assetsField(value.assets) : undefined;
   const people = hasPeople ? peopleField(value.people) : undefined;
   const nextThing = hasNextThing
@@ -1745,6 +1758,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
           ...(evidence ? { evidence } : {}),
           ...(hasSiteCards ? { siteCards } : {}),
           ...(hasShoppingLists ? { shoppingLists } : {}),
+          ...(dailyLog ? { dailyLog } : {}),
           ...(hasAssets ? { assets } : {}),
           ...(hasPeople ? { people } : {}),
           ...(hasCredentialRenewals ? { credentialRenewals } : {}),

@@ -347,6 +347,8 @@ export interface Workspace {
   siteCards?: SiteCard[];
   /** Owner-managed plain-text shopping lists; absent until used. */
   shoppingLists?: ShoppingList[];
+  /** Notes to self (Daily Log); absent until the first note. */
+  dailyLog?: DailyLogEntry[];
   /** Manually maintained physical Assets and condition logs; absent until used. */
   assets?: Asset[];
   /** Owner-entered relationship follow-ups; absent until used. */
@@ -366,6 +368,14 @@ export interface SiteCard {
   purpose: string;
   url: string | null;
   status: "active" | "archived";
+  createdAt: string;
+  updatedAt: string;
+}
+export interface DailyLogEntry {
+  id: string;
+  /** Adelaide-local day the note is about, YYYY-MM-DD. */
+  date: string;
+  text: string;
   createdAt: string;
   updatedAt: string;
 }

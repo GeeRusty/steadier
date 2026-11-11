@@ -6,6 +6,7 @@ import {
 } from "../components/steadier/OrphanUI";
 import ClaudeChangesPanel from "../components/steadier/ClaudeChangesPanel";
 import { useFocusTones } from "../hooks/useFocusTones";
+import type { DailyLogEntry } from "../domain/types";
 import { useCalendarFocusAutostart } from "../hooks/useCalendarFocusAutostart";
 import { useReminders } from "../hooks/useReminders";
 import { useFocusTimeLog } from "../hooks/useFocusTimeLog";
@@ -97,7 +98,7 @@ import {
 import TimeReview from "../components/steadier/TimeReview";
 import { describeRepeat } from "../domain/time";
 import RemindersPanel from "../components/steadier/RemindersPanel";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Compass,
   CircleDot,
@@ -734,6 +735,10 @@ export default function Home() {
     toast.success("Evidence saved to this workspace.");
     return true;
   };
+  const saveDailyLog = useCallback(
+    (entries: DailyLogEntry[]) => store.mutate(w => ({ ...w, dailyLog: entries })),
+    [store.mutate]
+  );
   const deleteEvidence = (id: string): boolean => {
     if (!allowed()) return false;
     const accepted = store.mutate(w => removeEvidenceEntry(w, id));
@@ -2599,6 +2604,9 @@ export default function Home() {
                   <DailyLogView
                     voice={voice}
                     onConvertToTask={openNoteAsTask}
+                    entries={store.workspace.dailyLog ?? []}
+                    readOnly={!!store.readOnly}
+                    onSave={saveDailyLog}
                   />
                 ) : view === "decisions" ? (
                   <DecisionLogView workspace={store.workspace} voice={voice} />

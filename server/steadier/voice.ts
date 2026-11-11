@@ -22,6 +22,7 @@ import { applyGuardedChange, ChangeError, type ChangePlan, type WorkspaceChangeR
 import { planCreateTask, planSetTaskTime, planUpdateTask } from "./connectorOps";
 import { createProductionRepository } from "./repository";
 import { DEFAULT_SHOPPING_LIST, findShoppingList, planAddShoppingItems } from "./shoppingOps";
+import { planAddNote } from "./notesOps";
 
 export const VOICE_MODEL = "claude-opus-5-5";
 const MAX_CONTEXT_TASKS = 150;
@@ -42,7 +43,7 @@ const SpokenTask = z.object({
 });
 
 export const VoiceIntent = z.object({
-  intent: z.enum(["add_tasks", "mark_done", "move_task", "shopping_add", "whats_next", "today", "unclear"]),
+  intent: z.enum(["add_tasks", "mark_done", "move_task", "shopping_add", "add_note", "whats_next", "today", "unclear"]),
   tasks: z.array(SpokenTask).describe("add_tasks only: one entry per separate thing to do. Empty otherwise."),
   task_id: z.string().nullable().describe("mark_done / move_task: the id of the matching open task from the list given. null otherwise."),
   new_date: z.string().nullable().describe("move_task: the new YYYY-MM-DD."),
@@ -50,6 +51,8 @@ export const VoiceIntent = z.object({
   new_minutes: z.number().int().nullable().describe("move_task: a new length in minutes only if they said one."),
   shopping_list: z.string().nullable().describe("shopping_add: the list name if they named one, else null."),
   shopping_items: z.array(z.string()).describe("shopping_add: one entry per item, e.g. ['eggs', 'bread']. Empty otherwise."),
+  note_text: z.string().nullable().describe("add_note: the note in their words, without the word 'note'. null otherwise."),
+  note_date: z.string().nullable().describe("add_note: YYYY-MM-DD only if the note is about another day, else null."),
   clarify: z.string().nullable().describe("unclear only: one short spoken sentence asking what they meant."),
 });
 export type VoiceIntent = z.infer<typeof VoiceIntent>;
@@ -84,6 +87,7 @@ export const Proposal = z.discriminatedUnion("kind", [
       minutes: z.number().int().min(5).max(1440).nullable(),
     })
     .strict(),
+  z.object({ kind: z.literal("add_note"), text: z.string().trim().min(1).max(10000), date: DATE }).strict(),
   z
     .object({
       kind: z.literal("shopping_add"),
@@ -111,6 +115,7 @@ Intents:
 - mark_done: they say they finished something ("done with the mechanic call", "I've had the coffee"). Pick the matching task_id from the open tasks list. If nothing clearly matches, use unclear and ask which one.
 - move_task: they want an existing task at a different day or time ("push the coffee to tomorrow morning"). Pick task_id from the list and give the full new_date and new_time. If they only changed the day, keep its current time. "Morning" with no time means 09:00, "afternoon" 14:00, "evening" 18:00.
 - shopping_add: they want things on a shopping list ("add eggs and bread to the shopping list", "we need milk"). One entry per item, in their words, without quantities words like "some".
+- add_note: they want to note something down rather than do it ("note: car's making a rattle", "make a note that the plumber said Tuesday", "journal: good day today"). A note never becomes a task. Put their words in note_text.
 - whats_next: "what's next", "what am I doing now".
 - today: "what's on today", "what have I got today".
 - unclear: anything else, with a short spoken question in clarify.
@@ -192,6 +197,12 @@ export function proposalFromIntent(intent: VoiceIntent, workspace: Workspace | n
       });
       return parsed.success ? { proposal: parsed.data } : { problem: `When should I move ${task.title} to?` };
     }
+    case "add_note": {
+      const text = intent.note_text?.trim();
+      if (!text) return { problem: "What should the note say?" };
+      const parsed = Proposal.safeParse({ kind: "add_note", text, date: intent.note_date ?? today });
+      return parsed.success ? { proposal: parsed.data } : { proposal: { kind: "add_note", text: text.slice(0, 10000), date: today } };
+    }
     case "shopping_add": {
       const items = intent.shopping_items.map(item => item.trim()).filter(Boolean).slice(0, 30);
       if (!items.length) return { problem: "What should I add to the list?" };
@@ -268,6 +279,10 @@ export function confirmationSpeech(p: Proposal, today: string): string {
       return `Move ${p.title} to ${spokenDate(p.date, today)}${p.time ? ` at ${spokenTime(p.time)}` : ", any time"}${p.minutes ? `, for ${spokenLength(p.minutes)}` : ""}?`;
     case "shopping_add":
       return `Add ${spokenList(p.items)} to the ${p.listTitle} list?`;
+    case "add_note": {
+      const text = p.text.length > 160 ? `${p.text.slice(0, 157).trimEnd()}…` : p.text;
+      return `Save a note${p.date === today ? "" : ` for ${spokenDate(p.date, today)}`}: ${text}. Save it?`;
+    }
   }
 }
 
@@ -364,6 +379,10 @@ export function planVoiceProposal(workspace: Workspace, p: Proposal, now: Date):
       if (p.time === null) schedule.minutes = null;
       const planned = planSetTaskTime(workspace, task.id, schedule, "Moved by voice.", now, "claude");
       return { ...planned, result: { speech: "Moved." } };
+    }
+    case "add_note": {
+      const planned = planAddNote(workspace, p.text, p.date, now);
+      return { ...planned, summary: `Claude: ${planned.summary} by voice`, result: { speech: "Noted." } };
     }
     case "shopping_add": {
       const planned = planAddShoppingItems(workspace, p.listTitle, p.items, now);

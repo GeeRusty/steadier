@@ -2,13 +2,11 @@ export const DAILY_LOG_STORAGE_KEY = "steadier.daily-log.local.v1";
 export const MAX_DAILY_LOG_ENTRIES = 5000;
 export const MAX_DAILY_LOG_TEXT = 10_000;
 
-export interface DailyLogEntry {
-  id: string;
-  date: string;
-  text: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { DailyLogEntry } from "./types";
+export type { DailyLogEntry } from "./types";
+
+/** Notes from before the Daily Log moved into the synced workspace stay here as a safety copy. */
+export const DAILY_LOG_MIGRATED_KEY = "steadier.daily-log.moved-to-workspace.v1";
 
 export interface DailyLogStorage {
   getItem: (key: string) => string | null;
@@ -119,6 +117,17 @@ function parseEntries(value: unknown): DailyLogEntry[] {
       updatedAt: entry.updatedAt,
     };
   });
+}
+
+/** Validate Daily Log entries stored in the workspace. Throws with a readable message. */
+export function validateDailyLogEntries(entries: unknown): DailyLogEntry[] {
+  return parseEntries({ version: 1, entries });
+}
+
+/** Local entries not yet in the workspace, by id. */
+export function entriesToMove(local: DailyLogEntry[], inWorkspace: DailyLogEntry[]): DailyLogEntry[] {
+  const known = new Set(inWorkspace.map(entry => entry.id));
+  return local.filter(entry => !known.has(entry.id));
 }
 
 export function readDailyLog(

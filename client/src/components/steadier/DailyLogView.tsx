@@ -25,8 +25,10 @@ import { adelaideClock } from "../../domain/time";
 import { groupByStable, monthGroup } from "../../domain/accordionGroups";
 import AccordionSection from "./AccordionSection";
 import {
+  DAILY_LOG_MIGRATED_KEY,
+  entriesToMove,
   readDailyLog,
-  writeDailyLog,
+  validateDailyLogEntries,
   type DailyLogEntry,
   type DailyLogStorage,
 } from "../../domain/dailyLog";
@@ -36,6 +38,12 @@ import { adelaideTimestamp } from "../../../../shared/time";
 interface Props {
   voice: VoiceControls;
   onConvertToTask: (sourceNote: string) => void;
+  /** Notes saved in the workspace (synced to the server when shared). */
+  entries: DailyLogEntry[];
+  /** True when the workspace can't be changed right now. */
+  readOnly: boolean;
+  /** Replace the saved notes. Returns false if the change was not accepted. */
+  onSave: (entries: DailyLogEntry[]) => boolean;
 }
 
 function localStorageOrNull(): DailyLogStorage | null {
@@ -64,11 +72,10 @@ function timeLabel(value: string): string {
   }).format(new Date(value));
 }
 
-export default function DailyLogView({ voice, onConvertToTask }: Props) {
+export default function DailyLogView({ voice, onConvertToTask, entries, readOnly, onSave }: Props) {
   const [storage] = useState(localStorageOrNull);
-  const [entries, setEntries] = useState<DailyLogEntry[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [storageReady, setStorageReady] = useState(false);
+  const storageReady = !readOnly;
   const [draft, setDraft] = useState("");
   const [entryDate, setEntryDate] = useState(() => adelaideClock().date);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -78,12 +85,43 @@ export default function DailyLogView({ voice, onConvertToTask }: Props) {
   const [statusMessage, setStatusMessage] = useState("");
   const dictationActive = useRef(false);
 
+  // One-time move: notes written before the Daily Log synced were kept only in
+  // this browser. Copy any the workspace doesn't have yet; the local copy is
+  // left in place as a safety net.
   useEffect(() => {
-    const result = readDailyLog(storage);
-    setEntries(result.entries);
-    setLoadError(result.error);
-    setStorageReady(result.ok);
-  }, [storage]);
+    if (readOnly || !storage) return;
+    let moved = false;
+    try {
+      moved = storage.getItem(DAILY_LOG_MIGRATED_KEY) === "1";
+    } catch {
+      return;
+    }
+    if (moved) return;
+    const local = readDailyLog(storage);
+    if (!local.ok) {
+      setLoadError(local.error);
+      return;
+    }
+    const missing = entriesToMove(local.entries, entries);
+    if (missing.length) {
+      let merged: DailyLogEntry[];
+      try {
+        merged = validateDailyLogEntries([...entries, ...missing]);
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : "Older notes on this phone couldn't be moved.");
+        return;
+      }
+      if (!onSave(merged)) return;
+      setStatusMessage(
+        `Moved ${missing.length} note${missing.length === 1 ? "" : "s"} from this device into your synced Daily Log.`
+      );
+    }
+    try {
+      storage.setItem(DAILY_LOG_MIGRATED_KEY, "1");
+    } catch {
+      // Harmless: the move is by id, so trying again later adds nothing twice.
+    }
+  }, [entries, onSave, readOnly, storage]);
 
   useEffect(() => {
     if (dictationActive.current && voice.transcript) {
@@ -174,15 +212,17 @@ export default function DailyLogView({ voice, onConvertToTask }: Props) {
     const nextEntries = existing
       ? entries.map(entry => (entry.id === existing.id ? nextEntry : entry))
       : [nextEntry, ...entries];
-    const result = writeDailyLog(storage, nextEntries);
-    if (!result.ok) {
-      setStatusMessage(result.error ?? "Daily Log was not saved.");
+    try {
+      validateDailyLogEntries(nextEntries);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? `Daily Log was not saved: ${error.message}` : "Daily Log was not saved.");
       return;
     }
-    setEntries(nextEntries);
-    setStatusMessage(
-      existing ? "Entry updated on this device." : "Entry saved on this device."
-    );
+    if (!onSave(nextEntries)) {
+      setStatusMessage("Daily Log was not saved. Check the sync status and try again.");
+      return;
+    }
+    setStatusMessage(existing ? "Entry updated." : "Entry saved.");
     resetDraft();
   }
 
@@ -200,16 +240,14 @@ export default function DailyLogView({ voice, onConvertToTask }: Props) {
     const target = entries.find(entry => entry.id === pendingDeleteId);
     if (!target || !storageReady) return;
     const nextEntries = entries.filter(entry => entry.id !== target.id);
-    const result = writeDailyLog(storage, nextEntries);
-    if (!result.ok) {
-      setStatusMessage(result.error ?? "Entry was not deleted.");
+    if (!onSave(nextEntries)) {
+      setStatusMessage("Entry was not deleted. Check the sync status and try again.");
       setPendingDeleteId(null);
       return;
     }
-    setEntries(nextEntries);
     if (editingId === target.id) resetDraft();
     setPendingDeleteId(null);
-    setStatusMessage("Entry deleted from this device.");
+    setStatusMessage("Entry deleted.");
   }
 
   return (
@@ -223,11 +261,11 @@ export default function DailyLogView({ voice, onConvertToTask }: Props) {
       </div>
 
       <div className="daily-log-private notice" role="note">
-        <strong>Private to this browser on this device.</strong> Entries are
-        stored in browser storage only; Steadier does not sync or back them up,
-        and they are not sent to Compass or AI. This storage is not encrypted by
-        Steadier and may be cleared by your browser. Do not store passwords,
-        account details or secrets.
+        <strong>Saved with the rest of Steadier.</strong> In your shared
+        personal space, notes sync to your other devices and are included in
+        server backups. Your voice assistant and a connected Claude can read and
+        add notes when you ask them to. Do not store passwords, account details
+        or secrets.
       </div>
 
       <div className="settings-layout daily-log-layout">
@@ -482,8 +520,8 @@ export default function DailyLogView({ voice, onConvertToTask }: Props) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this Daily Log entry?</AlertDialogTitle>
             <AlertDialogDescription>
-              It will be removed from this browser on this device. This cannot
-              be undone here.
+              It will be removed from your Daily Log on all your devices. The
+              server backup taken before each change can bring it back.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

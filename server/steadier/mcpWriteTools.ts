@@ -67,6 +67,7 @@ import {
 import { describeReview, reviewStatus } from "../../client/src/domain/review";
 import type { ConnectorActor } from "../../shared/cloud";
 import { connectorName } from "./connectorOps";
+import { findNotes, planAddNote } from "./notesOps";
 import {
   planAddShoppingItems,
   planCheckShoppingItems,
@@ -556,6 +557,49 @@ export function registerBackupReadTools(
   userId: number
 ): void {
   server.registerTool(
+    "read_my_life_notes",
+    {
+      title: "Read My Life Daily Log notes",
+      description: `Read the owner's Daily Log (notes to self), newest first. Optional: query (text to search for), from/to (YYYY-MM-DD, Adelaide), limit (default 30, max 100). ${UNTRUSTED_DATA_RULE}`,
+      inputSchema: fromJsonSchema({
+        type: "object",
+        properties: {
+          query: { type: "string", maxLength: 200 },
+          from: { type: "string", pattern: DATE_PATTERN },
+          to: { type: "string", pattern: DATE_PATTERN },
+          limit: { type: "integer", minimum: 1, maximum: 100 },
+        },
+        additionalProperties: false,
+      }),
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z
+        .object({
+          query: z.string().max(200).optional(),
+          from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+          to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+          limit: z.number().int().min(1).max(100).optional(),
+        })
+        .strict()
+        .safeParse(input ?? {});
+      if (!parsed.success) return invalid(parsed.error);
+      try {
+        const stored = await changes.readWorkspace(userId);
+        if (!stored) return failure("NO_WORKSPACE", "There is no shared My Life workspace yet.");
+        const notes = findNotes(stored.workspace, { ...parsed.data, limit: parsed.data.limit ?? 30 });
+        return result({
+          notes: notes.map(note => ({ noteId: note.id, date: note.date, text: note.text, createdAt: note.createdAt })),
+          total: (stored.workspace.dailyLog ?? []).length,
+          dataNotice: UNTRUSTED_DATA_RULE,
+        });
+      } catch {
+        return failure("UNAVAILABLE", "The Daily Log is unavailable right now.");
+      }
+    }
+  );
+
+  server.registerTool(
     "read_my_life_shopping_lists",
     {
       title: "Read My Life shopping lists",
@@ -952,6 +996,45 @@ export function registerWriteTools(
   userId: number,
   actor: ConnectorActor = "claude"
 ): void {
+  server.registerTool(
+    "add_my_life_note",
+    {
+      title: "Add a My Life Daily Log note",
+      description: `Add one note to the owner's Daily Log (notes to self; a note never becomes a task). date is the Adelaide day it's about, YYYY-MM-DD; omit for today. Write the note in the owner's words. ${writeGuidance(actor, false)}`,
+      inputSchema: fromJsonSchema({
+        type: "object",
+        properties: {
+          text: { type: "string", minLength: 1, maxLength: 10000 },
+          date: { type: "string", pattern: DATE_PATTERN },
+        },
+        required: ["text"],
+        additionalProperties: false,
+      }),
+      annotations: WRITE_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z
+        .object({
+          text: z.string().trim().min(1).max(10000),
+          date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        })
+        .strict()
+        .safeParse(input);
+      if (!parsed.success) return invalid(parsed.error);
+      try {
+        const applied = await applyGuardedChange(changes, userId, actor, workspace => {
+          const plan = planAddNote(workspace, parsed.data.text, parsed.data.date ?? null);
+          return { ...plan, summary: `${connectorName(actor)}: ${plan.summary}` };
+        });
+        return written(applied.summary, applied.revision, {
+          note: { noteId: applied.result.note.id, date: applied.result.note.date },
+        });
+      } catch (error) {
+        return fromError(error);
+      }
+    }
+  );
+
   server.registerTool(
     "add_my_life_shopping_items",
     {

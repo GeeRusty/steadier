@@ -487,6 +487,7 @@ describe("connector tools by approved scope", () => {
       "list_my_life_pending_deletes",
       "read_my_life_compass_map",
       "read_my_life_context",
+      "read_my_life_notes",
       "read_my_life_project",
       "read_my_life_sheet",
       "read_my_life_shopping_lists",
@@ -500,6 +501,7 @@ describe("connector tools by approved scope", () => {
     const client = await connect(store, WRITE_TOKEN);
     const tools = (await client.listTools()).tools;
     expect(tools.map(tool => tool.name).sort()).toEqual([
+      "add_my_life_note",
       "add_my_life_shopping_items",
       "add_my_life_subtask",
       "check_my_life_shopping_items",
@@ -511,6 +513,7 @@ describe("connector tools by approved scope", () => {
       "list_my_life_pending_deletes",
       "read_my_life_compass_map",
       "read_my_life_context",
+      "read_my_life_notes",
       "read_my_life_project",
       "read_my_life_sheet",
       "read_my_life_shopping_lists",
@@ -1388,5 +1391,22 @@ describe("shopping list connector tools", () => {
       client.callTool({ name: "add_my_life_shopping_items", arguments: { items: ["eggs"] } })
     ).rejects.toThrow(/not found/);
     expect(store.backups).toHaveLength(0);
+  });
+});
+
+describe("Daily Log connector tools", () => {
+  it("adds a note with a backup and reads it back", async () => {
+    const store = new MemoryStore();
+    store.addKey(WRITE_TOKEN, "steadier:read steadier:write");
+    const client = await connect(store, WRITE_TOKEN);
+    const added = await client.callTool({
+      name: "add_my_life_note",
+      arguments: { text: "Car is making a rattling noise", date: "2026-11-11" },
+    });
+    expect(added.isError).toBeFalsy();
+    expect(store.backups).toHaveLength(1);
+    const read = await client.callTool({ name: "read_my_life_notes", arguments: { query: "rattl" } });
+    const notes = (read.structuredContent as { notes: { date: string; text: string }[] }).notes;
+    expect(notes).toEqual([expect.objectContaining({ date: "2026-11-11", text: "Car is making a rattling noise" })]);
   });
 });

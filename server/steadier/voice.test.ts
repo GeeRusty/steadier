@@ -27,6 +27,8 @@ const intent = (over: Partial<VoiceIntent>): VoiceIntent => ({
   new_minutes: null,
   shopping_list: null,
   shopping_items: [],
+  note_text: null,
+  note_date: null,
   clarify: null,
   ...over,
 });
@@ -212,5 +214,26 @@ describe("voice: wording and context", () => {
     expect(msg).toContain("Shopping lists: Groceries");
     expect(msg).toContain('"time":"15:00"');
     expect(msg).toContain('They said: "make it 5"');
+  });
+});
+
+describe("voice: notes", () => {
+  it("saves a note to the Daily Log for today", () => {
+    const outcome = proposalFromIntent(intent({ intent: "add_note", note_text: "Car is making a rattling noise" }), workspace(), TODAY) as {
+      proposal: Proposal;
+    };
+    expect(confirmationSpeech(outcome.proposal, TODAY)).toBe("Save a note: Car is making a rattling noise. Save it?");
+    const saved = apply(workspace(), outcome.proposal);
+    expect(saved.dailyLog).toEqual([expect.objectContaining({ date: TODAY, text: "Car is making a rattling noise" })]);
+    expect(saved.tasks).toHaveLength(0);
+  });
+
+  it("says the day when the note is about another day", () => {
+    const outcome = proposalFromIntent(
+      intent({ intent: "add_note", note_text: "Plumber is coming", note_date: "2026-11-12" }),
+      workspace(),
+      TODAY
+    ) as { proposal: Proposal };
+    expect(confirmationSpeech(outcome.proposal, TODAY)).toBe("Save a note for tomorrow: Plumber is coming. Save it?");
   });
 });
