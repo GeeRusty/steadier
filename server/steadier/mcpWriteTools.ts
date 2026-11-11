@@ -67,6 +67,11 @@ import {
 import { describeReview, reviewStatus } from "../../client/src/domain/review";
 import type { ConnectorActor } from "../../shared/cloud";
 import { connectorName } from "./connectorOps";
+import {
+  planAddShoppingItems,
+  planCheckShoppingItems,
+  presentShoppingLists,
+} from "./shoppingOps";
 
 type ToolResult = {
   content: Array<{ type: "text"; text: string }>;
@@ -551,6 +556,34 @@ export function registerBackupReadTools(
   userId: number
 ): void {
   server.registerTool(
+    "read_my_life_shopping_lists",
+    {
+      title: "Read My Life shopping lists",
+      description: `List the owner's shopping lists with their items and ids. By default only items not yet ticked off are shown; set includeChecked=true to include ticked items. ${UNTRUSTED_DATA_RULE}`,
+      inputSchema: fromJsonSchema({
+        type: "object",
+        properties: { includeChecked: { type: "boolean" } },
+        additionalProperties: false,
+      }),
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z.object({ includeChecked: z.boolean().optional() }).strict().safeParse(input ?? {});
+      if (!parsed.success) return invalid(parsed.error);
+      try {
+        const stored = await changes.readWorkspace(userId);
+        if (!stored) return failure("NO_WORKSPACE", "There is no shared My Life workspace yet.");
+        return result({
+          lists: presentShoppingLists(stored.workspace, parsed.data.includeChecked ?? false),
+          dataNotice: UNTRUSTED_DATA_RULE,
+        });
+      } catch {
+        return failure("UNAVAILABLE", "Shopping lists are unavailable right now.");
+      }
+    }
+  );
+
+  server.registerTool(
     "get_my_life_calendar",
     {
       title: "Read the My Life calendar",
@@ -919,6 +952,92 @@ export function registerWriteTools(
   userId: number,
   actor: ConnectorActor = "claude"
 ): void {
+  server.registerTool(
+    "add_my_life_shopping_items",
+    {
+      title: "Add items to a My Life shopping list",
+      description: `Add one or more items to a shopping list. listTitle picks an existing list by name (case-insensitive); if no list has that name, a new list with that name is created. Omit listTitle to use the most recently used list (or a new "Shopping" list if there are none). One item per entry, e.g. ["eggs", "bread"]. ${writeGuidance(actor, false)}`,
+      inputSchema: fromJsonSchema({
+        type: "object",
+        properties: {
+          listTitle: { type: "string", minLength: 1, maxLength: 120 },
+          items: {
+            type: "array",
+            minItems: 1,
+            maxItems: 50,
+            items: { type: "string", minLength: 1, maxLength: 300 },
+          },
+        },
+        required: ["items"],
+        additionalProperties: false,
+      }),
+      annotations: WRITE_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z
+        .object({
+          listTitle: z.string().trim().min(1).max(120).optional(),
+          items: z.array(z.string().trim().min(1).max(300)).min(1).max(50),
+        })
+        .strict()
+        .safeParse(input);
+      if (!parsed.success) return invalid(parsed.error);
+      try {
+        const applied = await applyGuardedChange(changes, userId, actor, workspace => {
+          const plan = planAddShoppingItems(workspace, parsed.data.listTitle ?? null, parsed.data.items);
+          return { ...plan, summary: `${connectorName(actor)}: ${plan.summary}` };
+        });
+        return written(applied.summary, applied.revision, applied.result);
+      } catch (error) {
+        return fromError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "check_my_life_shopping_items",
+    {
+      title: "Tick off My Life shopping items",
+      description: `Tick items off a shopping list (checked=true), or untick them (checked=false). Use the listId and itemIds from read_my_life_shopping_lists. Ticked items stay on the list until the owner clears them in Steadier. ${writeGuidance(actor, false)}`,
+      inputSchema: fromJsonSchema({
+        type: "object",
+        properties: {
+          listId: { type: "string", minLength: 1, maxLength: 128 },
+          itemIds: {
+            type: "array",
+            minItems: 1,
+            maxItems: 100,
+            items: { type: "string", minLength: 1, maxLength: 128 },
+          },
+          checked: { type: "boolean" },
+        },
+        required: ["listId", "itemIds", "checked"],
+        additionalProperties: false,
+      }),
+      annotations: WRITE_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z
+        .object({
+          listId: z.string().min(1).max(128),
+          itemIds: z.array(z.string().min(1).max(128)).min(1).max(100),
+          checked: z.boolean(),
+        })
+        .strict()
+        .safeParse(input);
+      if (!parsed.success) return invalid(parsed.error);
+      try {
+        const applied = await applyGuardedChange(changes, userId, actor, workspace => {
+          const plan = planCheckShoppingItems(workspace, parsed.data.listId, parsed.data.itemIds, parsed.data.checked);
+          return { ...plan, summary: `${connectorName(actor)}: ${plan.summary}` };
+        });
+        return written(applied.summary, applied.revision, applied.result);
+      } catch (error) {
+        return fromError(error);
+      }
+    }
+  );
+
   server.registerTool(
     "create_my_life_task",
     {

@@ -45,7 +45,7 @@ const PAGE = `<!doctype html>
     <button class="yes" id="yes" type="button">Yes, save</button>
     <button id="no" type="button">No</button>
   </div>
-  <p class="hint" id="hint">Try: "Remind me to call the mechanic tomorrow at 10", "Uber shift Friday 4 till 8", or "What's next?"</p>
+  <p class="hint" id="hint">Try: "Uber shift Friday 4 till 8", "Done with the mechanic call", "Push the coffee to tomorrow morning", "Add eggs and bread to the shopping list", or just say everything on your mind.</p>
 </main>
 <script>
 (() => {
