@@ -2891,6 +2891,14 @@ export default function Home() {
                 <Plus size={23} aria-hidden="true" />
               </button>
             )}
+            <a
+              href="/voice"
+              className={`v2-floating-talk${view === "attention" && todayTab === "today" ? " v2-floating-talk--stacked" : ""}`}
+              aria-label="Talk to Steadier"
+              title="Talk to Steadier"
+            >
+              <Mic size={22} aria-hidden="true" />
+            </a>
             <OrphanSheet
               open={orphanOpen}
               onClose={() => setOrphanOpen(false)}

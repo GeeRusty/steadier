@@ -10548,6 +10548,11 @@ button.project-outcome-map-goal:disabled {
 :root[data-theme="dark"] .v2-pillars-card .pillar-slot.v2-unset { color: #E6D5AA; background: #302B20; border-color: #8D794D; }
 .v2-floating-capture { position: fixed; right: 18px; bottom: 84px; z-index: 45; display: grid; width: 52px; height: 52px; place-items: center; color: #fff; background: #1E3F35; border: 0; border-radius: 50%; box-shadow: 0 4px 14px rgba(0,0,0,.24); }
 .v2-floating-capture:hover { background: #285744; }
+.v2-floating-talk { position: fixed; right: 18px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 45; display: grid; width: 52px; height: 52px; place-items: center; color: #fff; background: #B4532A; border-radius: 50%; box-shadow: 0 4px 14px rgba(0,0,0,.24); text-decoration: none; }
+.v2-floating-talk--stacked { bottom: calc(146px + env(safe-area-inset-bottom, 0px)); }
+.v2-floating-talk:hover { background: #9A4522; }
+.v2-floating-talk:focus-visible { outline: 3px solid #1E3F35; outline-offset: 3px; }
+@media print { .v2-floating-talk { display: none; } }
 
 /* App / This page sheets */
 .v2-menu-overlay { position: fixed; inset: 0; z-index: 120; display: block; }
