@@ -1,4 +1,5 @@
 import React from "react";
+import { Info } from "lucide-react";
 import type { View } from "../../domain/types";
 
 export const PAGE_PURPOSE_CORE_VIEWS = [
@@ -52,9 +53,16 @@ export default function PagePurposeNote({ view }: Props) {
   const purpose = SPECIALIST_PAGE_PURPOSES[view];
   if (!purpose) return null;
 
+  // Show, don't explain: the explanation sits behind an info icon. Opening it
+  // also reveals the page's own intro text (see .page-purpose in index.css).
   return (
-    <aside className="page-purpose-note" role="note" aria-label="What this page is for">
-      <strong>What this page is for:</strong> <span>{purpose}</span>
-    </aside>
+    <details className="page-purpose">
+      <summary aria-label="What this page is for" title="What this page is for">
+        <Info size={18} aria-hidden="true" />
+      </summary>
+      <aside className="page-purpose-note" role="note" aria-label="What this page is for">
+        <strong>What this page is for:</strong> <span>{purpose}</span>
+      </aside>
+    </details>
   );
 }

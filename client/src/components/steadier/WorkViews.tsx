@@ -417,14 +417,7 @@ export default function WorkViews(p: Props) {
       </div>
       <div className="list-heading">
         <span>
-          {list.length}{" "}
-          {list.length === 1 ? "responsibility" : "responsibilities"}
-          {kinds && p.view !== "progress" && (
-            <span className="list-kinds">
-              {" · "}
-              {countLabel(kindCounts(list, kinds.ctx))}
-            </span>
-          )}
+          {list.length} {list.length === 1 ? "task" : "tasks"}
         </span>
         {p.view === "review" && (
           <span className="small muted">Acknowledge review ≠ complete work</span>

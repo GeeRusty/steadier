@@ -47,3 +47,4 @@ No other colours carry meaning.
 ## Standing rules for anyone (or any AI) working on Steadier
 - **Never sign in as the owner or create access passes** (session tokens, keys, login links) without asking the owner first, even temporarily and even for a screenshot.
 - **Never deploy with a failing test.** Fix first, run the full test suite green, then deploy.
+- **After a mock-up, wait for the owner's yes before building.**

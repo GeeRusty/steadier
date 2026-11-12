@@ -24,7 +24,9 @@ describe("PagePurposeNote", () => {
       const html = render(view);
       expect(html).toContain('role="note" aria-label="What this page is for"');
       expect(html).toContain("What this page is for:");
-      expect(html.length).toBeLessThan(600);
+      // Concise: the note text itself stays short (the markup now includes the info icon).
+      expect(SPECIALIST_PAGE_PURPOSES[view]!.length).toBeLessThan(200);
+      expect(html).toContain('<details class="page-purpose">');
     }
   });
 
