@@ -18,7 +18,8 @@ import { isFaded, notReadyTasks } from "../../domain/taskCard";
 import CardDotsMark from "./CardDotsMark";
 import { isTaskAnchor, pastDueTasks } from "../../domain/anchorPlanning";
 import type { Task, View, Project } from "../../domain/types";
-import { identityLabel } from "../../domain/life";
+import type { Imperative } from "../../domain/compass";
+import { effectiveTaskRole, rowLabel } from "../../domain/linkCheck";
 import {
   attention,
   derivedState,
@@ -39,6 +40,8 @@ interface Props {
   view: View;
   tasks: Task[];
   projects: Project[];
+  /** For the hybrid matrix row (linked to an active Imperative). */
+  imperatives?: Imperative[];
   search: string;
   area: string;
   filter: string;
@@ -113,6 +116,7 @@ export default function WorkViews(p: Props) {
   const [title, sub] = headings[p.view] || headings.all;
   const pastDueIds = new Set(pastDueTasks(p.tasks, today()).map(t => t.id));
   const notReadyCount = notReadyTasks(p.tasks).length;
+  const links = { imperatives: p.imperatives ?? [], projects: p.projects };
   const list = p.tasks.filter(task => {
     const state = derivedState(task, p.tasks);
     if (p.view === "progress" ? task.state !== "done" : task.state === "done")
@@ -133,7 +137,7 @@ export default function WorkViews(p: Props) {
     )
       return false;
     if (p.filter === "direction" || p.filter === "support") {
-      if (task.role !== p.filter) return false;
+      if (effectiveTaskRole(task, links) !== p.filter) return false;
     } else if (p.filter === "timely" || p.filter === "sustained") {
       if (task.pattern !== p.filter) return false;
     } else if (p.filter === "unclassified") {
@@ -242,7 +246,7 @@ export default function WorkViews(p: Props) {
           {task.droppedAt && (
             <span className="dropped-decision-tag">Dropped — kept decision</span>
           )}
-          <span className="identity-label">{identityLabel(task)}</span>
+          <span className="identity-label">{rowLabel(task, links)}</span>
           <span>
             {task.nextAction || "Choose one small next physical step."}
           </span>
@@ -434,7 +438,7 @@ export default function WorkViews(p: Props) {
           <option value="scheduled">Not available yet</option>
           <option value="deferred">Set aside</option>
           <option value="someday">Ideas (Someday)</option>
-          <option value="direction">Direction</option>
+          <option value="direction">Imperative</option>
           <option value="support">Support</option>
           <option value="timely">Timely</option>
           <option value="sustained">Sustained</option>

@@ -1,4 +1,5 @@
 import { setTaskPlace } from "../../domain/places";
+import { ROLE_LABEL, taskRowIsLinked } from "../../domain/linkCheck";
 import { removeSmallStep } from "../../domain/smallSteps";
 import WhyLine from "./WhyLine";
 import type { ChainStep } from "../../domain/goals";
@@ -967,8 +968,8 @@ export default function TaskEditor({
                   : "can be clarified later"}
             </summary>
             <p className="small muted">
-              Direction gives life its shape. Support keeps it working. Neither
-              is a lower-value category.
+              Imperative work is what you have chosen to move. Support keeps
+              life working. Neither is a lower-value category.
             </p>
             <label className="field">
               Why this belongs in my life
@@ -983,19 +984,31 @@ export default function TaskEditor({
             <div className="form-pair">
               <label className="field">
                 Role
-                <select
-                  aria-label="Responsibility role"
-                  value={draft.role || ""}
-                  onChange={e =>
-                    classify({
-                      role: (e.target.value || null) as LifeRole | null,
-                    })
-                  }
-                >
-                  <option value="">Clarify later</option>
-                  <option value="direction">Direction</option>
-                  <option value="support">Support</option>
-                </select>
+                {taskRowIsLinked(draft, { imperatives, projects }) ? (
+                  <span className="derived-row" aria-label="Responsibility role">
+                    Imperative (linked)
+                    <span className="small muted">
+                      {" "}
+                      Linked to an active Imperative, so the link decides the
+                      row. Your own choice ({draft.role ? ROLE_LABEL[draft.role] : "not set"})
+                      comes back if the link ends.
+                    </span>
+                  </span>
+                ) : (
+                  <select
+                    aria-label="Responsibility role"
+                    value={draft.role || ""}
+                    onChange={e =>
+                      classify({
+                        role: (e.target.value || null) as LifeRole | null,
+                      })
+                    }
+                  >
+                    <option value="">Clarify later</option>
+                    <option value="direction">Imperative</option>
+                    <option value="support">Support</option>
+                  </select>
+                )}
               </label>
               <label className="field">
                 Attention pattern

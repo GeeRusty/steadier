@@ -5,6 +5,15 @@ import React from "react";
 import { DecisionField, ImperativePicker, NotionField } from "./CompassFields";
 import type { Imperative } from "../../domain/compass";
 import { emptyProjectCompass } from "../../domain/compass";
+import {
+  confirmProjectImperatives,
+  effectiveProjectRole,
+  matrixBalance,
+  minutesText,
+  projectRowIsLinked,
+  ROLE_LABEL,
+  rowLabel,
+} from "../../domain/linkCheck";
 import { emptyProjectSchedule } from "../../domain/time";
 import { downloadPrivate } from "../../lib/cloudApi";
 import { useEffect, useMemo, useState } from "react";
@@ -33,11 +42,6 @@ import {
   stateLabel,
   today,
 } from "../../domain/engine";
-import {
-  DEFAULT_MATRIX_WEIGHTS,
-  identityLabel,
-  matrixKey,
-} from "../../domain/life";
 import type {
   LifePattern,
   LifeRole,
@@ -60,31 +64,32 @@ interface Props {
   readOnly: boolean;
 }
 
+/** Cells have no names: the plain description is all that is shown. */
 const CELL_DETAILS: Record<
   MatrixCell,
-  { title: string; description: string; role: LifeRole; pattern: LifePattern }
+  { description: string; axes: string; role: LifeRole; pattern: LifePattern }
 > = {
   "direction-timely": {
-    title: "Direction · Timely",
-    description: "Chosen direction with a real date attached.",
+    description: "A chosen thing with a window",
+    axes: "Imperative and Timely",
     role: "direction",
     pattern: "timely",
   },
   "direction-sustained": {
-    title: "Direction · Sustained",
-    description: "Chosen direction that benefits from steady return.",
+    description: "A chosen thing that grows through regular engagement",
+    axes: "Imperative and Sustained",
     role: "direction",
     pattern: "sustained",
   },
   "support-timely": {
-    title: "Support · Timely",
-    description: "Care or upkeep with a real date attached.",
+    description: "Upkeep that falls due",
+    axes: "Support and Timely",
     role: "support",
     pattern: "timely",
   },
   "support-sustained": {
-    title: "Support · Sustained",
-    description: "Care or upkeep that remains ongoing.",
+    description: "Upkeep that recurs",
+    axes: "Support and Sustained",
     role: "support",
     pattern: "sustained",
   },
@@ -479,7 +484,9 @@ function ProjectsView({
                 <div className="section-heading life-project-card-heading">
                   <div>
                     <div className="eyebrow">
-                      {project.role} · {project.pattern}
+                      {ROLE_LABEL[effectiveProjectRole(project, workspace)]}
+                      {projectRowIsLinked(project, workspace) ? " (linked)" : ""}{" "}
+                      · {project.pattern === "timely" ? "Timely" : "Sustained"}
                     </div>
                     <h2>
                       <TimingShapeMark project={project} /> {project.title}
@@ -957,17 +964,28 @@ function ProjectDialog({
           <div className="form-pair">
             <label className="field">
               Role
-              <select
-                aria-label="Project role"
-                value={draft.role}
-                disabled={readOnly}
-                onChange={event =>
-                  patch("role", event.target.value as LifeRole)
-                }
-              >
-                <option value="direction">Direction</option>
-                <option value="support">Support</option>
-              </select>
+              {projectRowIsLinked(draft, { imperatives }) ? (
+                <span className="derived-row" aria-label="Project role">
+                  Imperative (linked)
+                  <span className="small muted">
+                    {" "}
+                    The Imperative link decides the row. Your own choice (
+                    {ROLE_LABEL[draft.role]}) comes back if the link ends.
+                  </span>
+                </span>
+              ) : (
+                <select
+                  aria-label="Project role"
+                  value={draft.role}
+                  disabled={readOnly}
+                  onChange={event =>
+                    patch("role", event.target.value as LifeRole)
+                  }
+                >
+                  <option value="direction">Imperative</option>
+                  <option value="support">Support</option>
+                </select>
+              )}
             </label>
             <label className="field">
               Pattern
@@ -1059,12 +1077,33 @@ function ProjectDialog({
             {why && <WhyLine text={why} />}
             <div className="field">
               <span>Serves Imperative</span>
+              {draft.compass.imperativesSuggested &&
+                draft.compass.imperativeIds.length > 0 && (
+                  <p className="suggestion-line small">
+                    <span className="suggested-chip">Suggested</span> These
+                    links are not yours until you confirm them.
+                    <button
+                      type="button"
+                      className="text-button"
+                      onClick={() =>
+                        setDraft(current =>
+                          confirmProjectImperatives(current, current.updatedAt)
+                        )
+                      }
+                    >
+                      Confirm links
+                    </button>
+                  </p>
+                )}
               <ImperativePicker
                 selected={draft.compass.imperativeIds}
                 imperatives={imperatives}
-                onChange={imperativeIds =>
-                  patch("compass", { ...draft.compass, imperativeIds })
-                }
+                onChange={imperativeIds => {
+                  // Picking here is the owner's own choice.
+                  const { imperativesSuggested: _s, ...compass } =
+                    draft.compass;
+                  patch("compass", { ...compass, imperativeIds });
+                }}
               />
             </div>
             <DecisionField
@@ -1134,90 +1173,54 @@ function ProjectDialog({
 
 function MatrixView({
   workspace,
-  onMutate,
   onOpenTask,
-  readOnly,
 }: Pick<Props, "workspace" | "onMutate" | "onOpenTask" | "readOnly">) {
-  const activeTasks = useMemo(
-    () => workspace.tasks.filter(task => task.state !== "done"),
-    [workspace.tasks]
-  );
+  const day = today();
   const commitments = useMemo(
     () => attention(workspace.tasks).commitments,
     [workspace.tasks]
   );
-  const byCell = useMemo(() => {
-    const groups: Record<MatrixCell, Task[]> = {
-      "direction-timely": [],
-      "direction-sustained": [],
-      "support-timely": [],
-      "support-sustained": [],
-    };
-    for (const task of activeTasks) {
-      const key = matrixKey(task);
-      if (key) groups[key].push(task);
-    }
-    return groups;
-  }, [activeTasks]);
-  const unclassified = activeTasks.filter(task => !matrixKey(task));
-
-  const weightFor = (cell: MatrixCell) => {
-    const existing = workspace.matrixWeights?.[cell];
-    return Number.isInteger(existing) && existing! >= 1 && existing! <= 3
-      ? existing!
-      : DEFAULT_MATRIX_WEIGHTS[cell];
-  };
-  const setWeight = (cell: MatrixCell, value: number) => {
-    if (readOnly) return;
-    onMutate(current => ({
-      ...current,
-      matrixWeights: {
-        ...DEFAULT_MATRIX_WEIGHTS,
-        ...(current.matrixWeights ?? {}),
-        [cell]: value,
-      },
-    }));
-  };
+  const balance = useMemo(
+    () => matrixBalance(workspace, day),
+    [workspace, day]
+  );
+  const unclassified = balance.unclassified;
 
   return (
     <>
       <div className="page-heading life-heading">
         <div className="eyebrow">MY LIFE · BALANCED VIEW</div>
         <h1>See the parts that could disappear from view.</h1>
+        <p className="life-matrix-reminder">
+          <strong>Balance, not ranking.</strong>
+        </p>
         <p>
-          Direction and support sit side by side. Timely and sustained are
-          patterns, not a value ranking.
+          Rows: Imperative and Support. Columns: Timely and Sustained. Work
+          linked to an active Imperative sits in the Imperative row; anything
+          else stays where you put it.
         </p>
       </div>
 
       <div className="life-matrix-grid">
         {(Object.keys(CELL_DETAILS) as MatrixCell[]).map(cell => {
           const detail = CELL_DETAILS[cell];
-          const tasks = byCell[cell];
+          const { tasks, estimateMinutes, loggedMinutes } =
+            balance.cells[cell];
           return (
-            <section className="settings-section life-matrix-cell" key={cell}>
+            <section
+              className="settings-section life-matrix-cell"
+              key={cell}
+              aria-label={`${detail.axes}: ${detail.description}`}
+            >
               <div className="section-heading">
                 <div>
-                  <div className="eyebrow">{tasks.length} HELD HERE</div>
-                  <h2>{detail.title}</h2>
+                  <div className="eyebrow">
+                    {tasks.length} OPEN · {minutesText(estimateMinutes)}{" "}
+                    ESTIMATED · {minutesText(loggedMinutes)} LOGGED THIS WEEK
+                  </div>
+                  <h2>{detail.description}</h2>
                 </div>
-                <label className="life-emphasis-control">
-                  <span>Emphasis</span>
-                  <select
-                    aria-label={`Emphasis for ${detail.title}`}
-                    value={weightFor(cell)}
-                    disabled={readOnly}
-                    onChange={event =>
-                      setWeight(cell, Number(event.target.value))
-                    }
-                  >
-                    <option value={1}>1 · balanced</option>
-                    <option value={2}>2 · gentle</option>
-                    <option value={3}>3 · stronger</option>
-                  </select>
-                </label>
               </div>
-              <p className="small muted">{detail.description}</p>
               {tasks.length ? (
                 <div className="life-matrix-task-list">
                   {tasks.slice(0, 8).map(task => (
@@ -1229,7 +1232,7 @@ function MatrixView({
                       <strong>
                         <TimingShapeMark task={task} /> {task.title}
                       </strong>
-                      <span>{identityLabel(task)}</span>
+                      <span>{rowLabel(task, workspace)}</span>
                     </button>
                   ))}
                   {tasks.length > 8 && (
@@ -1250,14 +1253,15 @@ function MatrixView({
         <div className="section-heading">
           <div>
             <div className="eyebrow">COMPASS STAYS WITH YOU</div>
-            <h2>Emphasis breaks ties; it does not decide.</h2>
+            <h2>The matrix describes; it never orders.</h2>
           </div>
           <ClipboardCheck size={20} aria-hidden="true" />
         </div>
         <p>
-          Every cell starts balanced at 1. A little more emphasis can help when
-          otherwise comparable choices need a tie-breaker. It never changes
-          readiness, replaces Compass, or hides a real commitment.
+          Counts and time show where your attention is going. Nothing here
+          changes what Steadier suggests, how readiness works, or which real
+          commitments you see. Life Admin and Erosion Guard stay places tasks
+          live, not cells.
         </p>
       </section>
 
@@ -1313,7 +1317,7 @@ function MatrixView({
           <Check size={20} aria-hidden="true" />
         </div>
         <p>
-          This independent list is not changed by matrix emphasis. It is a
+          This independent list is not changed by the matrix. It is a
           reminder of real commitments, not a substitute for choosing with
           Compass.
         </p>

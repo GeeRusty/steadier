@@ -68,6 +68,8 @@ interface Props {
   sortCount?: number;
   ideaCount?: number;
   onSort?: () => void;
+  linkCheckCount?: number;
+  onLinkCheck?: () => void;
   onIdeas?: () => void;
 }
 
@@ -134,6 +136,7 @@ export default function TodayNow(p: Props) {
   }[] = [
     { key: "sort", n: p.sortCount ?? 0, label: "Sort", onClick: () => p.onSort?.() },
     { key: "place", n: p.orphanCount, label: "To place", onClick: p.onOpenOrphans },
+    { key: "linkcheck", n: p.linkCheckCount ?? 0, label: "Link check", onClick: () => p.onLinkCheck?.() },
     { key: "review", n: p.result.reviewDue.length, label: "Needs review", onClick: p.onReview },
     { key: "due", n: p.result.commitments.length, label: "Due soon", onClick: p.onCommitments },
     {

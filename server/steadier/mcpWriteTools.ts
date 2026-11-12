@@ -68,7 +68,7 @@ import { describeReview, reviewStatus } from "../../client/src/domain/review";
 import type { ConnectorActor } from "../../shared/cloud";
 import { connectorName } from "./connectorOps";
 import { findNotes, planAddNote } from "./notesOps";
-import { ideasView, setupView } from "./cardOps";
+import { ideasView, linkCheckView, setupView } from "./cardOps";
 import { guideFor } from "./guide";
 import {
   planAddShoppingItems,
@@ -143,7 +143,7 @@ const TASK_FIELD_SCHEMA = {
   role: {
     ...ROLE,
     description:
-      "direction (moves life forward) or support (keeps life running), or null.",
+      "direction (shown to the owner as Imperative: chosen work that moves life forward) or support (keeps life running), or null. A task or project linked to an active Imperative shows in the Imperative row whatever this says.",
   },
   pattern: {
     ...PATTERN,
@@ -633,6 +633,27 @@ export function registerBackupReadTools(
         return result({ ...view, dataNotice: UNTRUSTED_DATA_RULE });
       } catch {
         return failure("UNAVAILABLE", "Task setup is unavailable right now.");
+      }
+    }
+  );
+
+  server.registerTool(
+    "read_my_life_link_check",
+    {
+      title: "Read My Life Link check",
+      description: `Read the owner's Link check: (1) active Imperatives with no open work linked (no open task, no active project), and (2) active projects in the Imperative row not linked to any active Imperative, plus items the owner held with "Not yet" until the next Weekly Reality Review. Only the owner's confirmed links count. Read-only. You may suggest a link with set_my_life_placement (saved as a suggestion the owner confirms); only the owner confirms links, chooses Not yet, makes a project Support or steps an Imperative down. ${UNTRUSTED_DATA_RULE}`,
+      inputSchema: fromJsonSchema({ type: "object", properties: {}, additionalProperties: false }),
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z.object({}).strict().safeParse(input ?? {});
+      if (!parsed.success) return invalid(parsed.error);
+      try {
+        const stored = await changes.readWorkspace(userId);
+        if (!stored) return failure("NO_WORKSPACE", "There is no shared My Life workspace yet.");
+        return result({ ...linkCheckView(stored.workspace), dataNotice: UNTRUSTED_DATA_RULE });
+      } catch {
+        return failure("UNAVAILABLE", "The Link check is unavailable right now.");
       }
     }
   );
@@ -1764,7 +1785,7 @@ export function registerWriteTools(
     "set_my_life_placement",
     {
       title: "Place a My Life task or project",
-      description: `Link a task or project to existing Imperatives (imperativeIds replaces the list; [] clears), suggest a catch-all for a task (life-admin or erosion-guard), suggest a decision outcome (promote, sustain, delegate, retire), or set a project's Notion page link (https notion.so / notion.site). Catch-alls and decisions are saved as SUGGESTIONS the owner must confirm. Use list_my_life_imperatives for ids. ${writeGuidance(actor)}`,
+      description: `Link a task or project to existing Imperatives (imperativeIds replaces the list; [] clears), suggest a catch-all for a task (life-admin or erosion-guard), suggest a decision outcome (promote, sustain, delegate, retire), or set a project's Notion page link (https notion.so / notion.site). Imperative links (for tasks and projects), catch-alls and decisions are saved as SUGGESTIONS the owner must confirm. Use list_my_life_imperatives for ids. ${writeGuidance(actor)}`,
       inputSchema: fromJsonSchema({
         type: "object",
         properties: {

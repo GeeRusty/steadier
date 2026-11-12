@@ -31,7 +31,7 @@ describe("PageNavigation", () => {
     );
 
     expect(markup).toContain("Start here");
-    expect(markup).toContain("Direction");
+    expect(markup).toContain("Imperatives");
     expect(markup).toContain("Settings and data");
     expect(markup).toContain('aria-label="My Life menu content"');
     expect(markup).toContain("sidebar-navigation-scroll");

@@ -4,7 +4,7 @@ import { Download, Table2, RefreshCw } from "lucide-react";
 import type { useSharedWorkspace } from "../../hooks/useSharedWorkspace";
 import type { Task } from "../../domain/types";
 import { derivedState, today } from "../../domain/engine";
-import { identityLabel } from "../../domain/life";
+import { rowLabel } from "../../domain/linkCheck";
 import { downloadPrivate, privateOwnerRequest } from "../../lib/cloudApi";
 
 type Store = ReturnType<typeof useSharedWorkspace>;
@@ -191,7 +191,7 @@ export default function SheetView({
                   <td>{t.area || "General"}</td>
                   <td>{t.purpose || "Not clarified"}</td>
                   <td>
-                    {identityLabel(t)}
+                    {rowLabel(t, store.workspace)}
                     <small>{t.labelSource}</small>
                   </td>
                   <td>{derivedState(t, store.workspace.tasks)}</td>

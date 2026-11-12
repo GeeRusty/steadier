@@ -44,6 +44,7 @@ import {
 import type {
   Context,
   DailyLogEntry,
+  LinkCheckHold,
   DailyIntention,
   FocusSession,
   LifePattern,
@@ -1043,6 +1044,24 @@ function siteCardsField(value: unknown): SiteCard[] {
   });
 }
 
+const MAX_LINK_CHECK_HOLDS = 400;
+function linkCheckHoldsField(value: unknown): LinkCheckHold[] {
+  if (!Array.isArray(value) || value.length > MAX_LINK_CHECK_HOLDS)
+    fail(`linkCheckHolds must be a list of at most ${MAX_LINK_CHECK_HOLDS}.`);
+  return value.map((item, index) => {
+    const label = `link check hold ${index + 1}`;
+    if (!isRecord(item)) fail(`${label} is not an object.`);
+    hasExactKeys(item, ["kind", "id", "heldOn"], label);
+    if (item.kind !== "imperative" && item.kind !== "project")
+      fail(`${label} kind must be imperative or project.`);
+    const id = stringField(item, "id", 128, { nonEmpty: true, id: true });
+    const heldOn = stringField(item, "heldOn", 100, { nonEmpty: true });
+    if (Number.isNaN(Date.parse(heldOn)))
+      fail(`${label} heldOn must be a valid timestamp.`);
+    return { kind: item.kind, id, heldOn };
+  });
+}
+
 function dailyLogField(value: unknown): DailyLogEntry[] {
   try {
     return validateDailyLogEntries(value);
@@ -1635,6 +1654,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
     "siteCards",
     "shoppingLists",
     "dailyLog",
+    "linkCheckHolds",
     "assets",
     "people",
     "credentialRenewals",
@@ -1661,6 +1681,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
   const hasSiteCards = hasKey("siteCards");
   const hasShoppingLists = hasKey("shoppingLists");
   const hasDailyLog = hasKey("dailyLog");
+  const hasLinkCheckHolds = hasKey("linkCheckHolds");
   const hasAssets = hasKey("assets");
   const hasPeople = hasKey("people");
   const hasCredentialRenewals = hasKey("credentialRenewals");
@@ -1715,6 +1736,9 @@ function validateV2Workspace(value: JsonRecord): Workspace {
     ? shoppingListsField(value.shoppingLists)
     : undefined;
   const dailyLog = hasDailyLog ? dailyLogField(value.dailyLog) : undefined;
+  const linkCheckHolds = hasLinkCheckHolds
+    ? linkCheckHoldsField(value.linkCheckHolds)
+    : undefined;
   const assets = hasAssets ? assetsField(value.assets) : undefined;
   const people = hasPeople ? peopleField(value.people) : undefined;
   const nextThing = hasNextThing
@@ -1767,6 +1791,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
           ...(hasSiteCards ? { siteCards } : {}),
           ...(hasShoppingLists ? { shoppingLists } : {}),
           ...(dailyLog ? { dailyLog } : {}),
+          ...(linkCheckHolds ? { linkCheckHolds } : {}),
           ...(hasAssets ? { assets } : {}),
           ...(hasPeople ? { people } : {}),
           ...(hasCredentialRenewals ? { credentialRenewals } : {}),

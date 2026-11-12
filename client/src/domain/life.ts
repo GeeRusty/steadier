@@ -131,7 +131,7 @@ export function suggestIdentity(
 export function identityLabel(task: Task): string {
   const role = task.role
     ? task.role === "direction"
-      ? "Direction"
+      ? "Imperative"
       : "Support"
     : null;
   const pattern = task.pattern

@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import LinkCheckView from "../components/steadier/LinkCheckView";
+import { linkCheckCount } from "../domain/linkCheck";
 import ClaudeConsent from "../components/steadier/ClaudeConsent";
 import {
   OrphanBanner,
@@ -105,6 +107,7 @@ import {
   CircleDot,
   ListTodo,
   Lightbulb,
+  Link2,
   Shuffle,
   RefreshCw,
   Clock3,
@@ -239,6 +242,7 @@ const nav: { id: View; title: string; Icon: typeof CircleDot }[] = [
   { id: "near", title: "Near me", Icon: MapPin },
   { id: "areas", title: "Life areas", Icon: Layers3 },
   { id: "imperatives", title: "Imperatives", Icon: Compass },
+  { id: "linkcheck", title: "Link check", Icon: Link2 },
   { id: "compass-view", title: "Compass view", Icon: Compass },
   { id: "waiting", title: "Waiting & blocked", Icon: Clock3 },
   { id: "projects", title: "Project Outcomes", Icon: Layers3 },
@@ -2448,6 +2452,8 @@ export default function Home() {
                       sortCount={notReadyTasks(tasks).length}
                       ideaCount={ideaList(tasks).length}
                       onSort={() => navigate("sort")}
+                      linkCheckCount={linkCheckCount(store.workspace)}
+                      onLinkCheck={() => navigate("linkcheck")}
                       onIdeas={() => navigate("ideas")}
                       result={liveResult}
                       orphanCount={orphanReport(tasks).count}
@@ -2767,6 +2773,12 @@ export default function Home() {
                       navigate("attention");
                     }}
                   />
+                ) : view === "linkcheck" ? (
+                  <LinkCheckView
+                    workspace={store.workspace}
+                    readOnly={store.readOnly}
+                    onMutate={store.mutate}
+                  />
                 ) : view === "ideas" ? (
                   <IdeasShelf
                     tasks={tasks}
@@ -2887,6 +2899,7 @@ export default function Home() {
                     view={view}
                     tasks={tasks}
                     projects={store.workspace.projects}
+                    imperatives={store.workspace.imperatives}
                     search={search}
                     area={area}
                     filter={filter}

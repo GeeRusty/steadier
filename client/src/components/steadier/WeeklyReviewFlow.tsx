@@ -38,6 +38,8 @@ import { groupByStable, monthGroup } from "../../domain/accordionGroups";
 import AccordionSection from "./AccordionSection";
 import TimingShapeMark from "./TimingShapeMark";
 import { IdeasShelf } from "./SetupViews";
+import LinkCheckView from "./LinkCheckView";
+import { renewHoldsForReview } from "../../domain/linkCheck";
 import { bringBackIdea, ideaToTask, keepIdea, letGoIdea } from "../../domain/taskCard";
 
 interface Props {
@@ -54,6 +56,7 @@ const STEPS = [
   "Start",
   "Unplaced",
   "Ideas",
+  "Link check",
   "Money",
   "Action",
   "Capacity",
@@ -70,6 +73,8 @@ interface Draft {
   decisions: Record<string, DecisionOutcome | "">;
   notes: string;
   unplacedBefore: number;
+  /** When this review began; Not yet holds renewed after it survive the save. */
+  startedAt?: string;
 }
 
 function loadDraft(today: string): Draft | null {
@@ -141,6 +146,7 @@ export default function WeeklyReviewFlow({
         decisions: {},
         notes: "",
         unplacedBefore: unplacedTasks(workspace.tasks).length,
+        startedAt: adelaideTimestamp(),
       }
   );
   const [message, setMessage] = useState("");
@@ -289,7 +295,11 @@ export default function WeeklyReviewFlow({
       notes: draft.notes.trim(),
     };
     const ok = onMutate(w =>
-      applyReview(w, review, (tasks, id) => completeTask(tasks, id))
+      renewHoldsForReview(
+        applyReview(w, review, (tasks, id) => completeTask(tasks, id)),
+        draft.startedAt ?? null,
+        review.at
+      )
     );
     if (ok === false) {
       setMessage(
@@ -573,6 +583,8 @@ export default function WeeklyReviewFlow({
         onBringBack={id => ideaChange(id, (t, stamp) => bringBackIdea(t, stamp))}
       />
     );
+  } else if (step === "Link check") {
+    body = <LinkCheckView workspace={workspace} readOnly={readOnly} onMutate={onMutate} reviewMode />;
   } else if (step === "Imperatives") {
     body = (
       <>

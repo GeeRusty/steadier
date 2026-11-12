@@ -68,6 +68,12 @@ export interface ProjectCompass {
   imperativeIds: string[];
   decision: Decision | null;
   notionUrl: string | null;
+  /**
+   * True while connector-made Imperative links await the owner's Confirm.
+   * Absent (or false) means the links are the owner's own; older projects
+   * never have it.
+   */
+  imperativesSuggested?: boolean;
 }
 
 export interface Imperative {
@@ -292,18 +298,34 @@ export function projectCompassField(
   label: string
 ): ProjectCompass {
   if (!isRec(value)) fail(`${label} compass is not an object.`);
+  const hasSuggested = Object.prototype.hasOwnProperty.call(
+    value,
+    "imperativesSuggested"
+  );
   exactKeys(
     value,
-    ["labelsConfirmed", "imperativeIds", "decision", "notionUrl"],
+    [
+      "labelsConfirmed",
+      "imperativeIds",
+      "decision",
+      "notionUrl",
+      ...(hasSuggested ? ["imperativesSuggested"] : []),
+    ],
     `${label} compass`
   );
   if (typeof value.labelsConfirmed !== "boolean")
     fail(`${label} labelsConfirmed must be true or false.`);
+  if (hasSuggested && typeof value.imperativesSuggested !== "boolean")
+    fail(`${label} imperativesSuggested must be true or false.`);
+  const imperativeIds = idList(value.imperativeIds, `${label} imperativeIds`);
   return {
     labelsConfirmed: value.labelsConfirmed,
-    imperativeIds: idList(value.imperativeIds, `${label} imperativeIds`),
+    imperativeIds,
     decision: decisionField(value.decision, label),
     notionUrl: notion(value.notionUrl, `${label} Notion link`),
+    ...(value.imperativesSuggested === true && imperativeIds.length
+      ? { imperativesSuggested: true }
+      : {}),
   };
 }
 
@@ -397,7 +419,13 @@ export function pruneImperativeLinks(workspace: Workspace): Workspace {
     })),
     projects: workspace.projects.map(p => ({
       ...p,
-      compass: { ...p.compass, imperativeIds: clean(p.compass.imperativeIds) },
+      compass: (() => {
+        const imperativeIds = clean(p.compass.imperativeIds);
+        const { imperativesSuggested, ...rest } = p.compass;
+        return imperativesSuggested && imperativeIds.length
+          ? { ...rest, imperativeIds, imperativesSuggested }
+          : { ...rest, imperativeIds };
+      })(),
     })),
   };
 }

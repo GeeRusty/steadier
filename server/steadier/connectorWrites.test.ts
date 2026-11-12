@@ -488,6 +488,7 @@ describe("connector tools by approved scope", () => {
       "read_my_life_compass_map",
       "read_my_life_context",
       "read_my_life_ideas",
+      "read_my_life_link_check",
       "read_my_life_notes",
       "read_my_life_project",
       "read_my_life_sheet",
@@ -517,6 +518,7 @@ describe("connector tools by approved scope", () => {
       "read_my_life_compass_map",
       "read_my_life_context",
       "read_my_life_ideas",
+      "read_my_life_link_check",
       "read_my_life_notes",
       "read_my_life_project",
       "read_my_life_sheet",
@@ -1414,6 +1416,63 @@ describe("Daily Log connector tools", () => {
     const read = await client.callTool({ name: "read_my_life_notes", arguments: { query: "rattl" } });
     const notes = (read.structuredContent as { notes: { date: string; text: string }[] }).notes;
     expect(notes).toEqual([expect.objectContaining({ date: "2026-11-11", text: "Car is making a rattling noise" })]);
+  });
+});
+
+describe("Link check connector rules", () => {
+  it("saves Claude's project–Imperative links as suggestions and reads the Link check", async () => {
+    const store = new MemoryStore();
+    store.addKey(WRITE_TOKEN, "steadier:read steadier:write");
+    const ws = store.stored!.workspace;
+    ws.imperatives = [
+      {
+        id: "imp-home",
+        title: "Keep the family home stable",
+        reason: "",
+        status: "active",
+        setOn: "2026-10-01",
+        retiredOn: null,
+        notionUrl: null,
+        decision: null,
+        history: [],
+        createdAt: "2026-10-01T09:00:00",
+        updatedAt: "2026-10-01T09:00:00",
+      },
+    ];
+    const client = await connect(store, WRITE_TOKEN);
+
+    const before = await client.callTool({ name: "read_my_life_link_check", arguments: {} });
+    expect(before.isError).toBeFalsy();
+    const view = before.structuredContent as {
+      count: number;
+      imperativesWithNoWork: { imperativeId: string }[];
+      imperativeProjectsWithNoImperative: { projectId: string }[];
+    };
+    expect(view.imperativesWithNoWork.map(i => i.imperativeId)).toEqual(["imp-home"]);
+    expect(view.imperativeProjectsWithNoImperative.map(p => p.projectId)).toEqual(["project-1"]);
+    expect(view.count).toBe(2);
+
+    const linked = await client.callTool({
+      name: "set_my_life_placement",
+      arguments: { kind: "project", id: "project-1", imperativeIds: ["imp-home"] },
+    });
+    expect(linked.isError).toBeFalsy();
+    const project = store.stored!.workspace.projects.find(p => p.id === "project-1")!;
+    expect(project.compass).toMatchObject({ imperativeIds: ["imp-home"], imperativesSuggested: true });
+
+    // A suggestion does not count: both items are still in the Link check.
+    const after = await client.callTool({ name: "read_my_life_link_check", arguments: {} });
+    const again = after.structuredContent as {
+      count: number;
+      imperativeProjectsWithNoImperative: { projectId: string; suggestedImperativeIds?: string[] }[];
+    };
+    expect(again.count).toBe(2);
+    expect(again.imperativeProjectsWithNoImperative[0].suggestedImperativeIds).toEqual(["imp-home"]);
+
+    // The connector cannot write holds: the tool has no inputs.
+    const extra = await client.callTool({ name: "read_my_life_link_check", arguments: { hold: "project-1" } });
+    expect(extra.isError).toBe(true);
+    expect(store.stored!.workspace.linkCheckHolds).toBeUndefined();
   });
 });
 

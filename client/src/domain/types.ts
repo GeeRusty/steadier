@@ -59,7 +59,8 @@ export type View =
   | "credentialRenewals"
   | "invoices"
   | "sort"
-  | "ideas";
+  | "ideas"
+  | "linkcheck";
 export type LifeRole = "direction" | "support";
 export type LifePattern = "timely" | "sustained";
 export type LabelSource = "unclassified" | "suggested" | "confirmed";
@@ -286,6 +287,12 @@ export interface Task {
   /** Owner-confirmed source link for a generated obligation preparation task. */
   obligation?: TaskObligationOrigin;
 }
+export interface LinkCheckHold {
+  kind: "imperative" | "project";
+  id: string;
+  /** Adelaide local timestamp of the Not yet tap. */
+  heldOn: string;
+}
 export interface TaskParent {
   id: string;
   suggested: boolean;
@@ -356,6 +363,11 @@ export interface Workspace {
   shoppingLists?: ShoppingList[];
   /** Notes to self (Daily Log); absent until the first note. */
   dailyLog?: DailyLogEntry[];
+  /**
+   * Link check "Not yet" holds; absent until the first one. A hold lasts until
+   * the next Weekly Reality Review is saved after it.
+   */
+  linkCheckHolds?: LinkCheckHold[];
   /** Manually maintained physical Assets and condition logs; absent until used. */
   assets?: Asset[];
   /** Owner-entered relationship follow-ups; absent until used. */

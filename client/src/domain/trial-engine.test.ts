@@ -36,7 +36,7 @@ describe("personal life trial attention", () => {
     expect(result.commitments).toHaveLength(0);
     expect(result.items[0].reason).toContain("Suggested preparation");
   });
-  it("uses chosen matrix emphasis only for comparable work, not to erase actual commitments", () => {
+  it("never orders work by matrix cell (Balance, not ranking), and keeps actual commitments", () => {
     const direction = createTask(
       {
         id: "a-direction",
@@ -65,12 +65,13 @@ describe("personal life trial attention", () => {
       attention([support, direction], { now: day, matrixWeights: balanced })
         .items[0].task.id
     ).toBe(direction.id);
+    // Stored weights, even uneven old ones, no longer change the order.
     expect(
       attention([direction, support], {
         now: day,
         matrixWeights: { ...balanced, "support-sustained": 3 },
       }).items[0].task.id
-    ).toBe(support.id);
+    ).toBe(direction.id);
     const bill = createTask(
       {
         title: "Electricity payment",

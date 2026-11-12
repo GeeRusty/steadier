@@ -72,7 +72,7 @@ const projectInput = z
   .object({ projectId: z.string().min(1).max(200) })
   .strict();
 
-const PLANNING_GUIDANCE = `Before planning, read the current saved context and check its planning date, server revision, and freshness warning. This is a request-based read-only snapshot, not monitoring or scheduled outreach: saved context may exclude offline edits. Keep actual deadlines distinct from provisional preparation dates. Direction/Support and Timely/Sustained are qualities, not measures of personal value. Honor the saved intention, choose one physical next action, and if the user reports drifting, offer a gentle two-minute re-entry. Never claim monitoring or an attention diagnosis, and never change records unless the owner asks in this conversation. Times are Australia/Adelaide. ${UNTRUSTED_DATA_RULE}`;
+const PLANNING_GUIDANCE = `Before planning, read the current saved context and check its planning date, server revision, and freshness warning. This is a request-based read-only snapshot, not monitoring or scheduled outreach: saved context may exclude offline edits. Keep actual deadlines distinct from provisional preparation dates. Imperative/Support (stored as direction/support) and Timely/Sustained are qualities, not measures of personal value. Honor the saved intention, choose one physical next action, and if the user reports drifting, offer a gentle two-minute re-entry. Never claim monitoring or an attention diagnosis, and never change records unless the owner asks in this conversation. Times are Australia/Adelaide. ${UNTRUSTED_DATA_RULE}`;
 
 export type CompassMcpRouteDependencies = {
   repository?: SteadierRepository;

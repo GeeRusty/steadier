@@ -10,7 +10,7 @@ import type {
   MatrixWeights,
 } from "./types";
 
-import { suggestIdentity, matrixWeight } from "./life";
+import { suggestIdentity } from "./life";
 import {
   copyTaskSchedule,
   describeFlexibleWindow,
@@ -181,7 +181,7 @@ function candidateRank(candidate: Candidate): number {
 function compareCandidates(
   a: Candidate,
   b: Candidate,
-  weights?: MatrixWeights
+  _weights?: MatrixWeights
 ): number {
   const rank = candidateRank(a) - candidateRank(b);
   if (rank !== 0) return rank;
@@ -199,11 +199,7 @@ function compareCandidates(
       ? Number.POSITIVE_INFINITY
       : b.deadlineDays ?? Number.POSITIVE_INFINITY;
   if (aDeadline !== bDeadline) return aDeadline - bDeadline;
-  if (weights) {
-    const emphasis =
-      matrixWeight(b.task, weights) - matrixWeight(a.task, weights);
-    if (emphasis) return emphasis;
-  }
+  // The matrix describes work; it never orders it (Balance, not ranking).
 
   const aReview = a.reviewDays ?? Number.POSITIVE_INFINITY;
   const bReview = b.reviewDays ?? Number.POSITIVE_INFINITY;

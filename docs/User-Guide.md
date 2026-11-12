@@ -7,7 +7,7 @@ Steadier holds everything you're responsible for, then shows you a manageable fe
 - **Tasks** are anything you need to do. Each task can have a next step, a life area, dates, a project, and notes.
 - **Booked anchors** are tasks with a set day and clock time, such as a shift, an appointment or a job. Only these appear as blocks on the Calendar, and only these get spoken check-ins.
 - **Next thing** is the one task you've chosen to do now. Finish it with **Done**, or put it back with **Not now**.
-- **Roles**: every task is either **Direction** (moves your life forward) or **Support** (keeps life running).
+- **Roles**: every task is either **Imperative** (chosen work that moves your life forward) or **Support** (keeps life running). A task or project linked to an active Imperative is in the Imperative row automatically, shown as **Imperative (linked)**. Anything not linked keeps the role you chose. If that Imperative is retired, it goes back to your own choice.
 - **Patterns**: every task is either **Timely** (has a moment that matters) or **Sustained** (needs regular attention over time).
 - **Imperatives** are the few focus areas that matter most right now.
 - **Compass** is your bigger picture: **Pillars** (the big parts of your life), **Goals** under them, and **Goal Outcomes** that projects work towards.
@@ -62,10 +62,18 @@ History of what you've finished. Good for looking back. It isn't your to-do list
 Projects with their purpose, milestones and evidence. Connect each project to the Goal Outcome it serves. A project is marked achieved when you decide it is, not just because its tasks are done.
 
 ### My life matrix
-Checks your balance across Direction/Support and Timely/Sustained, so one kind of work doesn't crowd out the rest.
+**Balance, not ranking.** Four cells, each with a plain description: a chosen thing with a window; a chosen thing that grows through regular engagement; upkeep that falls due; upkeep that recurs. Each cell shows how many open tasks it holds, their estimated time, and time logged this week. The matrix only describes your work. It never changes the order of your suggestions.
 
 ### Imperatives
 Your few current focus areas. Review them now and then, and retire ones that no longer deserve attention.
+
+### Link check
+Two short lists, shown as **Link check (n)** in Needs attention:
+
+- **Imperatives with no work**: an active Imperative with no open task and no active project linked. Choose **Link work** (pick a project or task), **Not yet**, or **Step down** (Sustain, Delegate or Retire).
+- **Imperative projects with no Imperative**: an active project in the Imperative row that isn't linked to an active Imperative. Choose **Link to an Imperative**, **Make it Support**, or **Not yet**.
+
+Only links you made count. Suggested links show a **Confirm** button. **Not yet** holds an item until your next Weekly Reality Review, where you decide it again. Sustain or Delegate also holds it until then.
 
 ### Compass view, Compass map, and Pillars & Goals
 - **Compass view**: active Imperatives and Projects at a glance, with status marks.
@@ -76,7 +84,7 @@ Your few current focus areas. Review them now and then, and retire ones that no 
 A rules-based check-in on your current Imperatives and decisions. Open the real item to act on it.
 
 ### Weekly Reality Review
-The full weekly decision process: look at what happened, what's waiting, and what to change. Decisions you make are saved to the **Decision Log**.
+The full weekly decision process: look at what happened, what's waiting, and what to change. Decisions you make are saved to the **Decision Log**. The **Link check** step shows everything you held with Not yet. Decide each one, or tap **Not yet again** to hold it one more week. Anything you leave comes back to Link check when you save the review.
 
 ### Decision Log
 Read-only list of decisions saved during Weekly Reality Reviews.
@@ -146,12 +154,15 @@ Things you can say:
 
 Claude can see your Ideas and which tasks are set up, and can suggest a Place or First step, but only you can make a task ready or let an idea go. Tasks Claude creates start as faded cards.
 
+Claude can read your Link check. It can suggest a link between a task or project and an Imperative, but the link waits for your **Confirm**. Only you can choose Not yet, make a project Support, or step an Imperative down.
+
 Claude can read and change your Steadier when you ask it to in a chat. For example: "What's on my calendar this week?", "Find duplicate tasks", "Add milk to the shopping list", or "What did I note about the car?" Claude always asks before changing anything, and Steadier saves a full backup before every change. Connect it in Claude under **Settings → Connectors**.
 
 ## How do I…
 
 - **Add a task?** Tap **+** on My life today, or tell the voice assistant. After the title, choose **Task** or **Idea** (Task is the default).
 - **Set up a task / make it ready?** Open it, or use **Sort**, and light the three dots on its card: Action, Place, First step.
+- **Link a project to an Imperative?** Open **Link check**, or open the project and pick under **Serves Imperative**.
 - **Save an idea for later?** Tap **+**, type it, choose **Idea**. Or add it on the Ideas shelf.
 - **Give a task a time on the calendar?** Open the task and set its day and start time, or say "book X on Friday at 3".
 - **Change a booked time?** Open it from the Calendar and change the day or time, or say "move X to tomorrow at 9".

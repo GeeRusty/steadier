@@ -1126,14 +1126,23 @@ export function planSetPlacement(
         "Use an https notion.so or notion.site link."
       );
   }
+  // Claude's project–Imperative links are suggestions until the owner confirms.
+  const { imperativesSuggested: wasSuggested, ...baseCompass } =
+    project.compass;
+  const linkIds =
+    fields.imperativeIds !== undefined
+      ? [...new Set(fields.imperativeIds)]
+      : project.compass.imperativeIds;
+  const suggested =
+    fields.imperativeIds !== undefined
+      ? linkIds.length > 0
+      : wasSuggested === true && linkIds.length > 0;
   const updated: Project = {
     ...project,
     compass: {
-      ...project.compass,
-      imperativeIds:
-        fields.imperativeIds !== undefined
-          ? [...new Set(fields.imperativeIds)]
-          : project.compass.imperativeIds,
+      ...baseCompass,
+      imperativeIds: linkIds,
+      ...(suggested ? { imperativesSuggested: true } : {}),
       decision:
         fields.decision !== undefined
           ? decision(fields.decision)

@@ -46,7 +46,7 @@ describe("full page navigation groups", () => {
       title: "Start here",
       ids: ["attention", "all", "sort", "ideas", "calendar", "review", "weekly", "command-centre"],
     });
-    expect(PAGE_NAVIGATION_SECTIONS[1].title).toBe("Direction");
+    expect(PAGE_NAVIGATION_SECTIONS[1].title).toBe("Imperatives");
   });
 
   it("keeps every existing page as one direct destination", () => {
@@ -57,7 +57,7 @@ describe("full page navigation groups", () => {
     expect([...groupedIds].sort()).toEqual([...allPageIds].sort());
     expect(groups.map(group => group.title)).toEqual([
       "Start here",
-      "Direction",
+      "Imperatives",
       "Work and follow-ups",
       "Reference and records",
       "Planning tools",

@@ -144,7 +144,7 @@ describe("balanced life matrix", () => {
         "direction-timely": 4,
       })
     ).toBe(1);
-    expect(identityLabel(direction)).toBe("Direction · Timely (provisional)");
+    expect(identityLabel(direction)).toBe("Imperative · Timely (provisional)");
     expect(matrixKey(task("Capture later"))).toBeNull();
   });
 });

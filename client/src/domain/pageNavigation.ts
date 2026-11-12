@@ -10,9 +10,10 @@ export const PAGE_NAVIGATION_SECTIONS: readonly {
     ids: ["attention", "all", "sort", "ideas", "calendar", "review", "weekly", "command-centre"],
   },
   {
-    title: "Direction",
+    title: "Imperatives",
     ids: [
       "imperatives",
+      "linkcheck",
       "compass-view",
       "projects",
       "map",
