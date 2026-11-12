@@ -47,7 +47,9 @@ Day, week and month views of your booked anchors (tasks with a day and a clock t
 - Month view also shows bills and renewals due, birthdays, and anchors you've marked as major.
 
 ### All work
-Every task in one list, for finding things. Compact rows: title, signals, and one grey line for state and dates. Search, filter, tap a row to open it; the **Done** box completes it. The **i** button explains the page. Choose the **Not ready** filter to see only faded cards.
+Every task in one list, for finding things. Search, one filter, and groups by project (tap a group to fold it). Each project's **Outcome** shows once at the top of its group; tap it to read it all. Work with no project is under **No project**: Life Admin · Erosion Guard · Not placed.
+- Rows are the same as Today: a round **Done** circle, the title, a grey date/time chip, at most two chips for anything off normal (blocked, overdue, moved…), the green bar for Imperative work, dashed for suggestions. Normal things show nothing.
+- Tap a row to open its sheet: next action, prerequisites, notes, location and reminders. Choose the **Not ready** filter to see only faded cards.
 
 ### Sort
 One minute a day. When you have faded tasks, **Needs attention** on Overview shows **Sort** with a count. Sort shows one faded card at a time: tap a big **Place** button (recent projects first, then Life Admin and Erosion Guard), say or type the **First step**, tap **It's an action**, then **Done** or **Skip**. After the last card you go back to Today.

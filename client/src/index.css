@@ -12197,3 +12197,18 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 @media (max-width: 700px) {
   .topbar .capture-top, .topbar .voice-top { display: none !important; }
 }
+/* All work rows: the same compact row as Today (design language). */
+.wr { display: flex; align-items: center; gap: 6px; background: var(--card); border: 1px solid var(--tp-line); border-radius: 12px; padding: 6px 10px 6px 4px; min-height: 60px; margin: 0 0 8px; }
+.wr.wr-green { border-left: 5px solid var(--tp-green); }
+.wr.wr-suggested { border: 1.5px dashed var(--tp-btn-line); }
+.wr.wr-suggested.wr-green { border-left: 5px solid var(--tp-green); }
+.wr.wr-faded .wr-main { opacity: 0.55; }
+.wr.wr-done .tp-title { color: var(--muted-foreground); text-decoration: line-through; }
+.wr-tick { width: 48px; height: 48px; flex: none; display: grid; place-items: center; border: 0; background: none; padding: 0; }
+.wr-circle { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--muted-foreground); display: grid; place-items: center; color: var(--card); }
+.wr-done .wr-circle { background: var(--muted-foreground); }
+.wr-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; border: 0; background: none; padding: 6px 0; text-align: left; color: inherit; font: inherit; }
+.wr-sub { flex: none; display: flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 6px; border: 0; background: none; font-size: 13px; color: var(--muted-foreground); }
+.wr-subgroup { margin: 10px 0 6px; font-size: 13px; font-weight: 600; color: var(--muted-foreground); }
+.wr-outcome { display: block; width: 100%; margin: 0 0 8px; padding: 4px 0; border: 0; background: none; text-align: left; font: inherit; font-size: 13px; color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wr-outcome.is-open { white-space: normal; }

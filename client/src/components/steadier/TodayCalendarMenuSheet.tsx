@@ -3,7 +3,7 @@ import { Flag, Info, Mic, RotateCcw, ShieldCheck, Volume2, X } from "lucide-reac
 import type { Appearance } from "../../domain/appearance";
 import AppearanceToggle from "./AppearanceToggle";
 
-export type ScreenMenuPage = "today" | "calendar";
+export type ScreenMenuPage = "today" | "calendar" | "all";
 export type ScreenMenuKind = "app" | "page";
 
 interface Props {
@@ -25,6 +25,8 @@ interface Props {
   onUndo: () => void;
 }
 
+const ALL_GUIDE =
+  "All work is for finding anything. Rows are grouped by project, with the project's Outcome once at the top. Tap the circle to complete a task; tap the row to open it. Grey chips show only what's off normal.";
 const CALENDAR_GUIDE =
   "Calendar grids show booked anchors and hard-deadline points. Deadline points don't reserve time. To book a task, open its When settings and choose Booked anchor.";
 const TODAY_GUIDE =
@@ -64,7 +66,7 @@ export default function TodayCalendarMenuSheet({
     action();
     onClose();
   };
-  const guide = page === "today" ? TODAY_GUIDE : CALENDAR_GUIDE;
+  const guide = page === "today" ? TODAY_GUIDE : page === "all" ? ALL_GUIDE : CALENDAR_GUIDE;
 
   return (
     <div className={`v2-menu-overlay v2-menu-${kind}`}>
@@ -146,7 +148,7 @@ export default function TodayCalendarMenuSheet({
               aria-expanded={guideOpen}
               onClick={() => setGuideOpen(value => !value)}
             >
-              <span>{page === "today" ? "How this page works" : "How this calendar works"} <Info size={15} aria-hidden="true" /></span>
+              <span>{page === "calendar" ? "How this calendar works" : "How this page works"} <Info size={15} aria-hidden="true" /></span>
               <span className="v2-menu-row-value">{guideOpen ? "Hide" : "Show"}</span>
             </button>
             {guideOpen && (

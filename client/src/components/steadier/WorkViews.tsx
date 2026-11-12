@@ -1,6 +1,27 @@
 import TimeChips from "./TimeChips";
 import TimingShapeMark from "./TimingShapeMark";
-import { Info } from "lucide-react";
+import { Info, Unlink } from "lucide-react";
+import { useStatusMarkData } from "./TaskStates";
+import { taskChips, taskHasBrokenLink, clockText } from "../../domain/todayPlan";
+import { pendingPlacement } from "../../domain/compass";
+import { friendlyDate } from "../../domain/quickParse";
+
+/** One grey date/time chip, or nothing. */
+export function whenChip(task: Task, today: string): string | null {
+  const s = task.schedule;
+  const time = s.time ? clockText(timeToMinutesSafe(s.time)) : null;
+  if (s.date) {
+    const day = s.date === today ? (time ? "" : "today") : friendlyDate(s.date, today);
+    return [day, time].filter(Boolean).join(" ") || null;
+  }
+  if (s.flexibleWindow) return `${friendlyDate(s.flexibleWindow.startDate, today)}–${friendlyDate(s.flexibleWindow.endDate, today)}`;
+  if (task.deadline && task.deadline >= today) return `due ${task.deadline === today ? "today" : friendlyDate(task.deadline, today)}`;
+  return null;
+}
+function timeToMinutesSafe(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { TaskKindContext } from "./TaskStates";
 import { countLabel, kindCounts, taskKind } from "../../domain/todayStates";
@@ -108,6 +129,8 @@ export default function WorkViews(p: Props) {
   };
   const [title, sub] = headings[p.view] || headings.all;
   const [info, setInfo] = useState(false);
+  const [openOutcomes, setOpenOutcomes] = useState<Set<string>>(() => new Set());
+  const markData = useStatusMarkData();
   const pastDueIds = new Set(pastDueTasks(p.tasks, today()).map(t => t.id));
   const notReadyCount = notReadyTasks(p.tasks).length;
   const links = { imperatives: p.imperatives ?? [], projects: p.projects };
@@ -175,121 +198,133 @@ export default function WorkViews(p: Props) {
     const project = p.projects.find(item => item.id === row.task.projectId);
     return project
       ? { key: project.id, label: project.title }
-      : { key: "unlinked", label: "No linked Project" };
+      : { key: "unlinked", label: "No project" };
   });
   const isUrgent = (task: Task) =>
     isTaskAnchor(task) &&
     [task.deadline, task.preparationDate, task.schedule.date, task.reviewDate]
       .some(date => Boolean(date && date <= now));
+  const ctx = { day: now, minute: adelaideClock().minutes, lastReviewDate: markData?.lastWeeklyReviewDate ?? null };
   const renderRow = (row: (typeof rows)[number]) => {
     const task = row.task;
     const state = derivedState(task, p.tasks);
-    const dependencies = task.dependencies.filter(
-      id => p.tasks.find(t => t.id === id)?.state !== "done"
-    );
+    const done = task.state === "done";
+    const faded = isFaded(task, p.tasks);
+    const suggested = pendingPlacement(task) !== null;
+    const green = effectiveTaskRole(task, links) === "direction";
+    const broken = markData ? taskHasBrokenLink(task, markData) : false;
+    const when = done ? null : whenChip(task, now);
+    const chips = done
+      ? []
+      : [
+          state === "blocked" ? "blocked" : state === "waiting" ? "waiting" : null,
+          ...taskChips(task, ctx).map(c => c.text),
+        ]
+          .filter((c): c is string => !!c)
+          .slice(0, 2);
+    const signals = when || chips.length || broken || faded || suggested || task.droppedAt;
     return (
       <article
         key={task.id}
-        className={`work-row${row.depth ? " is-subtask" : ""}${kindOf(task)}${isFaded(task, p.tasks) ? " work-row--faded" : ""}${effectiveTaskRole(task, links) === "direction" ? " serves-imperative" : ""}`}
-        style={
-          row.depth
-            ? { marginLeft: `${Math.min(row.depth, 4) * 1.25}rem` }
-            : undefined
-        }
+        className={`wr${row.depth ? " is-subtask" : ""}${green ? " wr-green" : ""}${suggested ? " wr-suggested" : ""}${faded ? " wr-faded" : ""}${done ? " wr-done" : ""}`}
+        style={row.depth ? { marginLeft: `${Math.min(row.depth, 4) * 1.25}rem` } : undefined}
       >
-        {row.progress.total > 0 ? (
+        <button
+          type="button"
+          className="wr-tick"
+          aria-label={done ? `${task.title} is done` : `Mark ${task.title} done`}
+          aria-pressed={done}
+          disabled={done}
+          onClick={() => p.onDone(task.id)}
+        >
+          <span className="wr-circle">{done && <Check size={16} aria-hidden="true" />}</span>
+        </button>
+        <button className="wr-main" aria-label={`Open task ${task.title}`} onClick={() => p.onOpen(task)}>
+          <span className="tp-title">{task.title}</span>
+          {signals && (
+            <span className="tp-signals">
+              {when && <span className="tp-chip">{when}</span>}
+              {chips.map(text => (
+                <span key={text} className="tp-chip">
+                  {text}
+                </span>
+              ))}
+              {broken && <Unlink size={16} className="tp-broken" role="img" aria-label="Missing its Goal Outcome or Imperative link" />}
+              {faded && <CardDotsMark task={task} tasks={p.tasks} />}
+              {suggested && <span className="tp-meta">suggested · tap to confirm</span>}
+              {task.droppedAt && <span className="tp-meta">dropped · kept</span>}
+            </span>
+          )}
+          {p.view === "progress" && done && task.progressEvidence && (
+            <span className="tp-meta">What changed: {task.progressEvidence}</span>
+          )}
+        </button>
+        {row.progress.total > 0 && (
           <button
-            className="subtask-toggle"
+            className="wr-sub"
             aria-expanded={!row.collapsed}
             aria-label={`${row.collapsed ? "Show" : "Hide"} subtasks of ${task.title}`}
             onClick={() => toggle(task.id)}
           >
-            {row.collapsed ? (
-              <ChevronRight size={16} />
-            ) : (
-              <ChevronDown size={16} />
-            )}
+            {row.progress.done}/{row.progress.total}
+            {row.collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
           </button>
-        ) : (
-          <span className="subtask-toggle-spacer" aria-hidden />
         )}
-        <label
-          className={`work-row-done-tick${task.state === "done" ? " is-done" : ""}`}
-        >
-          <input
-            type="checkbox"
-            aria-label={
-              task.state === "done"
-                ? `${task.title} is done`
-                : `Mark ${task.title} done`
-            }
-            checked={task.state === "done"}
-            disabled={task.state === "done"}
-            onChange={() => p.onDone(task.id)}
-          />
-          <span>Done</span>
-        </label>
-        <button
-          className="work-row-main"
-          aria-label={`Open task ${task.title}`}
-          onClick={() => p.onOpen(task)}
-        >
-          <strong>{task.title}</strong>
-          <span className="work-row-signals">
-            <TimingShapeMark task={task} noGreen />
-            {isFaded(task, p.tasks) && <CardDotsMark task={task} tasks={p.tasks} />}
-          </span>
-          <span className="work-row-when">
-            {[
-              state !== "ready" ? stateLabel(state) : null,
-              deadlineLabel(task) || null,
-              task.droppedAt ? "Dropped — kept" : null,
-              ["waiting", "blocked"].includes(state)
-                ? task.waitingFor ||
-                  (dependencies.length
-                    ? `Blocked by: ${dependencies.map(id => p.tasks.find(t => t.id === id)?.title || "missing task").join(", ")}`
-                    : null)
-                : null,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </span>
-          {p.view === "progress" && task.state === "done" && task.progressEvidence && (
-            <span className="progress-evidence">
-              What changed: {task.progressEvidence}
-            </span>
-          )}
-        </button>
-        <div className="work-row-meta">
-          <TimeChips task={task} hideParent={row.depth > 0} />
-        </div>
-        {p.view === "review" &&
-        task.state !== "inbox" &&
-        task.labelSource === "confirmed" ? (
-          <button
-            className="button secondary small-button"
-            onClick={() => p.onReview(task.id)}
-          >
-            <RefreshCw size={14} /> Reviewed
-          </button>
-        ) : state === "ready" ? (
-          <button
-            className="icon-button"
-            aria-label={`Start ${task.title}`}
-            onClick={() => p.onStart(task)}
-          >
-            <ArrowRight size={18} />
-          </button>
-        ) : (
-          <button
-            className="icon-button"
-            aria-label={`Open ${task.title}`}
-            onClick={() => p.onOpen(task)}
-          >
-            <ArrowRight size={18} />
+        {p.view === "review" && task.state !== "inbox" && task.labelSource === "confirmed" && (
+          <button className="tp-btn" onClick={() => p.onReview(task.id)}>
+            Reviewed
           </button>
         )}
       </article>
+    );
+  };
+  const outcomeOf = (key: string) => p.projects.find(project => project.id === key)?.outcome?.trim() || "";
+  const placeGroup = (task: Task) =>
+    task.compass?.catchAllConfirmed && task.compass.catchAll === "life-admin"
+      ? "Life Admin"
+      : task.compass?.catchAllConfirmed && task.compass.catchAll === "erosion-guard"
+        ? "Erosion Guard"
+        : "Not placed";
+  const renderGroupBody = (group: (typeof rowGroups)[number]) => {
+    if (p.view !== "all") return <div className="work-list">{group.items.map(renderRow)}</div>;
+    if (group.key === "unlinked") {
+      return (
+        <div className="work-list">
+          {(["Life Admin", "Erosion Guard", "Not placed"] as const).map(name => {
+            const items = group.items.filter(row => placeGroup(row.task) === name);
+            if (!items.length) return null;
+            return (
+              <React.Fragment key={name}>
+                <h3 className="wr-subgroup">{name}</h3>
+                {items.map(renderRow)}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      );
+    }
+    const outcome = outcomeOf(group.key);
+    return (
+      <div className="work-list">
+        {outcome && (
+          <button
+            type="button"
+            className={`wr-outcome${openOutcomes.has(group.key) ? " is-open" : ""}`}
+            aria-expanded={openOutcomes.has(group.key)}
+            onClick={() =>
+              setOpenOutcomes(current => {
+                const next = new Set(current);
+                if (next.has(group.key)) next.delete(group.key);
+                else next.add(group.key);
+                return next;
+              })
+            }
+          >
+            Outcome: {outcome}
+          </button>
+        )}
+        {group.items.map(renderRow)}
+      </div>
     );
   };
   return (
@@ -417,7 +452,7 @@ export default function WorkViews(p: Props) {
                 revealToken={p.search && group.items.length ? p.search : ""}
                 className={`work-list-group work-list-group-${p.view}`}
                 >
-                <div className="work-list">{group.items.map(renderRow)}</div>
+                {renderGroupBody(group)}
               </AccordionSection>
           );
         })}

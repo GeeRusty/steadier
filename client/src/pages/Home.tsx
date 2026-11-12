@@ -483,8 +483,8 @@ export default function Home() {
     setEditing(null);
     setTaskPanelMode("view");
   };
-  const v2Screen = view === "calendar" || view === "attention";
-  const v2Page = view === "calendar" ? "calendar" : "today";
+  const v2Screen = view === "calendar" || view === "attention" || view === "all";
+  const v2Page = view === "calendar" ? "calendar" : view === "all" ? "all" : "today";
   const changeAppearance = (next: Appearance) => {
     setAppearance(next);
     persistAppearance(next);
@@ -2193,7 +2193,7 @@ export default function Home() {
                     />
                     <div className="v2-topbar-center" aria-live="polite">
                       <strong className="v2-page-title">
-                        {view === "calendar" ? "Calendar" : todayTab === "overview" ? "Overview" : "Today"}
+                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : todayTab === "overview" ? "Overview" : "Today"}
                       </strong>
                       <span className={`v2-sync-status ${topbarConnectionTone}`}>
                         <span>{topbarDate}</span><span aria-hidden="true"> · </span><i aria-hidden="true" />
@@ -2217,14 +2217,8 @@ export default function Home() {
                       onToggle={() => setMobileMenu(value => !value)}
                     />
                     <div className="breadcrumb">
-                      {view === "all" ? (
-                        <strong>{nav.find(n => n.id === view)?.title}</strong>
-                      ) : (
-                        <>
-                          My life<span>/</span>
-                          <strong>{nav.find(n => n.id === view)?.title}</strong>
-                        </>
-                      )}
+                      My life<span>/</span>
+                      <strong>{nav.find(n => n.id === view)?.title}</strong>
                     </div>
                     <div className="topbar-actions">
                       <div className="topbar-appearance"><AppearanceToggle appearance={appearance} onChange={changeAppearance} /></div>
@@ -2285,7 +2279,7 @@ export default function Home() {
                     confirmed. Voice recognition may need a connection.
                   </div>
                 )}
-                {focused && store.workspace.focus && !(v2Screen && (view === "calendar" || todayTab === "today")) && (
+                {focused && store.workspace.focus && !(v2Screen && (view === "calendar" || (view === "attention" && todayTab === "today"))) && (
                   <div className="resume-strip">
                     <span className="tiny-orbit" />
                     <div>
