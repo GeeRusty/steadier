@@ -43,9 +43,9 @@ export type CompassStatusItem =
 export const COMPASS_STATUS_GROUPS: ReadonlyArray<
   Pick<CompassStatusGroup, "id" | "title">
 > = [
-  { id: "red", title: "Red — unaligned Projects" },
-  { id: "grey", title: "Grey — stale or due" },
-  { id: "rest", title: "Other active marks" },
+  { id: "red", title: "Missing a link" },
+  { id: "grey", title: "Due or quiet" },
+  { id: "rest", title: "Everything else" },
 ];
 
 function groupFor(color: StatusMarkColor | null, grey: boolean) {

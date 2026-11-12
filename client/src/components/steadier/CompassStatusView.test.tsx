@@ -115,40 +115,10 @@ describe("CompassStatusView", () => {
     const rest = html.indexOf('data-sort-group="rest"');
 
     expect(html).toContain("Compass view");
-    expect(html).toContain('aria-label="Status mark shape key"');
-    expect(html).toContain("Up arrow — Ahead");
-    expect(html).toContain("Line — On track");
-    expect(html).toContain("Down arrow — Behind");
-    expect(html).toContain("0–6 days since recorded movement is on track; 7 or more days is behind.");
-    expect(html).toContain('data-mark-symbol="ahead"');
-    expect(html).toContain('data-mark-symbol="on-track"');
-    expect(html).toContain('data-mark-symbol="behind"');
-    expect(html).toContain('aria-label="Status mark colour key"');
-    expect(html).toContain("Colour key");
-    expect(html).toContain(
-      "Green: active Imperative, or Project and linked Goal Outcome share a direct active Imperative."
-    );
-    expect(html).toContain(
-      "Red: Project has no active confirmed Goal Outcome, or is linked to an active Imperative that does not also link its Goal Outcome."
-    );
-    expect(html).toContain(
-      "Amber: Project has no direct active-Imperative link, or Task has no available Project or owner-confirmed catch-all."
-    );
-    expect(html).toContain(
-      "Blue: Task with owner-confirmed Life Admin catch-all."
-    );
-    expect(html).toContain(
-      "Purple: Task with owner-confirmed Erosion Guard catch-all."
-    );
-    expect(html).toContain('class="compass-status-key-sample"');
-    expect(html).not.toContain("status-mark-surface");
-    expect(html).toContain('style="color:#009F55"');
-    expect(html).not.toContain('class="timing-shape-color-swatch"');
-    expect(html).toContain('class="compass-status-key-arrow"');
-    expect(html).toContain('stroke="currentColor"');
-    expect(html).toContain(
-      "Grey overrides colour for a Project with no purpose, a review date due or overdue, or 14 or more quiet days; Someday and parked items stay uncoloured."
-    );
+    // The arrow marks and their keys are gone (design language).
+    expect(html).not.toContain("data-mark-symbol");
+    expect(html).not.toContain("Shape key");
+    expect(html).not.toContain("Colour key");
     expect(red).toBeGreaterThanOrEqual(0);
     expect(red).toBeLessThan(grey);
     expect(grey).toBeLessThan(rest);
@@ -160,8 +130,7 @@ describe("CompassStatusView", () => {
     );
     expect(html).not.toContain("Synthetic achieved-project");
     expect(html).not.toContain("Synthetic retired-imperative");
-    expect(html).toContain("Alignment colour: Red.");
-    expect(html).toContain("Alignment colour: Green.");
+    expect(html).toContain('aria-label="Missing its Goal Outcome or Imperative link"');
   });
 
   it("shows a clear empty state and keeps the user-tapped read-aloud control", () => {
@@ -182,20 +151,11 @@ describe("CompassStatusView", () => {
     expect(html).toContain("No items in this group.");
   });
 
-  it("uses the key's semantic colors for every live page mark in both themes", () => {
-    const colors = ["green", "red", "amber", "blue", "purple"] as const;
+  it("draws no arrows or colour marks in either theme", () => {
     for (const appearance of ["light", "dark"] as const) {
       const html = renderPage(workspace(), appearance);
-      for (const color of colors) {
-        expect(html).toContain(
-          `style="color:${statusMarkColorHex(color, appearance)}"`
-        );
-      }
-      for (const color of ["green", "red"] as const) {
-        expect(html).toContain(
-          `data-arrow-color="${statusMarkColorHex(color, appearance)}"`
-        );
-      }
+      expect(html).not.toContain("data-arrow-color");
+      expect(html).not.toContain("timing-shape-mark");
     }
   });
 

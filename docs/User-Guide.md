@@ -19,17 +19,26 @@ Steadier holds everything you're responsible for, then shows you a manageable fe
 
 Open the menu to move between areas. The main ones are **My life today**, **Calendar**, **All work** and **Weekly Reality Review**. Most other pages show a short "What this page is for" note at the top.
 
-The orange **microphone button** in the bottom-right corner opens the voice assistant from any page.
+On a phone, five tabs sit at the bottom: **Today · Overview · All work · Calendar · Projects**. Backups and Compass are in the menu, and Compass is also linked from Overview.
+
+The **+** button at the right of the tab bar is the one capture button: **tap** to type a task, **hold** to talk to the voice assistant. It never covers a card.
 
 ## Areas of the app
 
-### My life today
-Your home screen. Use the **Today / Overview** switch at the top.
-- **Today** shows today's timeline of booked items, then your **Next thing**.
-- Anything with a planned day, deadline or preparation date of today or earlier is always listed under **Dated for today or overdue**, faded or solid. Faded ones have a **Set up** button.
-- Steadier suggests at most five things to look at, and explains why. Real deadlines that are close or have passed always stay visible.
-- Choose one task as your Next thing, then tap **Done** when it's finished or **Not now** to put it back.
-- The green **+** button adds a task.
+### Today
+Today is for doing. It uses three words only: **Now · Next · Later**, in time order. Nothing is ranked.
+- **Now:** the booked block running now, with its likely finish, a red now mark, and big **Done** / **Finished early** buttons. If nothing is booked, it's your running focus or your chosen Next thing (with **Start**).
+- **Next:** your chosen Next thing, or else the next booking.
+- **Later:** everything else dated or booked for today. Undated work is never on Today.
+- **Slipped:** a block past its likely finish shows **Keep going** (stretches it to its likely finish), **Move** or **Drop** (off today, kept in All work). If it slips again and you leave it, it's listed in the Weekly Review (Capacity step).
+- **Blocked by:** a booked task waiting on an unfinished prerequisite offers **Move it** or **Remove prerequisite**.
+- **Needs attention (n)** opens Overview: past-due work, review due, Sort, Link check, unplaced, Claude requests.
+- Tap any row to open its sheet: notes, outcome, prerequisites, subtasks. The **i** button explains the signals.
+
+**Signals (everywhere):** a green left bar means it serves an Imperative. Dashed means suggested (tap to confirm). Faded with dots means not set up. Grey chips show only what's off normal: ⏱ +20m / −10m, slipped, overdue 2d, moved 3×, quiet 9d, review due. A chip turns red only when it will clash with a fixed booking or deadline. The broken-link icon means a project, or a task in it, is missing its Goal Outcome or Imperative link (also in Link check). The old shape-and-colour arrows are gone.
+
+### Overview
+Overview is for seeing: Needs attention, choosing your Next thing from the Pool, today's timeline, Pillars, Movement and the Compass strip.
 
 ### Calendar
 Day, week and month views of your booked anchors (tasks with a day and a clock time).
@@ -65,10 +74,11 @@ Projects with their purpose, milestones and evidence. Connect each project to th
 Your few current focus areas. Review them now and then, and retire ones that no longer deserve attention.
 
 ### Link check
-Two short lists, shown as **Link check (n)** in Needs attention:
+Three short lists, shown as **Link check (n)** in Needs attention:
 
 - **Imperatives with no work**: an active Imperative with no open task and no active project linked. Choose **Link work** (pick a project or task), **Not yet**, or **Step down** (Sustain, Delegate or Retire).
 - **Imperative projects with no Imperative**: an active project in the Imperative row that isn't linked to an active Imperative. Choose **Link to an Imperative**, **Make it Support**, or **Not yet**.
+- **Projects with no Goal Outcome**: an active project that no Goal Outcome has confirmed. Tap **Open project** and link it there.
 
 Only links you made count. Suggested links show a **Confirm** button. **Not yet** holds an item until your next Weekly Reality Review, where you decide it again. Sustain or Delegate also holds it until then.
 
@@ -139,7 +149,7 @@ Give a booked task a reminder, for example 15 minutes before. Reminders work whi
 
 ## The voice assistant
 
-Tap the orange microphone, or long-press the Steadier app icon and choose **Talk**. Speak, then answer **yes**, **no**, or a correction such as "make it 5". Nothing is saved until you say yes.
+Hold the **+** button, or long-press the Steadier app icon and choose **Talk**. Speak, then answer **yes**, **no**, or a correction such as "make it 5". Nothing is saved until you say yes.
 
 Things you can say:
 - **Add a task or booking:** "Uber shift Friday 4 till 8, remind me 15 minutes before."

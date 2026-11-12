@@ -172,67 +172,11 @@ export default function CompassStatusView({
           <Volume2 size={15} aria-hidden="true" /> Read aloud
         </button>
       </div>
-      <p className="muted">
-        Active Imperatives and Projects, ordered by their visible mark. These
-        marks are live signals only; they do not change your records.
+      <p className="small muted">
+        Grey chips show only what's off normal. Green bar: serves an
+        Imperative. Broken-link icon: missing its Goal Outcome or Imperative
+        link.
       </p>
-      <div className="compass-status-keys">
-        <div
-          className="compass-status-shape-key"
-          role="group"
-          aria-label="Status mark shape key"
-        >
-          <strong>Shape key</strong>
-          <ul className="compass-status-shape-key-list">
-            {STATUS_SHAPE_KEY.map(item => (
-              <li key={item.shape}>
-                <span className="compass-status-shape-key-sample">
-                  <TimingShapeIcon
-                    shape={item.shape}
-                    className="compass-status-key-arrow"
-                  />
-                </span>
-                <span>
-                  <strong>{item.heading}</strong>: {item.description}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="small muted compass-status-grey-note">
-            {STATUS_SHAPE_NOTE}
-          </p>
-        </div>
-        <div
-          className="compass-status-color-key"
-          role="group"
-          aria-label="Status mark colour key"
-        >
-          <strong>Colour key</strong>
-          <ul className="compass-status-color-key-list">
-            {STATUS_COLOR_KEY.map(item => {
-              const arrowColor = statusMarkColorHex(item.color, appearance);
-              return (
-                <li key={item.color}>
-                  <span
-                    className="compass-status-key-sample"
-                    aria-hidden="true"
-                    style={{ color: arrowColor }}
-                  >
-                    <TimingShapeIcon
-                      shape="ahead"
-                      className="compass-status-key-arrow"
-                    />
-                  </span>
-                  <span>{item.label}</span>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="small muted compass-status-grey-note">
-            {STATUS_GREY_NOTE}
-          </p>
-        </div>
-      </div>
       {total === 0 && (
         <div className="empty-state" role="status">
           <Activity size={28} aria-hidden="true" />

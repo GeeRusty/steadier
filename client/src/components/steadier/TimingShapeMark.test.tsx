@@ -2,34 +2,48 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { createTask } from "../../domain/engine";
-import { adelaideClock, emptyTaskSchedule } from "../../domain/time";
+import { adelaideClock, emptyTaskSchedule, shiftDays } from "../../domain/time";
 import TimingShapeMark from "./TimingShapeMark";
 
 const TODAY = adelaideClock().date;
 const STAMP = `${TODAY}T09:00:00+10:30`;
 
-describe("TimingShapeMark", () => {
-  it("exposes a neutral symbol with an accessible live-status description", () => {
-    const task = createTask(
-      {
-        title: "Synthetic mark task",
-        state: "ready",
-        preparationDate: null,
-        reviewDate: null,
-        deadline: "2099-01-01",
-        schedule: emptyTaskSchedule(),
-        createdAt: STAMP,
-        updatedAt: STAMP,
-      },
-      TODAY
-    );
-    const html = renderToStaticMarkup(<TimingShapeMark task={task} />);
-    expect(html).toContain('role="img"');
-    expect(html).toMatch(
-      /aria-label="Timing shape: On track\. No booked timing commitment; last recorded movement was \d+ days ago\."/
-    );
-    expect(html).toContain('data-mark-symbol="on-track"');
-    expect(html).toContain('stroke-width="5"');
-    expect(html).toContain('data-shape="on-track"');
+function task(extra: Record<string, unknown> = {}) {
+  return createTask(
+    {
+      title: "Synthetic signal task",
+      state: "ready",
+      preparationDate: null,
+      reviewDate: null,
+      deadline: null,
+      schedule: emptyTaskSchedule(),
+      createdAt: STAMP,
+      updatedAt: STAMP,
+      ...extra,
+    },
+    TODAY
+  );
+}
+
+describe("Status signals (the arrows are gone)", () => {
+  it("on track shows nothing", () => {
+    expect(renderToStaticMarkup(<TimingShapeMark task={task({ deadline: "2099-01-01" })} />)).toBe("");
+  });
+
+  it("off normal shows grey chips only: overdue, moved, review due", () => {
+    const t = task({
+      deadline: shiftDays(TODAY, -2),
+      history: [1, 2, 3].map(i => ({ at: STAMP, text: `Rescheduled (${i}).` })),
+    });
+    const html = renderToStaticMarkup(<TimingShapeMark task={t} />);
+    expect(html).toContain(">overdue 2d<");
+    expect(html).toContain(">moved 3×<");
+    expect(html).not.toContain("tp-chip--red");
+    expect(html).not.toContain("<svg class=\"timing-shape-icon\"");
+  });
+
+  it("done and Someday show nothing", () => {
+    expect(renderToStaticMarkup(<TimingShapeMark task={task({ state: "done", deadline: shiftDays(TODAY, -5) })} />)).toBe("");
+    expect(renderToStaticMarkup(<TimingShapeMark task={task({ state: "someday", deadline: shiftDays(TODAY, -5) })} />)).toBe("");
   });
 });

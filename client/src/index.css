@@ -12159,10 +12159,19 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 .tab-capture { display: none; }
 @media (max-width: 700px) {
   .desktop-capture { display: none !important; }
-  .mobile-bottom .tab-capture {
+  .mobile-bottom button.tab-capture {
     display: grid; place-items: center; flex: none; align-self: center;
     width: 52px; height: 52px; min-height: 52px; padding: 0; margin: 0 8px 0 4px; border-radius: 50%; border: 0;
     color: #fff; background: #1E3F35; box-shadow: 0 2px 8px rgba(0,0,0,.2);
     -webkit-touch-callout: none; user-select: none; touch-action: manipulation;
   }
 }
+@media (max-width: 700px) {
+  .mobile-bottom button.tab-capture svg { color: #fff; stroke: #fff; }
+}
+/* Status signals in lists (replace the old arrow marks). */
+.status-signals { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; vertical-align: middle; }
+.sig-green { display: inline-block; width: 4px; height: 18px; border-radius: 2px; background: var(--tp-green); }
+.sig-chip { font-size: 12px; line-height: 1.5; }
+.sig-broken { color: var(--muted-foreground); }
+.sig-label { font-size: 12px; color: var(--muted-foreground); }

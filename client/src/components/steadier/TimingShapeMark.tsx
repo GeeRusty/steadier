@@ -1,4 +1,8 @@
-import React, { useSyncExternalStore, type CSSProperties } from "react";
+import React, { useSyncExternalStore } from "react";
+import { Unlink } from "lucide-react";
+import { taskChips } from "../../domain/todayPlan";
+import { effectiveTaskRole } from "../../domain/linkCheck";
+import { daysBetween } from "../../domain/time";
 import type { Imperative } from "../../domain/compass";
 import type { Project, Task } from "../../domain/types";
 import { adelaideClock } from "../../domain/time";
@@ -96,79 +100,70 @@ export function TimingShapeIcon({
   );
 }
 
+/**
+ * Status signals (docs/design-language.md). The old shape-and-colour arrows
+ * are gone; meaning is mapped to the card signals:
+ * on track → nothing · behind → overdue · moved 3+ → moved N× · quiet → quiet Nd
+ * · review due → review due · green → green bar · red link gap → broken-link
+ * icon · Life Admin / Erosion Guard → a text label. Chips are grey.
+ */
 export default function TimingShapeMark(props: TimingShapeMarkProps) {
   const clock = useStatusMarkClock();
   const markData = useStatusMarkData();
-  const appearance = useStatusMarkAppearance();
-  const shape = props.task
-    ? timingShapeForTask(props.task, clock)
-    : props.project
-      ? timingShapeForProject(props.project, clock)
-      : timingShapeForImperative(props.imperative, clock);
-  const colorResult = markData
-    ? props.task
-      ? statusMarkColorForTask(props.task, markData)
-      : props.project
-        ? statusMarkColorForProject(props.project, markData)
-        : statusMarkColorForImperative(props.imperative)
-    : props.imperative
-      ? statusMarkColorForImperative(props.imperative)
-      : null;
-  const color = colorResult?.color ?? null;
-  const staleness = props.task
-    ? statusMarkStalenessForTask(
-        props.task,
-        markData?.lastWeeklyReviewDate ?? null,
-        clock
-      )
-    : props.project
-      ? statusMarkStalenessForProject(
-          props.project,
-          markData?.lastWeeklyReviewDate ?? null,
-          clock
-        )
-      : statusMarkStalenessForImperative(
-          props.imperative,
-          markData?.lastWeeklyReviewDate ?? null,
-          clock
-        );
-  const arrowColor = staleness.grey
-    ? statusMarkGreyHex(appearance)
-    : color
-      ? staleness.daysSinceReview !== null
-        ? statusMarkColorAfterReviewFade(color, staleness.daysSinceReview, appearance)
-        : statusMarkColorHex(color, appearance)
-      : null;
-  if (!shape) return null;
+  const lastReview = markData?.lastWeeklyReviewDate ?? null;
+  const chips: string[] = [];
+  let green = false;
+  let broken = false;
+  let label: string | null = null;
 
-  const stalenessDescription = staleness.grey
-    ? `Staleness: grey. ${staleness.reason}`
-    : color && staleness.daysSinceReview !== null && staleness.daysSinceReview > 0
-      ? `The alignment colour is fading; ${staleness.daysSinceReview} day${staleness.daysSinceReview === 1 ? "" : "s"} since the last Weekly Review.`
-      : null;
+  if (props.task) {
+    const task = props.task;
+    if (task.state === "done" || task.state === "someday") return null;
+    chips.push(...taskChips(task, { day: clock.date, minute: clock.minutes, lastReviewDate: lastReview }).map(c => c.text));
+    if (markData) {
+      const color = statusMarkColorForTask(task, markData).color;
+      broken = !!task.projectId && color === "red";
+      green = effectiveTaskRole(task, { projects: markData.projects, imperatives: markData.imperatives }) === "direction";
+      label = color === "blue" ? "Life Admin" : color === "purple" ? "Erosion Guard" : null;
+    }
+  } else if (props.project) {
+    const project = props.project;
+    if (project.status !== "active") return null;
+    const deadline = project.schedule?.deadline;
+    if (deadline && deadline < clock.date) chips.push(`overdue ${daysBetween(deadline, clock.date)}d`);
+    const stale = statusMarkStalenessForProject(project, lastReview, clock);
+    if (project.schedule?.reviewDate && project.schedule.reviewDate <= clock.date) chips.push("review due");
+    else if (stale.quietDays !== null && stale.quietDays >= 7) chips.push(`quiet ${stale.quietDays}d`);
+    if (markData) {
+      const color = statusMarkColorForProject(project, markData).color;
+      broken = color === "red";
+      green = color === "green";
+    }
+  } else if (props.imperative) {
+    const stale = statusMarkStalenessForImperative(props.imperative, lastReview, clock);
+    if (stale.quietDays !== null && stale.quietDays >= 7) chips.push(`quiet ${stale.quietDays}d`);
+  }
+
+  const shown = chips.slice(0, 2);
+  if (!shown.length && !green && !broken && !label) return null;
   const description = [
-    `Timing shape: ${shape.label}. ${shape.reason}`,
-    colorResult
-      ? `Alignment colour: ${color ? STATUS_MARK_COLOR_NAME[color] : "none"}. ${colorResult.reason}`
-      : null,
-    stalenessDescription,
-  ].filter(Boolean).join(" ");
-
+    green ? "Serves an Imperative." : null,
+    broken ? "Missing its Goal Outcome or Imperative link." : null,
+    label,
+    ...shown,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return (
-    <span
-      className={`timing-shape-mark timing-shape-${shape.shape}${color ? ` timing-shape-color-${color}` : ""}${staleness.grey ? " timing-shape-grey" : ""}`}
-      role="img"
-      aria-label={description}
-      title={description}
-      style={arrowColor ? ({ "--status-mark-color": arrowColor } as CSSProperties) : undefined}
-      data-shape={shape.shape}
-      data-color={color ?? "none"}
-      data-appearance={appearance}
-      data-arrow-color={arrowColor ?? "none"}
-      data-grey={staleness.grey}
-      data-fade-days={staleness.daysSinceReview ?? "none"}
-    >
-      <TimingShapeIcon shape={shape.shape} />
+    <span className="status-signals" title={description}>
+      {green && <span className="sig-green" role="img" aria-label="Serves an Imperative" />}
+      {shown.map(text => (
+        <span key={text} className="tp-chip sig-chip">
+          {text}
+        </span>
+      ))}
+      {broken && <Unlink size={15} className="sig-broken" role="img" aria-label="Missing its Goal Outcome or Imperative link" />}
+      {label && <span className="sig-label">{label}</span>}
     </span>
   );
 }
