@@ -96,7 +96,7 @@ export default function FocusDialog(p: Props) {
           <TimingShapeMark task={p.task} /> {p.task.title}
         </DialogTitle>
         <DialogDescription>
-          {p.task.area} · {taskCompleted
+          {taskCompleted
             ? "This responsibility is complete; its scheduled timer continues."
             : "Your place is saved, even if you pause."}
         </DialogDescription>

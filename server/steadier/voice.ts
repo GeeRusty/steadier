@@ -19,7 +19,7 @@ import { adelaideClock, copyTaskSchedule, shiftDays } from "../../client/src/dom
 import type { Task, Workspace } from "../../client/src/domain/types";
 import { sdk } from "../_core/sdk";
 import { applyGuardedChange, ChangeError, type ChangePlan, type WorkspaceChangeRepository } from "./changes";
-import { planCreateTask, planSetTaskTime, planUpdateTask } from "./connectorOps";
+import { planAddIdea, planCreateTask, planSetTaskTime, planUpdateTask } from "./connectorOps";
 import { createProductionRepository } from "./repository";
 import { DEFAULT_SHOPPING_LIST, findShoppingList, planAddShoppingItems } from "./shoppingOps";
 import { planAddNote } from "./notesOps";
@@ -45,7 +45,7 @@ const SpokenTask = z.object({
 });
 
 export const VoiceIntent = z.object({
-  intent: z.enum(["add_tasks", "mark_done", "move_task", "shopping_add", "add_note", "help", "whats_next", "today", "unclear"]),
+  intent: z.enum(["add_tasks", "add_idea", "mark_done", "move_task", "shopping_add", "add_note", "help", "whats_next", "today", "unclear"]),
   tasks: z.array(SpokenTask).describe("add_tasks only: one entry per separate thing to do. Empty otherwise."),
   task_id: z.string().nullable().describe("mark_done / move_task: the id of the matching open task from the list given. null otherwise."),
   new_date: z.string().nullable().describe("move_task: the new YYYY-MM-DD."),
@@ -53,6 +53,8 @@ export const VoiceIntent = z.object({
   new_minutes: z.number().int().nullable().describe("move_task: a new length in minutes only if they said one."),
   shopping_list: z.string().nullable().describe("shopping_add: the list name if they named one, else null."),
   shopping_items: z.array(z.string()).describe("shopping_add: one entry per item, e.g. ['eggs', 'bread']. Empty otherwise."),
+  idea_title: z.string().nullable().describe("add_idea: the idea in their words, without 'idea' or 'as an idea'. null otherwise."),
+  idea_note: z.string().nullable().describe("add_idea: any extra detail they gave about the idea, else null."),
   note_text: z.string().nullable().describe("add_note: the note in their words, without the word 'note'. null otherwise."),
   note_date: z.string().nullable().describe("add_note: YYYY-MM-DD only if the note is about another day, else null."),
   help_question: z.string().nullable().describe("help: their question about using Steadier, tidied up. null otherwise."),
@@ -93,6 +95,13 @@ export const Proposal = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("add_note"), text: z.string().trim().min(1).max(10000), date: DATE }).strict(),
   z
     .object({
+      kind: z.literal("add_idea"),
+      title: z.string().trim().min(1).max(500),
+      note: z.string().trim().max(2000).nullable(),
+    })
+    .strict(),
+  z
+    .object({
       kind: z.literal("shopping_add"),
       listTitle: z.string().trim().min(1).max(120),
       items: z.array(z.string().trim().min(1).max(300)).min(1).max(30),
@@ -115,6 +124,7 @@ The text comes from phone speech recognition, so expect missing punctuation and 
 
 Intents:
 - add_tasks: they want something added, booked, scheduled or remembered. Put each separate thing in its own tasks entry; a long ramble ("brain dump") becomes several entries. Keep titles short and in their words. Drop filler like "remind me to" or "put in".
+- add_idea: they want something kept on their Ideas shelf, not done now: they say "idea", "as an idea", "save an idea", or start with "Idea:" ("idea: trailer hire side business", "add build a shed as an idea"). An idea is never a task and has no date. Put the idea in idea_title and any extra detail in idea_note.
 - mark_done: they say they finished something ("done with the mechanic call", "I've had the coffee"). Pick the matching task_id from the open tasks list. If nothing clearly matches, use unclear and ask which one.
 - move_task: they want an existing task at a different day or time ("push the coffee to tomorrow morning"). Pick task_id from the list and give the full new_date and new_time. If they only changed the day, keep its current time. "Morning" with no time means 09:00, "afternoon" 14:00, "evening" 18:00.
 - shopping_add: they want things on a shopping list ("add eggs and bread to the shopping list", "we need milk"). One entry per item, in their words, without quantities words like "some".
@@ -160,6 +170,14 @@ export function interpretMessage(text: string, now: Date, draft: Proposal | null
   return lines.join("\n");
 }
 
+/** "Idea: build a shed" / "idea, build a shed" → "build a shed". Null otherwise. */
+export function spokenIdea(text: string): string | null {
+  const match = /^\s*(?:an?\s+)?idea\s*[:,.\-–—]?\s+(.+)$/is.exec(text);
+  const title = match?.[1]?.trim().replace(/[.\s]+$/, "");
+  if (!title || title.length < 2) return null;
+  return title.slice(0, 500);
+}
+
 // ---------------------------------------------------------------------------
 // Turning Claude's intent into a checked proposal
 
@@ -200,6 +218,12 @@ export function proposalFromIntent(intent: VoiceIntent, workspace: Workspace | n
         minutes: intent.new_minutes,
       });
       return parsed.success ? { proposal: parsed.data } : { problem: `When should I move ${task.title} to?` };
+    }
+    case "add_idea": {
+      const title = intent.idea_title?.trim().slice(0, 500);
+      if (!title) return { problem: "What's the idea?" };
+      const note = intent.idea_note?.trim().slice(0, 2000) || null;
+      return { proposal: { kind: "add_idea", title, note } };
     }
     case "add_note": {
       const text = intent.note_text?.trim();
@@ -283,6 +307,8 @@ export function confirmationSpeech(p: Proposal, today: string): string {
       return `Move ${p.title} to ${spokenDate(p.date, today)}${p.time ? ` at ${spokenTime(p.time)}` : ", any time"}${p.minutes ? `, for ${spokenLength(p.minutes)}` : ""}?`;
     case "shopping_add":
       return `Add ${spokenList(p.items)} to the ${p.listTitle} list?`;
+    case "add_idea":
+      return `Add idea: ${p.title.length > 160 ? `${p.title.slice(0, 157).trimEnd()}…` : p.title}. Save it?`;
     case "add_note": {
       const text = p.text.length > 160 ? `${p.text.slice(0, 157).trimEnd()}…` : p.text;
       return `Save a note${p.date === today ? "" : ` for ${spokenDate(p.date, today)}`}: ${text}. Save it?`;
@@ -387,6 +413,10 @@ export function planVoiceProposal(workspace: Workspace, p: Proposal, now: Date):
       const planned = planSetTaskTime(workspace, task.id, schedule, "Moved by voice.", now, "claude");
       return { ...planned, result: { speech: "Moved." } };
     }
+    case "add_idea": {
+      const planned = planAddIdea(workspace, p.title, p.note ?? undefined, now, "claude", "Added by voice.");
+      return { ...planned, summary: `${planned.summary} by voice`, result: { speech: "Saved to your Ideas." } };
+    }
     case "add_note": {
       const planned = planAddNote(workspace, p.text, p.date, now);
       return { ...planned, summary: `Claude: ${planned.summary} by voice`, result: { speech: "Noted." } };
@@ -476,6 +506,13 @@ export function registerVoiceRoutes(
     const workspace = stored.workspace;
     const current = now();
     const today = adelaideClock(current).date;
+
+    // "Idea: …" always goes to the Ideas shelf, whatever the AI makes of it.
+    const sureIdea = spokenIdea(text);
+    if (sureIdea) {
+      const proposal: Proposal = { kind: "add_idea", title: sureIdea, note: null };
+      return send(res, 200, { kind: "confirm", proposal, speech: confirmationSpeech(proposal, today) } satisfies VoiceReply);
+    }
 
     let intent: VoiceIntent | null;
     try {

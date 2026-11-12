@@ -160,11 +160,9 @@ function workspaceFor(user: "Ada" | "Bea") {
     {
       id: taskId,
       title: `${user} private task`,
-      area: "Home",
       nextAction: "Open the relevant document",
       notes: "Untrusted note text is stored as data.",
       state: "ready",
-      important: false,
       pinned: false,
       deadline: "2026-10-30",
       startDate: null,

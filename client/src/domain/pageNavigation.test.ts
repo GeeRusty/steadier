@@ -9,7 +9,6 @@ const allPageIds: View[] = [
   "calendar",
   "review",
   "near",
-  "areas",
   "imperatives",
   "compass-view",
   "waiting",

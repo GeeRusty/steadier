@@ -15,11 +15,9 @@ function task(title: string, patch: Partial<Task> = {}): Task {
   return {
     id: "task-1",
     title,
-    area: "General",
     nextAction: "Take the first small step.",
     notes: "",
     state: "ready",
-    important: false,
     pinned: false,
     deadline: null,
     startDate: null,

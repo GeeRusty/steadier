@@ -55,7 +55,6 @@ describe("integration defect regressions", () => {
   it("keeps undated recurrence unavailable until its next occurrence", () => {
     const task = {
       ...make(),
-      important: true,
       pinned: true,
       repeatDays: 30,
       startDate: null,

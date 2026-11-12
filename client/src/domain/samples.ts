@@ -5,12 +5,12 @@ import type { Context, Scenario, Task, TaskState } from "./types";
 
 interface SampleOverrides {
   title: string;
-  area?: string;
   nextAction?: string;
   notes?: string;
   state?: TaskState;
-  important?: boolean;
   pinned?: boolean;
+  /** Stands in for the removed Important flag in sample work. */
+  pattern?: "timely" | "sustained";
   deadline?: string | null;
   startDate?: string | null;
   reviewDate?: string | null;
@@ -27,11 +27,9 @@ function task(id: string, day: string, overrides: SampleOverrides): Task {
   return {
     id,
     title: overrides.title,
-    area: overrides.area ?? "General",
     nextAction: overrides.nextAction ?? "",
     notes: overrides.notes ?? "",
     state: overrides.state ?? (overrides.nextAction ? "ready" : "inbox"),
-    important: overrides.important ?? false,
     pinned: overrides.pinned ?? false,
     deadline: overrides.deadline ?? null,
     startDate: overrides.startDate ?? null,
@@ -49,7 +47,7 @@ function task(id: string, day: string, overrides: SampleOverrides): Task {
     history: [{ at: stamp, text: "Added as sample work." }],
     purpose: "",
     role: null,
-    pattern: null,
+    pattern: overrides.pattern ?? null,
     labelSource: "unclassified",
     projectId: null,
     preparationDate: null,
@@ -70,10 +68,8 @@ function coreTasks(day: string): Task[] {
   return [
     task("sample-leaking-tap", day, {
       title: "Fix the leaking kitchen tap",
-      area: "Home",
       nextAction: "Photograph the leaking tap and measure the washer.",
       notes: "The drip is louder overnight. Check the isolation valve first.",
-      important: true,
       pinned: true,
       deadline: addDays(day, 1),
       reviewDate: day,
@@ -82,7 +78,6 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-van-service", day, {
       title: "Book the van service",
-      area: "Vehicles",
       nextAction: "Call Northside Motors and ask for the first weekday slot.",
       deadline: addDays(day, 4),
       reviewDate: addDays(day, 2),
@@ -91,9 +86,7 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-customer-quote", day, {
       title: "Send the Patel kitchen quote",
-      area: "Business",
       nextAction: "Price the two tap options in the supplier portal.",
-      important: true,
       deadline: addDays(day, 1),
       reviewDate: day,
       estimate: 25,
@@ -101,7 +94,6 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-licence-renewal", day, {
       title: "Renew the waste-carrier licence",
-      area: "Business",
       nextAction: "Find the renewal notice and note the licence number.",
       deadline: addDays(day, 18),
       reviewDate: addDays(day, 5),
@@ -110,7 +102,6 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-website-copy", day, {
       title: "Write the trailer hire website copy",
-      area: "Trailer hire",
       nextAction: "Draft the three questions customers ask most often.",
       reviewDate: addDays(day, 3),
       estimate: 30,
@@ -118,7 +109,6 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-trailer-page", day, {
       title: "Publish the trailer booking page",
-      area: "Trailer hire",
       nextAction: "Paste the approved copy into the booking page.",
       dependencies: ["sample-website-copy"],
       deadline: addDays(day, 9),
@@ -128,7 +118,6 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-trailer-listing", day, {
       title: "List the box trailer for hire",
-      area: "Trailer hire",
       nextAction: "Take six photos of the trailer in daylight.",
       dependencies: ["sample-trailer-page"],
       deadline: addDays(day, 11),
@@ -138,7 +127,6 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-permit-followup", day, {
       title: "Council permit confirmation",
-      area: "Business",
       state: "waiting",
       waitingFor: "Mara at the council permits desk",
       nextAction: "",
@@ -148,16 +136,14 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-garage-shelf", day, {
       title: "Clear one shelf in the garage",
-      area: "Home",
       nextAction: "Put an empty crate beside the workbench and sort one shelf.",
-      important: true,
+      pattern: "sustained",
       reviewDate: day,
       estimate: 20,
       context: "home",
     }),
     task("sample-first-aid", day, {
       title: "Restock the van first-aid kit",
-      area: "Vehicles",
       nextAction: "Check the expiry dates on plasters and antiseptic wipes.",
       reviewDate: addDays(day, 1),
       estimate: 10,
@@ -165,7 +151,6 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-bank-receipts", day, {
       title: "File last month’s fuel receipts",
-      area: "Business",
       nextAction: "Put the receipts in one envelope marked with the month.",
       deferredUntil: addDays(day, 10),
       reviewDate: addDays(day, 10),
@@ -174,7 +159,6 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-neighbour-ladder", day, {
       title: "Return Sam’s ladder",
-      area: "Home",
       nextAction: "Text Sam to choose a time for dropping the ladder back.",
       deadline: addDays(day, 6),
       reviewDate: addDays(day, 3),
@@ -183,7 +167,6 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-invoice-template", day, {
       title: "Simplify the invoice template",
-      area: "Business",
       nextAction: "List the fields repeated on the last three invoices.",
       startDate: addDays(day, 14),
       reviewDate: addDays(day, 12),
@@ -192,7 +175,6 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-tool-inventory", day, {
       title: "Photograph the tool inventory",
-      area: "Business",
       nextAction: "Charge the old phone used for workshop photos.",
       state: "someday",
       reviewDate: addDays(day, 30),
@@ -201,7 +183,6 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-insurance-question", day, {
       title: "Ask insurer about trailer cover",
-      area: "Trailer hire",
       nextAction: "Find the policy number in the renewal email.",
       reviewDate: addDays(day, 6),
       estimate: 15,
@@ -209,7 +190,6 @@ function coreTasks(day: string): Task[] {
     }),
     task("sample-garden-gate", day, {
       title: "Oil the garden gate hinge",
-      area: "Home",
       nextAction: "Bring the penetrating oil in from the van.",
       reviewDate: addDays(day, 8),
       estimate: 10,
@@ -245,7 +225,6 @@ function laterTasks(
     const cycle = index % 10;
     const shared = {
       title,
-      area: ["Home", "Business", "Vehicles", "Trailer hire"][index % 4],
       nextAction: `Spend five minutes setting up the first step for item ${number}.`,
       estimate: [5, 10, 15, 25, 40][index % 5],
       context: (["home", "computer", "out", "anywhere"] as Context[])[
@@ -294,9 +273,7 @@ function makeDeadlineScenario(day: string, overdueOnly: boolean): Task[] {
       day,
       {
         title: `${["Confirm supplier delivery", "Prepare site materials", "Reply to customer", "Check vehicle documents"][index % 4]} ${index + 1}`,
-        area: index % 2 ? "Business" : "Vehicles",
         nextAction: `Open the notes and complete the first check for item ${index + 1}.`,
-        important: index % 5 === 0,
         deadline: addDays(day, offset),
         reviewDate: index % 4 === 0 ? day : addDays(day, 2),
         estimate: 10 + (index % 3) * 10,

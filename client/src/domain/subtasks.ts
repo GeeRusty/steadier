@@ -268,7 +268,6 @@ export function addSubtask(
   const fields = options.fields ?? {};
   const projectId = fields.projectId ?? parent.projectId;
   const task = createTask({
-    area: parent.area,
     context: parent.context,
     ...fields,
     title: clean,

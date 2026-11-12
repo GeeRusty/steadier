@@ -28,7 +28,6 @@ export type View =
   | "all"
   | "review"
   | "waiting"
-  | "areas"
   | "progress"
   | "settings"
   | "projects"
@@ -231,12 +230,9 @@ export type MatrixWeights = Record<MatrixCell, number>;
 export interface Task {
   id: string;
   title: string;
-  area: string;
   nextAction: string;
   notes: string;
   state: TaskState;
-  /** Legacy compatibility fact; new UI uses life role/pattern, not high/low value. */
-  important: boolean;
   pinned: boolean;
   deadline: string | null;
   startDate: string | null;

@@ -8,6 +8,7 @@ import {
   planVoiceProposal,
   proposalFromIntent,
   spokenDate,
+  spokenIdea,
   spokenTime,
   todaySpeech,
   whatsNextSpeech,
@@ -27,6 +28,8 @@ const intent = (over: Partial<VoiceIntent>): VoiceIntent => ({
   new_minutes: null,
   shopping_list: null,
   shopping_items: [],
+  idea_title: null,
+  idea_note: null,
   note_text: null,
   note_date: null,
   help_question: null,
@@ -236,5 +239,38 @@ describe("voice: notes", () => {
       TODAY
     ) as { proposal: Proposal };
     expect(confirmationSpeech(outcome.proposal, TODAY)).toBe("Save a note for tomorrow: Plumber is coming. Save it?");
+  });
+});
+
+describe("voice: ideas", () => {
+  it("puts a spoken idea on the Ideas shelf after the read-back", () => {
+    const outcome = proposalFromIntent(
+      intent({ intent: "add_idea", idea_title: "Trailer hire side business", idea_note: "check council rules" }),
+      workspace(),
+      TODAY
+    ) as { proposal: Proposal };
+    expect(confirmationSpeech(outcome.proposal, TODAY)).toBe("Add idea: Trailer hire side business. Save it?");
+    const saved = apply(workspace(), outcome.proposal);
+    expect(saved.tasks).toHaveLength(1);
+    expect(saved.tasks[0]).toMatchObject({
+      title: "Trailer hire side business",
+      notes: "check council rules",
+      state: "someday",
+      reviewDate: null,
+      actionConfirmed: false,
+    });
+    expect(saved.tasks[0].history.at(-1)!.text).toContain("Added by voice.");
+  });
+
+  it("asks when the idea is empty", () => {
+    expect(proposalFromIntent(intent({ intent: "add_idea", idea_title: "  " }), workspace(), TODAY)).toEqual({ problem: "What's the idea?" });
+  });
+
+  it("always treats a sentence starting with Idea as an idea", () => {
+    expect(spokenIdea("Idea: build a shed")).toBe("build a shed");
+    expect(spokenIdea("idea, trailer hire side business.")).toBe("trailer hire side business");
+    expect(spokenIdea("an idea learn welding")).toBe("learn welding");
+    expect(spokenIdea("ideally call Sam tomorrow")).toBeNull();
+    expect(spokenIdea("call Sam about the idea")).toBeNull();
   });
 });

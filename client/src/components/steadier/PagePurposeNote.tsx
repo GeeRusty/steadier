@@ -14,7 +14,6 @@ export const SPECIALIST_PAGE_PURPOSES: Partial<Record<View, string>> = {
   "command-centre": "A rules-based check-in for current Imperatives and decisions; open the real Steadier item to act.",
   review: "Quick maintenance for work due for review or still unplaced. Weekly Reality Review is the separate full decision process.",
   waiting: "Track work waiting on a person or dependency, and decide when to return to it.",
-  areas: "Group and find tasks by life area; the hierarchy is not a sequence you must complete.",
   progress: "Look back at completed work and recent movement; this is history, not the active backlog.",
   settings: "Manage full backups, restore and trial settings; CSV alone is not a complete workspace backup.",
   projects: "Connect projects to their intended Goal Outcome; use Map/List for purpose, not scheduling.",

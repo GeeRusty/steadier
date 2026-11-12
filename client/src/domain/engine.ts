@@ -485,7 +485,7 @@ export function attention(
   const selected = candidates.slice(0, 5);
   const protectedIds = new Set<string>();
 
-  // Keep one due-review and one important undated task visible where there is a
+  // Keep one due-review and one sustained undated task visible where there is a
   // non-pinned slot to exchange. This avoids a list made entirely of urgent
   // dated tasks while respecting explicit pins.
   const reserve = (matches: (candidate: Candidate) => boolean) => {
@@ -516,7 +516,7 @@ export function attention(
   reserve(candidate => candidate.kind === "review");
   reserve(
     candidate =>
-      (candidate.task.pattern === "sustained" || candidate.task.important) &&
+      candidate.task.pattern === "sustained" &&
       candidate.task.deadline === null &&
       (candidate.kind === "action" ||
         candidate.kind === "clarify" ||
@@ -559,11 +559,9 @@ export function createTask(
   return {
     id: input.id ?? freshId(),
     title: input.title.trim(),
-    area: input.area ?? "General",
     nextAction,
     notes: input.notes ?? "",
     state,
-    important: input.important ?? false,
     pinned: input.pinned ?? false,
     deadline: input.deadline ?? null,
     startDate: input.startDate ?? null,

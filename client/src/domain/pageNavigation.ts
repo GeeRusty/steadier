@@ -18,7 +18,6 @@ export const PAGE_NAVIGATION_SECTIONS: readonly {
       "projects",
       "map",
       "compass-directory",
-      "areas",
       "matrix",
       "time",
     ],

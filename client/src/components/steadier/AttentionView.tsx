@@ -4,10 +4,6 @@ import {
   ArrowRight,
   Check,
   Clock3,
-  Home,
-  Car,
-  BriefcaseBusiness,
-  UserRound,
   ArrowUpRight,
   ChevronDown,
 } from "lucide-react";
@@ -24,14 +20,6 @@ import { countLabel, kindCounts, taskKind } from "../../domain/todayStates";
 import { TaskKindContext, useKindClass } from "./TaskStates";
 import TimingShapeMark from "./TimingShapeMark";
 
-export const areaIcon = (area: string) =>
-  area === "Home"
-    ? Home
-    : area === "Vehicles"
-      ? Car
-      : area === "Business"
-        ? BriefcaseBusiness
-        : UserRound;
 interface Props {
   /** "today": other tasks under the Now card. "overview": the wider view. */
   part: "today" | "overview";
@@ -49,7 +37,6 @@ interface Props {
   onStart: (t: Task) => void;
   onDone: (id: string) => void;
   onDefer: (id: string) => void;
-  onArea: (a: string) => void;
   onAll: (filter?: string) => void;
   onReview: () => void;
   onWaiting: () => void;
@@ -182,7 +169,6 @@ function formatEstimate(t: Task): string {
 
 function Overview(p: Props) {
   const kinds = useContext(TaskKindContext);
-  const areas = [...new Set(p.tasks.map(t => t.area))];
   const completedToday = p.tasks.filter(t =>
     t.completedAt?.startsWith(today())
   ).length;
@@ -201,37 +187,6 @@ function Overview(p: Props) {
   const moving = p.projects.filter(project => project.status === "active");
   return (
     <div className="overview">
-      <section aria-labelledby="areas-title">
-        <div className="section-heading compact">
-          <h2 id="areas-title">Life areas</h2>
-        </div>
-        <div className="area-list">
-          {areas.map(area => {
-            const tasks = p.tasks.filter(t => t.area === area);
-            const counts = kinds
-              ? kindCounts(tasks, kinds.ctx)
-              : { active: 0, held: 0 };
-            const Icon = areaIcon(area);
-            return (
-              <button
-                key={area}
-                className="landscape-area"
-                onClick={() => p.onArea(area)}
-              >
-                <span className="area-icon">
-                  <Icon size={18} />
-                </span>
-                <span>
-                  <strong>{area}</strong>
-                  <span>{countLabel(counts)}</span>
-                </span>
-                <ArrowUpRight size={15} />
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
       <section aria-labelledby="held-title">
         <div className="section-heading compact">
           <h2 id="held-title">Held</h2>

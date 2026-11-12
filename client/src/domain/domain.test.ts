@@ -86,9 +86,9 @@ describe('attention', () => {
     expect(result.commitments.map((task) => task.id)).toEqual([...result.commitments].map((task) => task.id).sort());
   });
 
-  it('keeps a due review and an important undated task where possible without false urgency', () => {
+  it('keeps a due review and a sustained undated task where possible without false urgency', () => {
     const dueReview = make('Review a parked supplier choice', { reviewDate: DAY });
-    const importantUndated = make('Clear garage shelf', { important: true, deadline: null });
+    const importantUndated = make('Clear garage shelf', { pattern: 'sustained', deadline: null });
     const urgent = Array.from({ length: 5 }, (_, index) =>
       make(`Urgent ${index}`, { deadline: DAY, reviewDate: '2026-03-20' }),
     );
@@ -120,20 +120,21 @@ describe('samples and capture', () => {
     expect(makeSampleTasks('fivehundred', DAY)).toHaveLength(500);
     const quiet = makeSampleTasks('quiet', DAY);
     expect(attention(quiet, { now: DAY }).commitments).toHaveLength(0);
-    expect(quiet.some((task) => task.important && task.deadline === null)).toBe(true);
+    expect(quiet.some((task) => task.pattern === 'sustained' && task.deadline === null)).toBe(true);
   });
 
   it('parses only explicit capture grammar and preserves casual date wording', () => {
-    const parsed = parseCapture('Call plumber #home due Friday 20 minutes important next: measure washer', DAY);
+    const parsed = parseCapture('Call plumber #home due Friday 20 minutes next: measure washer', DAY);
     expect(parsed).toMatchObject({
       title: 'Call plumber',
-      area: 'Home',
       context: 'home',
       deadline: '2026-03-13',
       estimate: 20,
-      important: true,
       nextAction: 'measure washer',
     });
+    expect(parsed).not.toHaveProperty('area');
+    // The word "important" is no longer a hidden flag: it stays in the title.
+    expect(parseCapture('Important call to the bank', DAY).title).toBe('Important call to the bank');
     const casual = parseCapture('Call plumber tomorrow when free', DAY);
     expect(casual.deadline).toBeNull();
     expect(casual.title).toBe('Call plumber tomorrow when free');

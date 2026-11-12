@@ -60,15 +60,15 @@ export function parseCapture(
   }
   if (parsed.role && parsed.pattern) parsed.labelSource = "confirmed";
 
-  const tagRules: Array<{ tag: RegExp; area: string; context: Context }> = [
-    { tag: /#home\b/gi, area: "Home", context: "home" },
-    { tag: /#vehicles?\b/gi, area: "Vehicles", context: "out" },
-    { tag: /#business\b/gi, area: "Business", context: "computer" },
-    { tag: /#personal\b/gi, area: "Personal", context: "anywhere" },
+  // These tags set only the Context now (Area was removed).
+  const tagRules: Array<{ tag: RegExp; context: Context }> = [
+    { tag: /#home\b/gi, context: "home" },
+    { tag: /#vehicles?\b/gi, context: "out" },
+    { tag: /#business\b/gi, context: "computer" },
+    { tag: /#personal\b/gi, context: "anywhere" },
   ];
   for (const rule of tagRules) {
     if (rule.tag.test(remainder)) {
-      parsed.area = rule.area;
       parsed.context = rule.context;
       remainder = remainder.replace(rule.tag, " ");
     }
@@ -117,10 +117,6 @@ export function parseCapture(
     remainder = `${remainder.slice(0, estimateMatch.index)} ${remainder.slice(estimateMatch.index + estimateMatch[0].length)}`;
   }
 
-  if (/\bimportant\b/i.test(remainder)) {
-    parsed.important = true;
-    remainder = remainder.replace(/\bimportant\b/gi, " ");
-  }
 
   // Only call it waiting when a person/reason was captured. A bare "waiting"
   // remains title text rather than changing task workflow without context.

@@ -25,7 +25,7 @@ export default function SheetView({
   const rows = useMemo(
     () =>
       store.workspace.tasks.filter(t =>
-        `${t.title} ${t.area} ${t.purpose} ${t.nextAction}`
+        `${t.title} ${t.purpose} ${t.nextAction}`
           .toLowerCase()
           .includes(search.toLowerCase())
       ),
@@ -85,7 +85,7 @@ export default function SheetView({
               setSearch(e.target.value);
               setPage(0);
             }}
-            placeholder="Title, area, purpose or next step"
+            placeholder="Title, purpose or next step"
           />
         </label>
         <div className="backup-actions">
@@ -158,7 +158,6 @@ export default function SheetView({
             <tr>
               {[
                 "Responsibility",
-                "Life area",
                 "Purpose",
                 "Identity",
                 "Available state",
@@ -188,7 +187,6 @@ export default function SheetView({
                       {t.title}
                     </button>
                   </th>
-                  <td>{t.area || "General"}</td>
                   <td>{t.purpose || "Not clarified"}</td>
                   <td>
                     {rowLabel(t, store.workspace)}

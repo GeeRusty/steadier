@@ -102,11 +102,9 @@ const MATRIX_CELLS: readonly MatrixCell[] = [
 const LEGACY_TASK_KEYS = [
   "id",
   "title",
-  "area",
   "nextAction",
   "notes",
   "state",
-  "important",
   "pinned",
   "deadline",
   "startDate",
@@ -154,11 +152,9 @@ const PROJECT_KEYS = [
 const CSV_FIELDS = [
   "id",
   "title",
-  "area",
   "nextAction",
   "notes",
   "state",
-  "important",
   "pinned",
   "deadline",
   "startDate",
@@ -173,6 +169,9 @@ const CSV_FIELDS = [
   "completedAt",
   "dependencies",
 ] as const;
+
+/** Older exports also had area and important; they still import. */
+const LEGACY_CSV_FIELDS = [...CSV_FIELDS, "area", "important"] as const;
 
 type JsonRecord = Record<string, unknown>;
 
@@ -778,6 +777,26 @@ function planningField(value: unknown): PlanningSettings {
       : {}),
   };
 }
+/** "General" was the automatic filler, so only a chosen Area is kept. */
+function areaWorthKeeping(area: string): boolean {
+  return area !== "" && area.toLowerCase() !== "general";
+}
+export function notesWithArea(notes: string, area: string): string {
+  if (!areaWorthKeeping(area)) return notes;
+  const line = `Area: ${area}`;
+  if (notes.split(/\r?\n/).some(l => l.trim() === line)) return notes;
+  return (notes.trim() ? `${notes.trimEnd()}\n${line}` : line).slice(0, 20000);
+}
+function historyWithArea(
+  history: Task["history"],
+  area: string,
+  at: string,
+  notes: string
+): Task["history"] {
+  if (notesWithArea(notes, area) === notes) return history;
+  return [...history, { at, text: `Area “${area}” moved into the notes (Area was removed).` }];
+}
+
 function validateTask(value: unknown, label: string, requireV2 = false): Task {
   if (!isRecord(value)) fail(`${label} is not an object.`);
   const hasPassOverCount = Object.prototype.hasOwnProperty.call(
@@ -793,6 +812,15 @@ function validateTask(value: unknown, label: string, requireV2 = false): Task {
   delete shapeRecord.passOverCount;
   delete shapeRecord.droppedAt;
   delete shapeRecord.actionConfirmed;
+  // Removed fields (2026-11-12): older saves, backups and CSVs still load.
+  // Important is dropped; a chosen Area is moved into the notes.
+  delete shapeRecord.area;
+  delete shapeRecord.important;
+  if (Object.prototype.hasOwnProperty.call(value, "important"))
+    booleanField(value, "important");
+  const legacyArea = Object.prototype.hasOwnProperty.call(value, "area")
+    ? stringField(value, "area", 120).trim()
+    : "";
   const baseShapes = [
     LEGACY_TASK_KEYS,
     TASK_KEYS,
@@ -823,11 +851,9 @@ function validateTask(value: unknown, label: string, requireV2 = false): Task {
   return {
     id: stringField(value, "id", 128, { nonEmpty: true, id: true }),
     title: stringField(value, "title", 500, { nonEmpty: true }),
-    area: stringField(value, "area", 120),
     nextAction: stringField(value, "nextAction", 2000),
-    notes: stringField(value, "notes", 20000),
+    notes: notesWithArea(stringField(value, "notes", 20000), legacyArea),
     state: enumField(value, "state", STATES) as TaskState,
-    important: booleanField(value, "important"),
     pinned: booleanField(value, "pinned"),
     deadline: nullableDateField(value, "deadline"),
     startDate: nullableDateField(value, "startDate"),
@@ -848,7 +874,12 @@ function validateTask(value: unknown, label: string, requireV2 = false): Task {
     completedAt: requireV2
       ? nullableInstantField(value, "completedAt")
       : nullableStringField(value, "completedAt", 100),
-    history: historyField(value, requireV2),
+    history: historyWithArea(
+      historyField(value, requireV2),
+      legacyArea,
+      String(value.updatedAt),
+      String(value.notes)
+    ),
     ...(hasPassOverCount
       ? {
           passOverCount: boundedInteger(
@@ -1952,13 +1983,12 @@ function parseCsv(text: string): Task[] {
   const header = rows[0].map((cell, index) =>
     index === 0 ? cell.replace(/^\uFEFF/, "") : cell
   );
-  if (
-    header.length !== CSV_FIELDS.length ||
-    new Set(header).size !== header.length ||
-    header.some(
-      field => !CSV_FIELDS.includes(field as (typeof CSV_FIELDS)[number])
-    )
-  ) {
+  const matches = (fields: readonly string[]) =>
+    header.length === fields.length &&
+    new Set(header).size === header.length &&
+    header.every(field => fields.includes(field));
+  const legacyColumns = matches(LEGACY_CSV_FIELDS);
+  if (!matches(CSV_FIELDS) && !legacyColumns) {
     fail("CSV headers must be exactly the documented task export columns.");
   }
   if (rows.length - 1 > MAX_IMPORT_TASKS) {
@@ -1982,11 +2012,15 @@ function parseCsv(text: string): Task[] {
     const raw: JsonRecord = {
       id: cells.id,
       title: cells.title,
-      area: cells.area,
+      ...(legacyColumns
+        ? {
+            area: cells.area,
+            important: csvBoolean(cells.important, "important"),
+          }
+        : {}),
       nextAction: cells.nextAction,
       notes: cells.notes,
       state: cells.state,
-      important: csvBoolean(cells.important, "important"),
       pinned: csvBoolean(cells.pinned, "pinned"),
       deadline: cells.deadline === "" ? null : cells.deadline,
       startDate: cells.startDate === "" ? null : cells.startDate,
@@ -2037,11 +2071,9 @@ export function exportCSV(tasks: Task[]): string {
     const values: Record<(typeof CSV_FIELDS)[number], string> = {
       id: task.id,
       title: task.title,
-      area: task.area,
       nextAction: task.nextAction,
       notes: task.notes,
       state: task.state,
-      important: String(task.important),
       pinned: String(task.pinned),
       deadline: task.deadline ?? "",
       startDate: task.startDate ?? "",

@@ -28,11 +28,9 @@ function task(id: string, extra: Partial<Task> = {}): Task {
   return {
     id,
     title: `Task ${id}`,
-    area: "Home",
     nextAction: "Ring Sam, about the quote; then book",
     notes: "PRIVATE NOTE must never appear",
     state: "ready",
-    important: false,
     pinned: false,
     deadline: null,
     startDate: null,

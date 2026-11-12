@@ -434,7 +434,6 @@ function reconcilePreparationTask(
       {
         id: preparationTaskId,
         title: generatedTitle(obligation.title),
-        area: "Personal",
         nextAction: obligation.nextAction.trim(),
         state: "ready",
         deadline: targetDate,

@@ -240,7 +240,6 @@ const nav: { id: View; title: string; Icon: typeof CircleDot }[] = [
   { id: "calendar", title: "Calendar", Icon: CalendarDays },
   { id: "review", title: "Review due / unplaced", Icon: RefreshCw },
   { id: "near", title: "Near me", Icon: MapPin },
-  { id: "areas", title: "Life areas", Icon: Layers3 },
   { id: "imperatives", title: "Imperatives", Icon: Compass },
   { id: "linkcheck", title: "Link check", Icon: Link2 },
   { id: "compass-view", title: "Compass view", Icon: Compass },
@@ -400,7 +399,6 @@ export default function Home() {
   const [context, setContext] = useState<Context>("anywhere");
   const [minutes, setMinutes] = useState(0);
   const [search, setSearch] = useState("");
-  const [area, setArea] = useState("");
   const [filter, setFilter] = useState("");
   const [editing, setEditing] = useState<Task | null>(null);
   const [taskPanelMode, setTaskPanelMode] = useState<"view" | "edit">("view");
@@ -495,7 +493,6 @@ export default function Home() {
     if (v !== "obligations") setFocusObligationId(null);
     setView(v);
     setSearch("");
-    setArea("");
     setFilter("");
     setMobileMenu(false);
     setScreenMenu(null);
@@ -2512,10 +2509,6 @@ export default function Home() {
                     onStart={start}
                     onDone={done}
                     onDefer={defer}
-                    onArea={a => {
-                      navigate("areas");
-                      setArea(a);
-                    }}
                     onAll={openAll}
                     onReview={() => navigate("review")}
                     onWaiting={() => navigate("waiting")}
@@ -2901,10 +2894,8 @@ export default function Home() {
                     projects={store.workspace.projects}
                     imperatives={store.workspace.imperatives}
                     search={search}
-                    area={area}
                     filter={filter}
                     onSearch={setSearch}
-                    onArea={setArea}
                     onFilter={setFilter}
                     onOpen={openTaskView}
                     onStart={start}

@@ -250,7 +250,6 @@ const SHEET_COLUMNS = [
   "project_title",
   "project_status",
   "title",
-  "area",
   "stored_state",
   "derived_state",
   "available",
@@ -368,7 +367,6 @@ export function workspaceSheetCsv(
     row.parent_suggested = task.parent ? task.parent.suggested : "";
     row.project_status = project?.status ?? "";
     row.title = task.title;
-    row.area = task.area;
     row.stored_state = task.state;
     row.derived_state = availability?.derivedState ?? "";
     row.available = availability?.available ?? false;

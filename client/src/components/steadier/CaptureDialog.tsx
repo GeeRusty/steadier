@@ -14,6 +14,8 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { installCaptureDraftFlush, parseCapture } from "../../domain/capture";
+
+const IDEA_PREFIX = /^\s*(?:an?\s+)?idea\s*[:,.\-–—]?\s+/i;
 import { createTask } from "../../domain/engine";
 import { CATCH_ALL_LABEL, type CatchAll } from "../../domain/compass";
 import { looksLikeAction, settleCardState } from "../../domain/taskCard";
@@ -94,7 +96,6 @@ export default function CaptureDialog({
   const [textSource, setTextSource] = useState<"typed" | "voice">("typed");
   const [voiceOriginated, setVoiceOriginated] = useState(false);
   const [nextAction, setNextAction] = useState("");
-  const [area, setArea] = useState("");
   const [state, setState] = useState<TaskState | "">("");
   const [waitingFor, setWaitingFor] = useState("");
   const [error, setError] = useState("");
@@ -113,9 +114,11 @@ export default function CaptureDialog({
   });
   // Time phrases first (dates, times, length, repeat, reminders), then the
   // existing capture rules on what remains.
+  // "Idea: …" (typed or spoken) switches to Idea; the word itself is dropped.
+  const startsAsIdea = IDEA_PREFIX.test(text);
   const quick = useMemo(() => {
     const clock = adelaideClock();
-    return parseQuickAdd(text, clock.date, clock.minutes);
+    return parseQuickAdd(text.replace(IDEA_PREFIX, ""), clock.date, clock.minutes);
   }, [text]);
   const parsed = useMemo(() => {
     const base = parseCapture(quick.title);
@@ -132,6 +135,9 @@ export default function CaptureDialog({
   const [projectId, setProjectId] = useState(initialProjectId);
   // Capture asks one thing after the title: Idea or Task (Task by default).
   const [kind, setKind] = useState<"task" | "idea">("task");
+  useEffect(() => {
+    if (startsAsIdea) setKind("idea");
+  }, [startsAsIdea]);
   const [actionOk, setActionOk] = useState(false);
   const [catchAll, setCatchAll] = useState<CatchAll | "">("");
   const [role, setRole] = useState<LifeRole | "">("");
@@ -163,7 +169,6 @@ export default function CaptureDialog({
             : undefined,
       waitingFor: capturedWaitingFor,
       nextAction: capturedNextAction,
-      area: area || parsed.area || "Personal",
       state: capturedState,
     });
     if (kind === "idea") {
@@ -200,7 +205,6 @@ export default function CaptureDialog({
     actionOk,
     catchAll,
     kind,
-    area,
     identity,
     nextAction,
     notes,
@@ -704,7 +708,6 @@ export default function CaptureDialog({
                     </ul>
                   )}
                   <p className="small">
-                    {area || parsed.area || "Personal"} ·{" "}
                     {parsed.deadline
                       ? `Deadline ${parsed.deadline}`
                       : "No deadline invented"}{" "}
@@ -817,15 +820,6 @@ export default function CaptureDialog({
               <details className="detail-section">
                 <summary>More</summary>
               <div className="form-pair">
-                <label className="field">
-                  Area
-                  <select value={area} onChange={e => setArea(e.target.value)}>
-                    <option value="">Use detected area</option>
-                    {["Home", "Vehicles", "Business", "Personal"].map(a => (
-                      <option key={a}>{a}</option>
-                    ))}
-                  </select>
-                </label>
                 <label className="field">
                   State
                   <select

@@ -122,11 +122,9 @@ function testWorkspace(title = "Pay bill") {
     {
       id: "task-1",
       title,
-      area: "Home",
       nextAction: "Open the invoice",
       notes: "",
       state: "ready",
-      important: false,
       pinned: false,
       deadline: "2026-10-30",
       startDate: null,

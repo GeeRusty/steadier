@@ -224,10 +224,9 @@ export default function TaskViewPanel({
               )}
             </div>
           )}
-          {(projectTitle || task.area) && (
+          {projectTitle && (
             <div className="task-view-placement">
-              {projectTitle && <span className="task-view-project">{projectTitle}</span>}
-              {task.area && <span>{task.area}</span>}
+              <span className="task-view-project">{projectTitle}</span>
             </div>
           )}
         </section>

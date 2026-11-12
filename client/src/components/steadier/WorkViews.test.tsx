@@ -24,10 +24,8 @@ function renderWorkViews(filter: string) {
       tasks={[task]}
       projects={[]}
       search=""
-      area=""
       filter={filter}
       onSearch={() => undefined}
-      onArea={() => undefined}
       onFilter={() => undefined}
       onOpen={() => undefined}
       onStart={() => undefined}

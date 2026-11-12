@@ -4,7 +4,7 @@ Steadier holds everything you're responsible for, then shows you a manageable fe
 
 ## The big ideas
 
-- **Tasks** are anything you need to do. Each task can have a next step, a life area, dates, a project, and notes.
+- **Tasks** are anything you need to do. Each task can have a next step, dates, a project, and notes. (Tasks used to have an **Area**, such as Home or Business. Area was removed because Pillars do that job. Any Area you'd chosen was copied into the task's notes as a line like `Area: Home`. There's also no Important flag: Steadier doesn't rank tasks.)
 - **Booked anchors** are tasks with a set day and clock time, such as a shift, an appointment or a job. Only these appear as blocks on the Calendar, and only these get spoken check-ins.
 - **Next thing** is the one task you've chosen to do now. Finish it with **Done**, or put it back with **Not now**.
 - **Roles**: every task is either **Imperative** (chosen work that moves your life forward) or **Support** (keeps life running). A task or project linked to an active Imperative is in the Imperative row automatically, shown as **Imperative (linked)**. Anything not linked keeps the role you chose. If that Imperative is retired, it goes back to your own choice.
@@ -51,9 +51,6 @@ Quick tidy-up: tasks due for a review, and tasks that don't have a place yet. It
 
 ### Waiting & blocked
 Tasks waiting on another person or on something else first. Decide when to check back.
-
-### Life areas
-Tasks grouped by area of life, such as Home, Work or Health. The grouping is for finding things, not an order to do them in.
 
 ### Completed steps
 History of what you've finished. Good for looking back. It isn't your to-do list.
@@ -144,6 +141,7 @@ Things you can say:
 - **Mark done:** "Done with the mechanic call."
 - **Move:** "Push the coffee to tomorrow morning." Repeating tasks have to be moved in the app.
 - **Shopping:** "Add eggs and bread to the shopping list."
+- **Idea:** "Idea: trailer hire side business", or "add build a shed as an idea". It goes on the Ideas shelf, not into your tasks. Starting with "Idea" always makes it an idea.
 - **Notes:** "Note: the car's making a rattle."
 - **Check your day:** "What's next?" or "What's on today?"
 - **Ask how to use Steadier:** "How do I move a task?" or "What's the Compass map for?"
@@ -154,6 +152,8 @@ Things you can say:
 
 Claude can see your Ideas and which tasks are set up, and can suggest a Place or First step, but only you can make a task ready or let an idea go. Tasks Claude creates start as faded cards.
 
+In any chat you can say "add that as an idea" and Claude puts it on your Ideas shelf, with a backup saved first.
+
 Claude can read your Link check. It can suggest a link between a task or project and an Imperative, but the link waits for your **Confirm**. Only you can choose Not yet, make a project Support, or step an Imperative down.
 
 Claude can read and change your Steadier when you ask it to in a chat. For example: "What's on my calendar this week?", "Find duplicate tasks", "Add milk to the shopping list", or "What did I note about the car?" Claude always asks before changing anything, and Steadier saves a full backup before every change. Connect it in Claude under **Settings → Connectors**.
@@ -163,7 +163,8 @@ Claude can read and change your Steadier when you ask it to in a chat. For examp
 - **Add a task?** Tap **+** on My life today, or tell the voice assistant. After the title, choose **Task** or **Idea** (Task is the default).
 - **Set up a task / make it ready?** Open it, or use **Sort**, and light the three dots on its card: Action, Place, First step.
 - **Link a project to an Imperative?** Open **Link check**, or open the project and pick under **Serves Imperative**.
-- **Save an idea for later?** Tap **+**, type it, choose **Idea**. Or add it on the Ideas shelf.
+- **Save an idea for later?** Tap **+** and choose **Idea**, or start with "Idea:" and it switches for you. You can also say "Idea: …" to the voice assistant, add it on the Ideas shelf, or tell Claude "add that as an idea".
+- **Find what Area a task had?** Look in its notes for a line like `Area: Home`.
 - **Give a task a time on the calendar?** Open the task and set its day and start time, or say "book X on Friday at 3".
 - **Change a booked time?** Open it from the Calendar and change the day or time, or say "move X to tomorrow at 9".
 - **Delete a task?** Steadier doesn't delete a whole task with one tap, so nothing vanishes by accident. If it's finished, mark it **Done**. If you've decided not to do it, choose **Dropped**: this shows as "Still on, or dropped?" when you pick a task you've passed over a few times, and the task leaves your suggestions but stays in **All work** so you can bring it back.

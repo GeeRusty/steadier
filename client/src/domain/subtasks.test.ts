@@ -38,11 +38,10 @@ function add(tasks: Task[], parentId: string, title: string) {
 }
 
 describe("subtasks", () => {
-  it("adds a confirmed subtask that inherits the parent's area and project", () => {
-    const parent = base("Move house", { area: "Home", projectId: "p1" });
+  it("adds a confirmed subtask that inherits the parent's project", () => {
+    const parent = base("Move house", { projectId: "p1" });
     const { tasks, task } = add([parent], parent.id, "Book removalist");
     expect(task.parent).toEqual({ id: parent.id, suggested: false });
-    expect(task.area).toBe("Home");
     expect(task.projectId).toBe("p1");
     expect(childrenOf(tasks, parent.id).map(t => t.id)).toEqual([task.id]);
     expect(subtaskProgress(tasks, parent.id)).toEqual({ done: 0, total: 1 });

@@ -33,7 +33,6 @@ import {
   flexibleWindowState,
   formatDuration,
 } from "../../domain/time";
-import { areaIcon } from "./AttentionView";
 import AccordionSection from "./AccordionSection";
 import { groupByStable, monthGroup } from "../../domain/accordionGroups";
 interface Props {
@@ -43,10 +42,8 @@ interface Props {
   /** For the hybrid matrix row (linked to an active Imperative). */
   imperatives?: Imperative[];
   search: string;
-  area: string;
   filter: string;
   onSearch: (v: string) => void;
-  onArea: (v: string) => void;
   onFilter: (v: string) => void;
   onOpen: (t: Task) => void;
   onStart: (t: Task) => void;
@@ -71,7 +68,7 @@ export default function WorkViews(p: Props) {
     });
   useEffect(
     () => setPage(0),
-    [p.view, p.search, p.area, p.filter, p.tasks.length]
+    [p.view, p.search, p.filter, p.tasks.length]
   );
   const now = today();
   const adelaideToday = adelaideClock().date;
@@ -90,7 +87,6 @@ export default function WorkViews(p: Props) {
     0
   );
   const result = useMemo(() => attention(p.tasks, { now }), [p.tasks, now]);
-  const areas = [...new Set(p.tasks.map(t => t.area))];
   const headings: Record<string, [string, string]> = {
     all: [
       "The whole picture.",
@@ -103,10 +99,6 @@ export default function WorkViews(p: Props) {
     waiting: [
       "Some things need time.",
       "Waiting is a real state. Name the missing piece, and return when it makes sense.",
-    ],
-    areas: [
-      "The parts of your life.",
-      "Stable places to find things. Not a hierarchy you have to climb to begin.",
     ],
     progress: [
       "You moved things forward.",
@@ -130,7 +122,6 @@ export default function WorkViews(p: Props) {
       return false;
     if (p.view === "waiting" && !["waiting", "blocked"].includes(state))
       return false;
-    if (p.area && task.area !== p.area) return false;
     if (
       p.filter === "commitments" &&
       !result.commitments.some(t => t.id === task.id)
@@ -162,7 +153,7 @@ export default function WorkViews(p: Props) {
     } else if (p.filter && p.filter !== "commitments" && state !== p.filter)
       return false;
     const project = p.projects.find(project => project.id === task.projectId);
-    return `${task.title} ${task.nextAction} ${task.notes} ${task.area} ${task.waitingFor} ${task.purpose} ${task.role || ""} ${task.pattern || ""} ${project?.title || ""} ${project?.outcome || ""}`
+    return `${task.title} ${task.nextAction} ${task.notes} ${task.waitingFor} ${task.purpose} ${task.role || ""} ${task.pattern || ""} ${project?.title || ""} ${project?.outcome || ""}`
       .toLowerCase()
       .includes(p.search.toLowerCase());
   });
@@ -289,9 +280,7 @@ export default function WorkViews(p: Props) {
           <span className={`state-tag state-${state}`}>
             {stateLabel(state)}
           </span>
-          <span>
-            {task.area} · {deadlineLabel(task)}
-          </span>
+          <span>{deadlineLabel(task)}</span>
           <TimeChips task={task} hideParent={row.depth > 0} />
         </div>
         {p.view === "review" &&
@@ -372,35 +361,6 @@ export default function WorkViews(p: Props) {
           </div>
         </aside>
       )}
-      {p.view === "areas" && (
-        <div className="area-directory">
-          {areas.map(a => {
-            const items = p.tasks.filter(
-              t => t.area === a && t.state !== "done"
-            );
-            const Icon = areaIcon(a);
-            return (
-              <button
-                key={a}
-                className={`directory-area ${p.area === a ? "selected" : ""}`}
-                onClick={() => p.onArea(p.area === a ? "" : a)}
-              >
-                <Icon size={24} />
-                <h2>{a}</h2>
-                <p>
-                  {kinds
-                    ? countLabel(kindCounts(items, kinds.ctx))
-                    : `${items.length} open`}
-                </p>
-                <span className="text-button">
-                  Explore area
-                  <ArrowRight size={15} />
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
       <div className="library-toolbar">
         <label className="library-search">
           <Search size={18} />
@@ -411,16 +371,6 @@ export default function WorkViews(p: Props) {
             aria-label="Search all responsibilities"
           />
         </label>
-        <select
-          aria-label="Filter by life area"
-          value={p.area}
-          onChange={e => p.onArea(e.target.value)}
-        >
-          <option value="">All areas</option>
-          {areas.map(a => (
-            <option key={a}>{a}</option>
-          ))}
-        </select>
         <select
           aria-label="Filter by workflow"
           value={p.filter}
@@ -451,7 +401,6 @@ export default function WorkViews(p: Props) {
         <span>
           {list.length}{" "}
           {list.length === 1 ? "responsibility" : "responsibilities"}
-          {p.area ? ` in ${p.area}` : ""}
           {kinds && p.view !== "progress" && (
             <span className="list-kinds">
               {" · "}

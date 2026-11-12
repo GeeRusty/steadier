@@ -341,7 +341,7 @@ function NowCard(p: {
         <div className="now-more">
           {contributes && <p><span className="lbl">Contributes to</span> {contributes}</p>}
           {task.notes && <p className="now-notes">{task.notes}</p>}
-          <p className="small muted">{task.area}{task.context !== "anywhere" ? ` · ${task.context}` : ""}</p>
+          {task.context !== "anywhere" && <p className="small muted">{task.context}</p>}
           <button className="text-button" onClick={p.onOpen}>Open details <ArrowRight size={14} /></button>
         </div>
       )}

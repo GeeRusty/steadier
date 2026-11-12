@@ -34,7 +34,6 @@ import {
   Volume2,
 } from "lucide-react";
 import TimeChips from "./TimeChips";
-import LifeAreaPicker from "./LifeAreaPicker";
 import TimingShapeMark from "./TimingShapeMark";
 import TaskDetailDoneControl from "./TaskDetailDoneControl";
 import {
@@ -653,15 +652,6 @@ export default function TaskEditor({
       setAutosaveDetail("Not saved. Your edits are still open; check sync and try again.");
     }
   };
-  const areas = [
-    ...new Set([
-      "Home",
-      "Vehicles",
-      "Business",
-      "Personal",
-      ...tasks.map(t => t.area),
-    ]),
-  ];
   return (
     <Dialog open onOpenChange={open => !open && leave(onClose)}>
       <DialogContent
@@ -1111,11 +1101,6 @@ export default function TaskEditor({
             hasProject={!!draft.projectId}
           />
           <div className="form-pair">
-            <LifeAreaPicker
-              areas={areas}
-              value={draft.area}
-              onChange={area => patch("area", area)}
-            />
             <label className="field">
               Workflow
               <select
@@ -1324,7 +1309,6 @@ export default function TaskEditor({
                       }
                     />
                     {t.title}
-                    <span>{t.area}</span>
                   </label>
                 ))}
               {draft.dependencies

@@ -25,6 +25,7 @@ import {
 } from "./changes";
 import {
   planCreateProject,
+  planAddIdea,
   planCreateTask,
   planRequestDelete,
   planUpdateProject,
@@ -125,9 +126,8 @@ const PATTERN = {
 const TASK_FIELD_SCHEMA = {
   title: { type: "string", minLength: 1, maxLength: 500 },
   area: {
-    type: "string",
-    maxLength: 120,
-    description: "Life area, e.g. Home, Work, Health.",
+    description:
+      "Removed from Steadier. Do not send it; put any area wording in notes instead.",
   },
   nextAction: {
     type: "string",
@@ -204,7 +204,10 @@ const calendarDate = z
   }, "Not a real calendar date.");
 const taskFields = {
   title: z.string().trim().min(1).max(500).optional(),
-  area: z.string().max(120).optional(),
+  // Area was removed (2026-11-12); a clear message instead of a silent drop.
+  area: z
+    .never({ message: "Area was removed from Steadier. Put it in the notes instead." })
+    .optional(),
   nextAction: z.string().max(2000).optional(),
   notes: z.string().max(20000).optional(),
   state: z.enum(STATES).optional(),
@@ -1099,6 +1102,44 @@ export function registerWriteTools(
   actor: ConnectorActor = "claude"
 ): void {
   server.registerTool(
+    "add_my_life_idea",
+    {
+      title: "Add an idea to the My Life Ideas shelf",
+      description: `Add one idea to the owner's Ideas shelf: something they might do one day, not a task. Use it when the owner says "add that as an idea" or similar. title is the idea in the owner's words; note is optional detail. Ideas have no dates, timers or warnings. Only the owner can make an idea a task or let it go, in Steadier. ${writeGuidance(actor, false)}`,
+      inputSchema: fromJsonSchema({
+        type: "object",
+        properties: {
+          title: { type: "string", minLength: 1, maxLength: 500 },
+          note: { type: "string", maxLength: 20000 },
+        },
+        required: ["title"],
+        additionalProperties: false,
+      }),
+      annotations: WRITE_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z
+        .object({
+          title: z.string().trim().min(1).max(500),
+          note: z.string().max(20000).optional(),
+        })
+        .strict()
+        .safeParse(input);
+      if (!parsed.success) return invalid(parsed.error);
+      try {
+        const applied = await applyGuardedChange(changes, userId, actor, workspace =>
+          planAddIdea(workspace, parsed.data.title, parsed.data.note, new Date(), actor)
+        );
+        return written(applied.summary, applied.revision, {
+          idea: { taskId: applied.result.task.id, title: applied.result.task.title },
+        });
+      } catch (error) {
+        return fromError(error);
+      }
+    }
+  );
+
+  server.registerTool(
     "add_my_life_note",
     {
       title: "Add a My Life Daily Log note",
@@ -1268,7 +1309,7 @@ export function registerWriteTools(
     "update_my_life_task",
     {
       title: "Update a My Life task",
-      description: `Change fields of one existing task: title, area, next action, notes, state (including done), project link (projectId, or null to unlink), role (direction/support), pattern (timely/sustained), purpose, deadline, review date, start date, preparation date, waiting-for, estimate, context, progress evidence, pass-over count, or the owner's reversible Dropped decision. Setting dropped=true records a kept decision; it never deletes the task. Setting dropped=false reopens it. Send only the fields to change; null clears a date or link. ${writeGuidance(actor)}`,
+      description: `Change fields of one existing task: title, next action, notes, state (including done), project link (projectId, or null to unlink), role (direction/support), pattern (timely/sustained), purpose, deadline, review date, start date, preparation date, waiting-for, estimate, context, progress evidence, pass-over count, or the owner's reversible Dropped decision. Setting dropped=true records a kept decision; it never deletes the task. Setting dropped=false reopens it. Send only the fields to change; null clears a date or link. ${writeGuidance(actor)}`,
       inputSchema: fromJsonSchema({
         type: "object",
         properties: {

@@ -62,7 +62,6 @@ export function connectorName(actor: ConnectorActor): string {
 
 export type TaskFields = {
   title?: string;
-  area?: string;
   nextAction?: string;
   notes?: string;
   state?: TaskState;
@@ -94,7 +93,6 @@ export type ProjectFields = {
 
 const TASK_FIELD_LABELS: Record<keyof TaskFields, string> = {
   title: "title",
-  area: "area",
   nextAction: "next action",
   notes: "notes",
   state: "state",
@@ -222,6 +220,37 @@ export function planCreateTask(
   return {
     workspace: { ...workspace, tasks: [...workspace.tasks, task] },
     summary: `${connectorName(actor)}: created task ${quoted(task.title)}`,
+    result: { task },
+  };
+}
+
+/** Add an idea to the Ideas shelf: the existing Someday state, no review date. */
+export function planAddIdea(
+  workspace: Workspace,
+  title: string,
+  ideaNote: string | undefined,
+  now: Date,
+  actor: ConnectorActor = "claude",
+  historyNote?: string
+): ChangePlan<{ task: Task }> {
+  const stamp = adelaideTimestamp(now);
+  const task: Task = {
+    ...createTask({
+      title: title.trim(),
+      notes: ideaNote?.trim() ?? "",
+      state: "someday",
+      reviewDate: null,
+      createdAt: stamp,
+      updatedAt: stamp,
+      history: [
+        { at: stamp, text: connectorLine(actor, "Added to the Ideas shelf.", historyNote) },
+      ],
+    }),
+    actionConfirmed: false,
+  };
+  return {
+    workspace: { ...workspace, tasks: [...workspace.tasks, task] },
+    summary: `${connectorName(actor)}: added idea ${quoted(task.title)}`,
     result: { task },
   };
 }
