@@ -2939,7 +2939,7 @@ export default function Home() {
                     }}
                     readOnly={store.readOnly}
                   />
-                ) : (
+                ) : view === "attention" ? null : (
                   <WorkViews
                     view={view}
                     tasks={tasks}
@@ -2997,6 +2997,11 @@ export default function Home() {
                   </button>
                 );
               })}
+              <CaptureHoldButton
+                className="tab-capture"
+                onTap={() => openCapture()}
+                onHold={() => window.location.assign("/voice?listen=1")}
+              />
             </nav>
             {v2Screen && screenMenu && (
               <TodayCalendarMenuSheet
@@ -3024,6 +3029,7 @@ export default function Home() {
             )}
             {v2Screen && (
               <CaptureHoldButton
+                className="v2-floating-capture desktop-capture"
                 onTap={() => openCapture()}
                 onHold={() => window.location.assign("/voice?listen=1")}
               />

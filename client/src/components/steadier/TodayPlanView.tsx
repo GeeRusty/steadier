@@ -65,15 +65,19 @@ function RowMain({ row, tasks, time, onOpen }: { row: TodayRow; tasks: Task[]; t
       <span className="tp-time">{time}</span>
       <span className="tp-title-wrap">
         <span className="tp-title">{row.task.title}</span>
-        {(row.label || row.suggested) && (
-          <span className="tp-meta">
-            {[row.label, row.suggested ? "suggested · tap to confirm" : null].filter(Boolean).join(" · ")}
+        {(row.label || row.suggested || row.chips.length > 0 || row.brokenLink || row.faded) && (
+          <span className="tp-signals">
+            <Chips chips={row.chips} />
+            {row.brokenLink && <Unlink size={16} className="tp-broken" role="img" aria-label="Missing its Goal Outcome or Imperative link" />}
+            {row.faded && <CardDotsMark task={row.task} tasks={tasks} />}
+            {(row.label || row.suggested) && (
+              <span className="tp-meta">
+                {[row.label, row.suggested ? "suggested · tap to confirm" : null].filter(Boolean).join(" · ")}
+              </span>
+            )}
           </span>
         )}
       </span>
-      <Chips chips={row.chips} />
-      {row.brokenLink && <Unlink size={17} className="tp-broken" role="img" aria-label="Missing its Goal Outcome or Imperative link" />}
-      {row.faded && <CardDotsMark task={row.task} tasks={tasks} />}
       <ChevronRight size={16} className="tp-open" aria-hidden="true" />
     </button>
   );
@@ -149,6 +153,7 @@ export default function TodayPlanView(p: Props) {
   return (
     <div className="tp">
       <div className="tp-head">
+        <h2 className="tp-label">Now</h2>
         <button
           type="button"
           className="tp-info-button"
@@ -165,7 +170,6 @@ export default function TodayPlanView(p: Props) {
         </p>
       )}
 
-      <h2 className="tp-label">Now</h2>
       {now ? (
         <section id="today-now" className={rowClass(now, "tp-now")} aria-label="Now">
           <button type="button" className="tp-now-title" onClick={() => p.onOpen(now.task)}>

@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 const HOLD_MS = 450;
 
 /** The one capture button: tap to type, hold to speak to Steadier. */
-export default function CaptureHoldButton({ onTap, onHold }: { onTap: () => void; onHold: () => void }) {
+export default function CaptureHoldButton({ onTap, onHold, className = "v2-floating-capture" }: { onTap: () => void; onHold: () => void; className?: string }) {
   const timer = useRef<number | null>(null);
   const held = useRef(false);
   const clear = () => {
@@ -14,7 +14,7 @@ export default function CaptureHoldButton({ onTap, onHold }: { onTap: () => void
   return (
     <button
       type="button"
-      className="v2-floating-capture"
+      className={className}
       aria-label="Capture: tap to type, hold to speak"
       title="Tap to type · hold to speak"
       onPointerDown={() => {

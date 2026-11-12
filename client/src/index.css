@@ -12104,8 +12104,9 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 }
 .v2-page-title { font-family: Georgia, "Source Serif 4", serif; font-weight: 500; font-size: 18px; }
 .v2-floating-capture { -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
-.tp { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 112px; font-size: 15px; }
-.tp-head { display: flex; justify-content: flex-end; margin-bottom: -6px; }
+.tp { display: flex; flex-direction: column; gap: 10px; padding: 0 0 24px; font-size: 15px; }
+.tp-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 -6px; }
+.tp-head .tp-label { margin: 0; }
 .tp-info-button { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: var(--muted-foreground); border-radius: 8px; }
 .tp-info { margin: 0; font-size: 13px; color: var(--muted-foreground); background: var(--card); border: 1px solid var(--tp-line); border-radius: 10px; padding: 10px 12px; }
 .tp-label { margin: 6px 0 0; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; color: var(--muted-foreground); }
@@ -12120,19 +12121,20 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 .tp-title-wrap { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
 .tp-title { font-size: 18px; font-weight: 600; line-height: 1.3; color: var(--tp-strong); overflow-wrap: normal; word-break: normal; }
 .tp-meta { font-size: 13px; color: var(--muted-foreground); margin: 0; }
-.tp-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; flex: none; max-width: 45%; }
+.tp-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.tp-signals { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
 .tp-chip { font-size: 13px; background: var(--tp-chip-bg); color: var(--tp-chip-ink); border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
 .tp-chip--red { background: var(--tp-red-bg); color: var(--tp-red-ink); }
 .tp-broken { color: var(--muted-foreground); flex: none; }
 .tp-open { color: var(--muted-foreground); flex: none; }
-.tp-extra { display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px 68px; }
+.tp-extra { display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px 14px; }
 .tp-blocked { margin: 0; font-size: 13px; color: var(--tp-chip-ink); }
 .tp-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .tp-actions--three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .tp-btn { min-height: 44px; padding: 0 14px; border: 1px solid var(--tp-btn-line); border-radius: 8px; background: var(--card); color: var(--tp-strong); font: inherit; font-size: 15px; }
 .tp-btn:disabled, .tp-big:disabled { opacity: 0.5; }
 .tp-now { padding: 16px; gap: 10px; }
-.tp-now .tp-chips { justify-content: flex-start; max-width: none; }
+
 .tp-now .tp-extra { padding: 0; }
 .tp-now-title { display: flex; align-items: center; gap: 8px; border: 0; background: none; padding: 0; text-align: left; font: inherit; color: inherit; }
 .tp-progress { position: relative; height: 22px; }
@@ -12151,4 +12153,16 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 /* Phones use the bottom tabs for Today / Overview; wider screens keep the switch. */
 @media (max-width: 700px) {
   .today-switch-desktop { display: none; }
+}
+
+/* The one capture button sits in the tab bar on phones, so it never covers a card. */
+.tab-capture { display: none; }
+@media (max-width: 700px) {
+  .desktop-capture { display: none !important; }
+  .mobile-bottom .tab-capture {
+    display: grid; place-items: center; flex: none; align-self: center;
+    width: 52px; height: 52px; min-height: 52px; padding: 0; margin: 0 8px 0 4px; border-radius: 50%; border: 0;
+    color: #fff; background: #1E3F35; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    -webkit-touch-callout: none; user-select: none; touch-action: manipulation;
+  }
 }
