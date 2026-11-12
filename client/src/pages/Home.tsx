@@ -2060,6 +2060,7 @@ export default function Home() {
     const onToday = todayTaskIds(todayPlan(store.workspace, tasks, clock.date, clock.minutes));
     return (
       pastDueOffToday(tasks, clock.date, onToday).length +
+      liveResult.reviewDue.length +
       (reviewStatus(store.workspace, clock.date).due ? 1 : 0) +
       notReadyTasks(tasks).length +
       linkCheckCount(store.workspace) +
