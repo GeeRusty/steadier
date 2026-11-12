@@ -25,8 +25,8 @@ The **+** button at the right of the tab bar is the one capture button: **tap** 
 
 ## Areas of the app
 
-### Today
-Today is for doing. It uses three words only: **Now · Next · Later**, in time order. Nothing is ranked.
+### My life today
+The **Today** tab is for doing. It uses three words only: **Now · Next · Later**, in time order. Nothing is ranked.
 - **Now:** the booked block running now, with its likely finish, a red now mark, and big **Done** / **Finished early** buttons. If nothing is booked, it's your running focus or your chosen Next thing (with **Start**).
 - **Next:** your chosen Next thing, or else the next booking.
 - **Later:** everything else dated or booked for today. Undated work is never on Today.
