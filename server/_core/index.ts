@@ -5,6 +5,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerAndroidAppRoutes } from "./androidApp";
 import { registerVoiceRoutes } from "../steadier/voice";
+import { registerBillScanRoutes } from "../steadier/billScan";
 import { registerVoicePage } from "../steadier/voicePage";
 import { registerGuidePage } from "../steadier/guide";
 import { publicPlatformScript } from "./publicConfig";
@@ -35,6 +36,7 @@ async function startServer() {
   registerVoicePage(app);
   registerGuidePage(app);
   registerVoiceRoutes(app);
+  registerBillScanRoutes(app);
   // Owner-scoped data routes must be registered before the Vite/static SPA fallback.
   registerSteadierRoutes(app);
   registerCompassConnectionDiagnostics(app);

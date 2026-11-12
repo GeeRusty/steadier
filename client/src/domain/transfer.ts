@@ -1686,6 +1686,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
     "shoppingLists",
     "dailyLog",
     "linkCheckHolds",
+    "hideAmountsFromAI",
     "assets",
     "people",
     "credentialRenewals",
@@ -1713,6 +1714,9 @@ function validateV2Workspace(value: JsonRecord): Workspace {
   const hasShoppingLists = hasKey("shoppingLists");
   const hasDailyLog = hasKey("dailyLog");
   const hasLinkCheckHolds = hasKey("linkCheckHolds");
+  if (hasKey("hideAmountsFromAI") && typeof value.hideAmountsFromAI !== "boolean") {
+    fail("hideAmountsFromAI must be true or false.");
+  }
   const hasAssets = hasKey("assets");
   const hasPeople = hasKey("people");
   const hasCredentialRenewals = hasKey("credentialRenewals");
@@ -1823,6 +1827,9 @@ function validateV2Workspace(value: JsonRecord): Workspace {
           ...(hasShoppingLists ? { shoppingLists } : {}),
           ...(dailyLog ? { dailyLog } : {}),
           ...(linkCheckHolds ? { linkCheckHolds } : {}),
+          ...(typeof value.hideAmountsFromAI === "boolean"
+            ? { hideAmountsFromAI: value.hideAmountsFromAI }
+            : {}),
           ...(hasAssets ? { assets } : {}),
           ...(hasPeople ? { people } : {}),
           ...(hasCredentialRenewals ? { credentialRenewals } : {}),

@@ -97,6 +97,12 @@ Tasks linked to saved places. Arrival alerts need location permission and Steadi
 
 ### Obligations
 Bills, licences, renewals, insurance and tax dates, with lead time to prepare. It isn't accounting.
+- **Cancel by:** a type for trials and subscriptions you may not want. Its date is the last day to cancel, and it reminds you 3 days before by default. Once you've dealt with it, tap **Done**. If you decide to keep it, change its type to Renewal.
+- **Scan a bill:** take or pick a photo of a bill. Your server reads the text, removes anything that looks like account details, then sends only that cleaned text to Claude to pick out the provider, what it's for, amount, due date, how often and any renewal or cancel-by date. The photo is deleted as soon as it's read and is never stored or sent anywhere. You check every field, then **Save draft**. If the bill shows a second date, you can tick to add it too. (A photo you picked from your gallery stays in your gallery.)
+- **Never stored:** account, card, BSB and reference numbers, biller codes, logins, passwords and addresses are thrown away from scans and from anything Claude adds. You'll see how many were removed. Pay using the bill or your bank app.
+- **From Claude:** Claude can suggest an obligation (`add_my_life_obligation`). It arrives as a draft marked **Suggested by Claude · confirm**, with no reminder until you save it yourself.
+- **Hide amounts from AI** (on by default): Claude can't see or add amounts. Scanned amounts still come from the cleaned text, so check them.
+- There's no fortnightly option; a fortnightly bill is set to Does not repeat.
 
 ### Shopping Lists
 Group shopping items into lists and tick them off. Use tasks for anything that needs follow-up.

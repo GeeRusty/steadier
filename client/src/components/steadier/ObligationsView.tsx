@@ -13,6 +13,8 @@ import {
 import { toast } from "sonner";
 import { adelaideTimestamp } from "../../../../shared/time";
 import {
+  amountsHiddenFromAI,
+  defaultLeadTimeDays,
   markObligationPaid,
   newObligationDraft,
   obligationPreparationTask,
@@ -32,6 +34,8 @@ import type {
 import { groupByStable, monthGroup } from "../../domain/accordionGroups";
 import AccordionSection from "./AccordionSection";
 import TimingShapeMark from "./TimingShapeMark";
+import ScanBillPanel from "./ScanBillPanel";
+import { CADENCE_LABEL, KIND_LABEL } from "./obligationLabels";
 
 interface Props {
   workspace: Workspace;
@@ -44,21 +48,6 @@ interface Props {
   ) => void;
   focusId?: string | null;
 }
-
-const KIND_LABEL: Record<ObligationKind, string> = {
-  bill: "Bill",
-  renewal: "Renewal",
-  licence: "Licence",
-  insurance: "Insurance",
-  tax: "Tax date",
-};
-const CADENCE_LABEL: Record<ObligationCadence, string> = {
-  none: "Does not repeat",
-  weekly: "Weekly",
-  monthly: "Monthly",
-  quarterly: "Quarterly",
-  yearly: "Yearly",
-};
 
 function dayLabel(value: string): string {
   const date = new Date(`${value}T12:00:00Z`);
@@ -153,7 +142,7 @@ export default function ObligationsView({
   }, [ordered, query, workspace.goals, workspace.imperatives]);
   const obligationGroups = groupByStable(visibleObligations, item => {
     if (item.status === "draft") return { key: "draft", label: "Drafts" };
-    if (item.status === "paid") return { key: "paid", label: "Paid" };
+    if (item.status === "paid") return { key: "paid", label: "Paid or done" };
     if (item.dueDate < day)
       return { key: "past-due", label: "Past due · unpaid" };
     if (item.dueDate === day) return { key: "due-today", label: "Due today" };
@@ -257,8 +246,11 @@ export default function ObligationsView({
     const detail = recurring
       ? ` This will record this occurrence as paid and advance the next due date by its ${CADENCE_LABEL[obligation.cadence].toLowerCase()} cadence. It will not submit a payment.`
       : " This records the obligation as paid; it will not submit a payment or process the amount note.";
-    if (!window.confirm(`Confirm that “${obligation.title}” is paid?${detail}`))
-      return;
+    const cancelBy = obligation.kind === "cancel-by";
+    const question = cancelBy
+      ? `Mark “${obligation.title}” done? Use this once you've cancelled it or decided to keep it (if you keep it, change its type to Renewal).`
+      : `Confirm that “${obligation.title}” is paid?${detail}`;
+    if (!window.confirm(question)) return;
     const expectedDueDate = obligation.dueDate;
     const accepted = onMutate(current =>
       markObligationPaid(
@@ -271,6 +263,7 @@ export default function ObligationsView({
     );
     if (accepted === false)
       toast.error("That was not saved. Check sync and try again.");
+    else if (cancelBy) toast.success("Done.");
     else
       toast.success(
         recurring
@@ -349,6 +342,27 @@ export default function ObligationsView({
         submit, reconcile or compare money.
       </div>
 
+      <div className="obligation-scan-row">
+        <ScanBillPanel day={day} readOnly={readOnly} onMutate={onMutate} />
+        <label className="check-row small obligation-ai-amounts">
+          <input
+            type="checkbox"
+            checked={amountsHiddenFromAI(workspace)}
+            disabled={readOnly}
+            onChange={event => {
+              const hide = event.target.checked;
+              const accepted = onMutate(current => ({
+                ...current,
+                hideAmountsFromAI: hide,
+              }));
+              if (accepted === false)
+                toast.error("That wasn't saved. Check sync and try again.");
+            }}
+          />
+          Hide amounts from AI (Claude can't see or add amounts)
+        </label>
+      </div>
+
       {readOnly && (
         <div className="notice small" role="status">
           This workspace is read-only while its shared data is loading or needs
@@ -425,9 +439,27 @@ export default function ObligationsView({
               Type
               <select
                 value={form.kind}
-                onChange={event =>
-                  change("kind", event.target.value as ObligationKind)
-                }
+                onChange={event => {
+                  const kind = event.target.value as ObligationKind;
+                  setForm(current => {
+                    if (!current) return current;
+                    const followDefault =
+                      isNew &&
+                      current.leadTimeDays === defaultLeadTimeDays(current.kind);
+                    return {
+                      ...current,
+                      kind,
+                      leadTimeDays: followDefault
+                        ? defaultLeadTimeDays(kind)
+                        : current.leadTimeDays,
+                      nextAction:
+                        kind === "cancel-by" && !current.nextAction.trim()
+                          ? `Decide: keep or cancel ${current.title.trim() || "it"}`
+                          : current.nextAction,
+                    };
+                  });
+                  setFormError("");
+                }}
                 disabled={readOnly}
               >
                 {Object.entries(KIND_LABEL).map(([value, label]) => (
@@ -438,7 +470,7 @@ export default function ObligationsView({
               </select>
             </label>
             <label className="field">
-              Due date
+              {form.kind === "cancel-by" ? "Cancel by" : "Due date"}
               <input
                 type="date"
                 value={form.dueDate}
@@ -628,7 +660,8 @@ export default function ObligationsView({
           <FileText size={30} />
           <h2>Keep the next due date visible.</h2>
           <p>
-            Start with one bill, renewal, licence, insurance or tax date. Save a
+            Start with one bill, renewal, licence, insurance or tax date, or a
+            cancel-by date for a trial. Scan a bill to fill it in from a photo. Save a
             draft first if you want to decide its Compass link or next action
             later.
           </p>
@@ -704,11 +737,18 @@ export default function ObligationsView({
                         <Pencil size={15} />
                       </button>
                     )}
+                    {obligation.suggestedBy === "claude" && (
+                      <span className="state-tag obligation-suggested">
+                        Suggested by Claude · confirm
+                      </span>
+                    )}
                     <span
                       className={`state-tag obligation-status obligation-status-${obligation.status}`}
                     >
                       {obligation.status === "paid"
-                        ? "Paid"
+                        ? obligation.kind === "cancel-by"
+                          ? "Done"
+                          : "Paid"
                         : obligation.status === "draft"
                           ? "Draft"
                           : overdue
@@ -719,7 +759,10 @@ export default function ObligationsView({
                 </div>
                 <div className="obligation-card-details">
                   <span>
-                    <strong>Due</strong> {dayLabel(obligation.dueDate)}
+                    <strong>
+                      {obligation.kind === "cancel-by" ? "Cancel by" : "Due"}
+                    </strong>{" "}
+                    {dayLabel(obligation.dueDate)}
                   </span>
                   <span>
                     <strong>Prepare from</strong> {dayLabel(prepDate)} (
@@ -826,7 +869,7 @@ export default function ObligationsView({
                       onClick={() => pay(obligation)}
                       disabled={readOnly}
                     >
-                      Mark paid…
+                      {obligation.kind === "cancel-by" ? "Done…" : "Mark paid…"}
                     </button>
                   </div>
                 )}

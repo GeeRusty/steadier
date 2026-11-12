@@ -6643,6 +6643,51 @@ button.project-outcome-map-goal:disabled {
   border-radius: 999px;
   background: #fff;
 }
+.obligation-scan-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 0 0 14px;
+}
+.obligation-scan-row .scan-bill {
+  flex-basis: 100%;
+  margin: 0;
+}
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.check-row input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.obligation-ai-amounts {
+  color: var(--muted-foreground);
+}
+.scan-bill-error {
+  flex-basis: 100%;
+  margin: 0;
+}
+.scan-bill-privacy {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+.scan-bill-privacy svg {
+  flex: none;
+  margin-top: 2px;
+}
+.scan-bill .check-row {
+  margin: 10px 0;
+}
+.obligation-suggested {
+  color: #8a5a12;
+  background: #fbf0dc;
+}
 .obligation-list {
   display: grid;
   gap: 12px;

@@ -505,6 +505,7 @@ describe("connector tools by approved scope", () => {
     expect(tools.map(tool => tool.name).sort()).toEqual([
       "add_my_life_idea",
       "add_my_life_note",
+      "add_my_life_obligation",
       "add_my_life_shopping_items",
       "add_my_life_subtask",
       "check_my_life_shopping_items",
@@ -1534,6 +1535,62 @@ describe("Task card and Ideas connector rules", () => {
     const made = await client.callTool({ name: "create_my_life_task", arguments: { title: "Fix gate", area: "Home" } });
     expect(made.isError).toBe(true);
     expect(JSON.stringify(made.content)).toContain("Area was removed");
+  });
+
+  it("suggests an obligation: draft only, safe fields only, amounts hidden by default", async () => {
+    const store = new MemoryStore();
+    store.addKey(WRITE_TOKEN, "steadier:read steadier:write");
+    const client = await connect(store, WRITE_TOKEN);
+    const backupsBefore = store.backups.length;
+    const added = await client.callTool({
+      name: "add_my_life_obligation",
+      arguments: {
+        provider: "Netflix",
+        for_what: "Streaming, account 99887766",
+        kind: "cancel-by",
+        due_date: "2026-12-01",
+        amount: "$22.99",
+      },
+    });
+    expect(added.isError).toBeFalsy();
+    expect(store.backups.length).toBe(backupsBefore + 1);
+    const saved = store.stored!.workspace.obligations!.at(-1)!;
+    expect(saved).toMatchObject({
+      title: "Netflix — Streaming",
+      kind: "cancel-by",
+      dueDate: "2026-12-01",
+      status: "draft",
+      suggestedBy: "claude",
+      link: null,
+      preparationTaskId: null,
+      amountDue: null,
+      leadTimeDays: 3,
+      nextAction: "Decide: keep or cancel Netflix — Streaming",
+    });
+    const text = JSON.stringify(added.structuredContent);
+    expect(text).not.toContain("99887766");
+    expect(text).not.toContain("22.99");
+    expect(text).toContain("hides amounts from AI");
+    expect(text).toContain("Removed 1 thing");
+    // No reminder task until the owner confirms.
+    expect(store.stored!.workspace.tasks.some(t => t.obligation)).toBe(false);
+  });
+
+  it("keeps an amount only when the owner lets AI see amounts", async () => {
+    const store = new MemoryStore();
+    store.addKey(WRITE_TOKEN, "steadier:read steadier:write");
+    store.stored!.workspace = { ...store.stored!.workspace, hideAmountsFromAI: false };
+    const client = await connect(store, WRITE_TOKEN);
+    const added = await client.callTool({
+      name: "add_my_life_obligation",
+      arguments: { provider: "AGL", for_what: "Electricity", kind: "bill", due_date: "2026-11-28", cadence: "quarterly", amount: "412.5" },
+    });
+    expect(added.isError).toBeFalsy();
+    expect(store.stored!.workspace.obligations!.at(-1)).toMatchObject({ amountDue: "$412.50", cadence: "quarterly", leadTimeDays: 7 });
+    const bad = await client.callTool({ name: "add_my_life_obligation", arguments: { kind: "bill", due_date: "2026-11-28", provider: "4455 6677 8899" } });
+    expect(bad.isError).toBe(true);
+    const badDate = await client.callTool({ name: "add_my_life_obligation", arguments: { kind: "bill", due_date: "2026-02-31", provider: "AGL" } });
+    expect(badDate.isError).toBe(true);
   });
 
   it("reads Ideas but cannot let one go", async () => {

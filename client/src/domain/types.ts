@@ -68,7 +68,8 @@ export type ObligationKind =
   | "renewal"
   | "licence"
   | "insurance"
-  | "tax";
+  | "tax"
+  | "cancel-by";
 export type ObligationStatus = "draft" | "active" | "paid";
 export type ObligationCadence =
   | "none"
@@ -104,6 +105,8 @@ export interface Obligation {
   preparationTaskId: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Added by Claude and not yet confirmed by the owner; absent otherwise. */
+  suggestedBy?: "claude";
 }
 export type CredentialRenewalCategory =
   | "licence"
@@ -364,6 +367,11 @@ export interface Workspace {
    * the next Weekly Reality Review is saved after it.
    */
   linkCheckHolds?: LinkCheckHold[];
+  /**
+   * Hide obligation amounts from Claude (the connector). Absent means hidden;
+   * only an explicit false lets Claude see or add amounts.
+   */
+  hideAmountsFromAI?: boolean;
   /** Manually maintained physical Assets and condition logs; absent until used. */
   assets?: Asset[];
   /** Owner-entered relationship follow-ups; absent until used. */

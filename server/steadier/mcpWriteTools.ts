@@ -69,6 +69,8 @@ import { describeReview, reviewStatus } from "../../client/src/domain/review";
 import type { ConnectorActor } from "../../shared/cloud";
 import { connectorName } from "./connectorOps";
 import { findNotes, planAddNote } from "./notesOps";
+import { planSuggestObligation } from "./obligationOps";
+import { isDate } from "../../client/src/domain/time";
 import { ideasView, linkCheckView, setupView } from "./cardOps";
 import { guideFor } from "./guide";
 import {
@@ -1132,6 +1134,82 @@ export function registerWriteTools(
         );
         return written(applied.summary, applied.revision, {
           idea: { taskId: applied.result.task.id, title: applied.result.task.title },
+        });
+      } catch (error) {
+        return fromError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "add_my_life_obligation",
+    {
+      title: "Suggest a bill, renewal or cancel-by date for My Life Obligations",
+      description: `Suggest one obligation for the owner to confirm: a bill, renewal, licence, insurance, tax date, or a "cancel-by" date for a trial or subscription they may not want. It is saved as a draft marked "Suggested by Claude", with no reminder until the owner confirms it in Obligations. provider is who it's from (e.g. "Netflix"); for_what is what it's for in a few words. due_date is YYYY-MM-DD (for cancel-by, the last day to cancel). Never include account, card, BSB, reference or customer numbers, logins, passwords or addresses: they are removed. amount is only kept if the owner has allowed Claude to see amounts. ${writeGuidance(actor, false)}`,
+      inputSchema: fromJsonSchema({
+        type: "object",
+        properties: {
+          provider: { type: "string", maxLength: 200 },
+          for_what: { type: "string", maxLength: 200 },
+          kind: { type: "string", enum: ["bill", "renewal", "licence", "insurance", "tax", "cancel-by"] },
+          due_date: { type: "string", pattern: DATE_PATTERN },
+          cadence: { type: "string", enum: ["none", "weekly", "monthly", "quarterly", "yearly"] },
+          lead_time_days: { type: "integer", minimum: 0, maximum: 365 },
+          amount: { type: "string", maxLength: 40 },
+          next_action: { type: "string", maxLength: 500 },
+        },
+        required: ["kind", "due_date"],
+        additionalProperties: false,
+      }),
+      annotations: WRITE_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z
+        .object({
+          provider: z.string().max(200).optional(),
+          for_what: z.string().max(200).optional(),
+          kind: z.enum(["bill", "renewal", "licence", "insurance", "tax", "cancel-by"]),
+          due_date: z.string().refine(isDate, "due_date must be a real YYYY-MM-DD date."),
+          cadence: z.enum(["none", "weekly", "monthly", "quarterly", "yearly"]).optional(),
+          lead_time_days: z.number().int().min(0).max(365).optional(),
+          amount: z.string().max(40).optional(),
+          next_action: z.string().max(500).optional(),
+        })
+        .strict()
+        .safeParse(input);
+      if (!parsed.success) return invalid(parsed.error);
+      const data = parsed.data;
+      try {
+        const applied = await applyGuardedChange(changes, userId, actor, workspace =>
+          planSuggestObligation(
+            workspace,
+            {
+              provider: data.provider,
+              forWhat: data.for_what,
+              kind: data.kind,
+              dueDate: data.due_date,
+              cadence: data.cadence,
+              leadTimeDays: data.lead_time_days,
+              amount: data.amount,
+              nextAction: data.next_action,
+            },
+            new Date()
+          )
+        );
+        const { obligation, removed, amountNotSaved } = applied.result;
+        return written(applied.summary, applied.revision, {
+          obligation: {
+            id: obligation.id,
+            title: obligation.title,
+            type: obligation.kind,
+            dueDate: obligation.dueDate,
+            cadence: obligation.cadence,
+            leadTimeDays: obligation.leadTimeDays,
+            status: "suggested — the owner confirms it in Obligations",
+            ...(obligation.amountDue ? { amount: obligation.amountDue } : {}),
+          },
+          ...(removed ? { removed: `Removed ${removed} thing${removed === 1 ? "" : "s"} that looked like account details or an address.` } : {}),
+          ...(amountNotSaved ? { amount: "Not saved: the owner hides amounts from AI." } : {}),
         });
       } catch (error) {
         return fromError(error);

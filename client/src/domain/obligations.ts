@@ -23,6 +23,7 @@ const KINDS: readonly ObligationKind[] = [
   "licence",
   "insurance",
   "tax",
+  "cancel-by",
 ];
 const STATUSES: readonly ObligationStatus[] = ["draft", "active", "paid"];
 const CADENCES: readonly ObligationCadence[] = [
@@ -168,7 +169,13 @@ export function obligationsField(
   const records = value.map((raw, index): Obligation => {
     const label = `obligation ${index + 1}`;
     if (!isRecord(raw)) fail(`${label} is not an object.`);
-    exactKeys(raw, OBLIGATION_KEYS, label);
+    const hasSuggested = Object.prototype.hasOwnProperty.call(raw, "suggestedBy");
+    if (hasSuggested && raw.suggestedBy !== "claude") {
+      fail(`${label} suggestion source must be claude.`);
+    }
+    const shape = { ...raw };
+    delete shape.suggestedBy;
+    exactKeys(shape, OBLIGATION_KEYS, label);
     if (
       typeof raw.kind !== "string" ||
       !KINDS.includes(raw.kind as ObligationKind)
@@ -261,6 +268,7 @@ export function obligationsField(
       preparationTaskId,
       createdAt,
       updatedAt,
+      ...(hasSuggested ? { suggestedBy: "claude" as const } : {}),
     };
   });
   const ids = new Set<string>();
@@ -537,6 +545,16 @@ function reconcilePreparationTask(
   };
 }
 
+/** Amounts are hidden from Claude unless the owner turned that off. */
+export function amountsHiddenFromAI(workspace: Pick<Workspace, "hideAmountsFromAI">): boolean {
+  return workspace.hideAmountsFromAI !== false;
+}
+
+/** Default reminder lead time for a new obligation of this type. */
+export function defaultLeadTimeDays(kind: ObligationKind): number {
+  return kind === "cancel-by" ? 3 : 7;
+}
+
 export function saveObligation(
   workspace: Workspace,
   input: Obligation,
@@ -564,6 +582,8 @@ export function saveObligation(
     createdAt: previous?.createdAt ?? input.createdAt,
     updatedAt: stamp,
   };
+  // Saving it yourself is the confirmation of a Claude suggestion.
+  delete candidate.suggestedBy;
   if (status === "active") {
     if (!candidate.link)
       throw new Error("Choose a Pillar or Imperative before activation.");
