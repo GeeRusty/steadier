@@ -160,6 +160,11 @@ const PAGE = `<!doctype html>
   }
 
   mic.addEventListener("click", listen);
+  // Held the + button in Steadier: start listening straight away.
+  if (new URLSearchParams(location.search).get("listen") === "1") {
+    history.replaceState(null, "", location.pathname);
+    setTimeout(listen, 150);
+  }
   document.getElementById("yes").addEventListener("click", confirm);
   document.getElementById("no").addEventListener("click", cancel);
 })();

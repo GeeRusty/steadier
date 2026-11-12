@@ -714,7 +714,7 @@ export default function ObligationsView({
               : "Not linked";
             return (
               <article
-                className={`settings-section obligation-card obligation-${obligation.status}`}
+                className={`settings-section obligation-card obligation-${obligation.status}${obligation.suggestedBy === "claude" ? " is-suggested" : ""}`}
                 key={obligation.id}
               >
                 <div className="obligation-card-heading">

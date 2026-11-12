@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import LinkCheckView from "../components/steadier/LinkCheckView";
 import { linkCheckCount } from "../domain/linkCheck";
+import { pastDueOffToday, todayPlan, todayTaskIds } from "../domain/todayPlan";
+import TodayPlanView from "../components/steadier/TodayPlanView";
+import CaptureHoldButton from "../components/steadier/CaptureHoldButton";
+import { privateOwnerJSON } from "../lib/cloudApi";
 import ClaudeConsent from "../components/steadier/ClaudeConsent";
 import {
   OrphanBanner,
@@ -73,7 +77,7 @@ import {
 import { chainsForProject, describeWhy, mapGaps } from "../domain/goals";
 import { createStatusMarkData } from "../domain/statusMarkColor";
 import { applyAppearance, persistAppearance, readAppearance, type Appearance } from "../domain/appearance";
-import { MOBILE_QUICK_NAV_IDS } from "../domain/mobileQuickNavigation";
+import { MOBILE_TABS } from "../domain/mobileQuickNavigation";
 import { PILLAR_SLOTS, pillarStrip } from "../domain/pillarStrip";
 import { buildCalendar } from "../domain/calendarModel";
 import {
@@ -81,7 +85,7 @@ import {
   commandCentreSnapshot,
   confirmActiveImperative,
 } from "../domain/commandCentre";
-import { latestWeeklyReviewDate } from "../domain/review";
+import { latestWeeklyReviewDate, reviewStatus } from "../domain/review";
 import {
   adelaideClock,
   flexibleCompletionNote,
@@ -139,6 +143,10 @@ import {
   ShoppingCart,
   Package,
   Users,
+  Sun,
+  LayoutDashboard,
+  ListChecks,
+  FolderKanban,
 } from "lucide-react";
 import NearMeView from "../components/steadier/NearMeView";
 import { useLocationReminders } from "../hooks/useLocationReminders";
@@ -274,9 +282,13 @@ const nav: { id: View; title: string; Icon: typeof CircleDot }[] = [
   },
   { id: "invoices", title: "Invoices", Icon: FileText },
 ];
-const mobileQuickNav = MOBILE_QUICK_NAV_IDS.map(
-  id => nav.find(item => item.id === id)!
-);
+const TAB_ICONS = {
+  today: Sun,
+  overview: LayoutDashboard,
+  all: ListChecks,
+  calendar: CalendarDays,
+  projects: FolderKanban,
+} as const;
 interface InstallPrompt extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: string }>;
@@ -405,6 +417,22 @@ export default function Home() {
   const [orphanOpen, setOrphanOpen] = useState(false);
   // Today redesign (v2.8): Today / Overview switch, intention editor, re-anchor.
   const [todayTab, setTodayTab] = useState<"today" | "overview">("today");
+  const [pendingDeleteCount, setPendingDeleteCount] = useState(0);
+  // Claude delete requests waiting for the owner count in Needs attention.
+  const pendingOwner = store.cloud.user?.id ?? 0;
+  useEffect(() => {
+    if (!store.cloud.active || !pendingOwner) {
+      setPendingDeleteCount(0);
+      return;
+    }
+    let live = true;
+    privateOwnerJSON<{ pending: unknown[] }>(pendingOwner, "/api/steadier/pending-deletes")
+      .then(r => live && setPendingDeleteCount(Array.isArray(r.pending) ? r.pending.length : 0))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [store.cloud.active, pendingOwner, store.cloud.revision]);
   const [intentionOpen, setIntentionOpen] = useState<false | "type" | "listen">(
     false
   );
@@ -2026,6 +2054,19 @@ export default function Home() {
   const nowTask =
     nowBlock ?? focused ?? intentionTask ?? liveResult.items[0]?.task;
   const nowIds = nowTask ? [nowTask.id] : [];
+  const todayAttentionCount = (() => {
+    if (view !== "attention") return 0;
+    const clock = adelaideClock();
+    const onToday = todayTaskIds(todayPlan(store.workspace, tasks, clock.date, clock.minutes));
+    return (
+      pastDueOffToday(tasks, clock.date, onToday).length +
+      (reviewStatus(store.workspace, clock.date).due ? 1 : 0) +
+      notReadyTasks(tasks).length +
+      linkCheckCount(store.workspace) +
+      orphanReport(tasks).count +
+      pendingDeleteCount
+    );
+  })();
   return (
     <TaskListContext.Provider value={tasks}>
       <TaskKindContext.Provider value={kindValue}>
@@ -2150,22 +2191,15 @@ export default function Home() {
                       onToggle={() => setMobileMenu(value => !value)}
                     />
                     <div className="v2-topbar-center" aria-live="polite">
-                      <strong>{view === "calendar" ? "Calendar" : "Today"}</strong>
+                      <strong className="v2-page-title">
+                        {view === "calendar" ? "Calendar" : todayTab === "overview" ? "Overview" : "Today"}
+                      </strong>
                       <span className={`v2-sync-status ${topbarConnectionTone}`}>
                         <span>{topbarDate}</span><span aria-hidden="true"> · </span><i aria-hidden="true" />
                         <span>{topbarSyncText}</span>
                       </span>
                     </div>
                     <div className="v2-topbar-actions">
-                      {view === "attention" && (
-                        <button
-                          className="icon-button v2-mic-button"
-                          aria-label="Speak"
-                          onClick={() => openCapture(true)}
-                        >
-                          <Mic size={19} aria-hidden="true" />
-                        </button>
-                      )}
                       <button
                         className="icon-button v2-page-menu-button"
                         aria-label="Open This page menu"
@@ -2345,19 +2379,21 @@ export default function Home() {
                     {voice.error}
                   </p>
                 )}
-                {view === "attention" && (
-                  <TodayViewSwitch
-                    value={todayTab}
-                    onChange={tab => {
-                      setTodayTab(tab);
-                      window.scrollTo({ top: 0 });
-                    }}
-                  />
-                )}
                 {view === "review" && (
                   <h1 className="page-purpose-heading">Review due / unplaced</h1>
                 )}
-                <PagePurposeNote view={view} />
+                {view === "attention" && (
+                  <div className="today-switch-desktop">
+                    <TodayViewSwitch
+                      value={todayTab}
+                      onChange={tab => {
+                        setTodayTab(tab);
+                        window.scrollTo({ top: 0 });
+                      }}
+                    />
+                  </div>
+                )}
+                {!(view === "attention" && todayTab === "today") && <PagePurposeNote view={view} />}
                 {view === "attention" && todayTab === "overview" && (
                   <OrphanBanner
                     workspace={store.workspace}
@@ -2379,7 +2415,58 @@ export default function Home() {
                   />
                 )}
                 {view === "attention" && todayTab === "today" && (
-                  <div className="v2-today-card-stack">
+                  <TodayPlanView
+                    workspace={store.workspace}
+                    tasks={tasks}
+                    readOnly={store.readOnly}
+                    attentionCount={todayAttentionCount}
+                    onAttention={() => {
+                      setTodayTab("overview");
+                      window.scrollTo({ top: 0 });
+                    }}
+                    onOverview={() => {
+                      setTodayTab("overview");
+                      window.scrollTo({ top: 0 });
+                    }}
+                    onDone={id => done(id)}
+                    onFinishedEarly={finishEarly}
+                    onStart={task => start(task)}
+                    onOpenFocus={() => setFocusOpen(true)}
+                    onOpen={openTaskView}
+                    onMove={openTaskEditor}
+                    onDrop={dropFromPool}
+                    onMutate={store.mutate}
+                  />
+                )}
+                {view === "attention" && todayTab === "overview" && (
+                  <>
+                    <TodayNow
+                      workspace={store.workspace}
+                      tasks={tasks}
+                      sortCount={notReadyTasks(tasks).length}
+                      ideaCount={ideaList(tasks).length}
+                      onSort={() => navigate("sort")}
+                      linkCheckCount={linkCheckCount(store.workspace)}
+                      onLinkCheck={() => navigate("linkcheck")}
+                      onIdeas={() => navigate("ideas")}
+                      result={liveResult}
+                      orphanCount={orphanReport(tasks).count}
+                      readOnly={store.readOnly}
+                      onDone={id => done(id)}
+                      onNotNow={notNow}
+                      onStart={start}
+                      onOpenFocus={() => setFocusOpen(true)}
+                      onFinishedEarly={finishEarly}
+                      onOpen={openTaskView}
+                      onConfirmPlacement={confirmHome}
+                      onOpenOrphans={() => setOrphanOpen(true)}
+                      onReview={() => navigate("review")}
+                      onCommitments={() => openAll("commitments")}
+                      onCalendar={() => navigate("calendar")}
+                      onImperatives={() => navigate("imperatives")}
+                    />
+                    <ClaudeChangesPanel store={store} voice={voice} compact />
+                    <div className="v2-today-card-stack overview-pool">
                     <TodayNextThing
                       workspace={store.workspace}
                       tasks={tasks}
@@ -2417,7 +2504,6 @@ export default function Home() {
                         />
                       }
                     />
-                    <DatedTodayCard tasks={tasks} today={now} onOpen={openTaskView} />
                     <V2FoldableCard
                       title="Pillars"
                       count={`${todayPillarCount} of ${PILLAR_SLOTS} set`}
@@ -2439,36 +2525,7 @@ export default function Home() {
                         todayV2
                       />
                     </V2FoldableCard>
-                  </div>
-                )}
-                {view === "attention" && todayTab === "overview" && (
-                  <>
-                    <TodayNow
-                      workspace={store.workspace}
-                      tasks={tasks}
-                      sortCount={notReadyTasks(tasks).length}
-                      ideaCount={ideaList(tasks).length}
-                      onSort={() => navigate("sort")}
-                      linkCheckCount={linkCheckCount(store.workspace)}
-                      onLinkCheck={() => navigate("linkcheck")}
-                      onIdeas={() => navigate("ideas")}
-                      result={liveResult}
-                      orphanCount={orphanReport(tasks).count}
-                      readOnly={store.readOnly}
-                      onDone={id => done(id)}
-                      onNotNow={notNow}
-                      onStart={start}
-                      onOpenFocus={() => setFocusOpen(true)}
-                      onFinishedEarly={finishEarly}
-                      onOpen={openTaskView}
-                      onConfirmPlacement={confirmHome}
-                      onOpenOrphans={() => setOrphanOpen(true)}
-                      onReview={() => navigate("review")}
-                      onCommitments={() => openAll("commitments")}
-                      onCalendar={() => navigate("calendar")}
-                      onImperatives={() => navigate("imperatives")}
-                    />
-                    <ClaudeChangesPanel store={store} voice={voice} compact />
+                    </div>
                     <MoveFloorTodayCard day={now} onOpen={() => navigate("moveEnergy")} />
                   </>
                 )}
@@ -2485,12 +2542,6 @@ export default function Home() {
                     onOpenTask={openTaskView}
                     onRead={voice.read}
                     readOnly={store.readOnly}
-                  />
-                )}
-                {view === "attention" && todayTab === "today" && (
-                  <MoveFloorTodayCard
-                    day={now}
-                    onOpen={() => navigate("moveEnergy")}
                   />
                 )}
                 {view === "attention" && todayTab === "overview" ? (
@@ -2771,6 +2822,7 @@ export default function Home() {
                     workspace={store.workspace}
                     readOnly={store.readOnly}
                     onMutate={store.mutate}
+                    onOpenProject={openProjectById}
                   />
                 ) : view === "ideas" ? (
                   <IdeasShelf
@@ -2924,34 +2976,27 @@ export default function Home() {
               </main>
             </div>
             <nav className="mobile-bottom" aria-label="Quick navigation">
-              {mobileQuickNav.map(({ id, title, Icon }) => (
-                <button
-                  key={id}
-                  className={view === id ? "active" : ""}
-                  aria-current={view === id ? "page" : undefined}
-                  aria-label={
-                    id === "compass-view" ? "Open Compass view" : undefined
-                  }
-                  title={id === "compass-view" ? "Compass view" : undefined}
-                  onClick={() => {
-                    navigate(id);
-                    setMobileMenu(false);
-                  }}
-                >
-                  <Icon size={19} />
-                  <span>
-                    {id === "compass-view"
-                      ? "Compass"
-                      : id === "settings"
-                        ? "Backups"
-                        : id === "attention"
-                          ? "Today"
-                          : id === "projects"
-                            ? "Projects"
-                            : title}
-                  </span>
-                </button>
-              ))}
+              {MOBILE_TABS.map(tab => {
+                const active =
+                  view === tab.view && (!tab.todayTab || tab.todayTab === todayTab);
+                const Icon = TAB_ICONS[tab.key];
+                return (
+                  <button
+                    key={tab.key}
+                    className={active ? "active" : ""}
+                    aria-current={active ? "page" : undefined}
+                    onClick={() => {
+                      if (tab.todayTab) setTodayTab(tab.todayTab);
+                      navigate(tab.view);
+                      setMobileMenu(false);
+                      window.scrollTo({ top: 0 });
+                    }}
+                  >
+                    <Icon size={19} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
             </nav>
             {v2Screen && screenMenu && (
               <TodayCalendarMenuSheet
@@ -2977,24 +3022,12 @@ export default function Home() {
                 }}
               />
             )}
-            {view === "attention" && todayTab === "today" && (
-              <button
-                type="button"
-                className="v2-floating-capture"
-                aria-label="Capture a task"
-                onClick={() => openCapture()}
-              >
-                <Plus size={23} aria-hidden="true" />
-              </button>
+            {v2Screen && (
+              <CaptureHoldButton
+                onTap={() => openCapture()}
+                onHold={() => window.location.assign("/voice?listen=1")}
+              />
             )}
-            <a
-              href="/voice"
-              className={`v2-floating-talk${view === "attention" && todayTab === "today" ? " v2-floating-talk--stacked" : ""}`}
-              aria-label="Talk to Steadier"
-              title="Talk to Steadier"
-            >
-              <Mic size={22} aria-hidden="true" />
-            </a>
             <OrphanSheet
               open={orphanOpen}
               onClose={() => setOrphanOpen(false)}

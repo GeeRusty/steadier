@@ -12,6 +12,7 @@ import {
   linkTaskToImperative,
   makeProjectSupport,
   matrixBalance,
+  projectsWithoutGoalOutcome,
   renewHoldsForReview,
   rowLabel,
   stepDownImperative,
@@ -105,7 +106,17 @@ describe("Link check lists", () => {
       { ...project("e", "direction"), status: "achieved" },
     ];
     expect(unlinkedProjects(w).map(p => p.id)).toEqual(["a", "c"]);
-    expect(linkCheckCount(w)).toBe(1 + 2);
+    // Plus the four active projects with no Goal Outcome (approved 2026-11-12).
+    expect(linkCheckCount(w)).toBe(1 + 2 + 4);
+  });
+
+  it("List 3 is active projects with no confirmed Goal Outcome", () => {
+    const w = base();
+    w.projects = [project("a", "support"), project("b", "support"), { ...project("c", "support"), status: "achieved" }];
+    w.goals = [
+      { id: "o1", level: "outcome", title: "O", description: "", status: "active", parents: [], projects: [{ id: "a", confirmed: true }, { id: "b", confirmed: false }], notionUrl: null, history: [], createdAt: T0, updatedAt: T0 },
+    ];
+    expect(projectsWithoutGoalOutcome(w).map(p => p.id)).toEqual(["b"]);
   });
 });
 

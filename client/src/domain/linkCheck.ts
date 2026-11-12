@@ -274,9 +274,24 @@ export function unlinkedProjects(workspace: Workspace): Project[] {
   );
 }
 
+/**
+ * Active projects with no confirmed Goal Outcome (the broken-link icon).
+ * Counted in Link check since 2026-11-12 (owner-approved).
+ */
+export function projectsWithoutGoalOutcome(workspace: Workspace): Project[] {
+  const linked = new Set<string>();
+  for (const goal of workspace.goals ?? []) {
+    if (goal.level !== "outcome" || goal.status !== "active") continue;
+    for (const link of goal.projects ?? []) if (link.confirmed) linked.add(link.id);
+  }
+  return workspace.projects.filter(p => p.status === "active" && !linked.has(p.id));
+}
+
 export function linkCheckCount(workspace: Workspace): number {
   return (
-    unlinkedImperatives(workspace).length + unlinkedProjects(workspace).length
+    unlinkedImperatives(workspace).length +
+    unlinkedProjects(workspace).length +
+    projectsWithoutGoalOutcome(workspace).length
   );
 }
 

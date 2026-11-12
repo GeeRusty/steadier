@@ -21,14 +21,7 @@ describe("My Life slide-out navigation", () => {
     expect(open).toContain('aria-expanded="true"');
   });
 
-  it("preserves the six horizontal quick links as one-tap destinations", () => {
-    expect(MOBILE_QUICK_NAV_IDS).toEqual([
-      "attention",
-      "calendar",
-      "all",
-      "projects",
-      "settings",
-      "compass-view",
-    ]);
+  it("keeps five bottom tabs", () => {
+    expect(MOBILE_QUICK_NAV_IDS).toEqual(["attention", "all", "calendar", "projects"]);
   });
 });

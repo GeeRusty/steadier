@@ -15,6 +15,7 @@ import {
   stepDownImperative,
   unlinkedImperatives,
   unlinkedProjects,
+  projectsWithoutGoalOutcome,
   type StepDownOutcome,
 } from "../../domain/linkCheck";
 import { isOpenTask } from "../../domain/taskCard";
@@ -28,6 +29,8 @@ interface Props {
   onMutate: (fn: (w: Workspace) => Workspace) => boolean | void;
   /** Weekly Review step: show the Not yet items that must be decided again. */
   reviewMode?: boolean;
+  /** Opens a project so its Goal Outcome can be linked there. */
+  onOpenProject?: (id: string) => void;
 }
 
 type Open = { id: string; panel: "link" | "step" } | null;
@@ -36,7 +39,8 @@ type Open = { id: string; panel: "link" | "step" } | null;
  * Link check: Imperatives with no work, and Imperative-row projects with no
  * Imperative. Every choice is one owner tap; nothing links itself.
  */
-export default function LinkCheckView({ workspace, readOnly, onMutate, reviewMode = false }: Props) {
+export default function LinkCheckView({ workspace, readOnly, onMutate, reviewMode = false, onOpenProject }: Props) {
+  const noOutcome = reviewMode ? [] : projectsWithoutGoalOutcome(workspace);
   const [open, setOpen] = useState<Open>(null);
   const [message, setMessage] = useState("");
   const imperatives = reviewMode ? heldLinkItems(workspace).imperatives : unlinkedImperatives(workspace);
@@ -226,7 +230,7 @@ export default function LinkCheckView({ workspace, readOnly, onMutate, reviewMod
     );
   };
 
-  const nothing = imperatives.length === 0 && projects.length === 0;
+  const nothing = imperatives.length === 0 && projects.length === 0 && noOutcome.length === 0;
 
   return (
     <section className="ideas-shelf link-check" aria-labelledby="link-check-title">
@@ -257,6 +261,24 @@ export default function LinkCheckView({ workspace, readOnly, onMutate, reviewMod
             <>
               <h2 className="lbl">Imperative projects with no Imperative ({projects.length})</h2>
               <ul className="ideas-list">{projects.map(projectCard)}</ul>
+            </>
+          )}
+          {noOutcome.length > 0 && (
+            <>
+              <h2 className="lbl">Projects with no Goal Outcome ({noOutcome.length})</h2>
+              <ul className="ideas-list">
+                {noOutcome.map(project => (
+                  <li key={project.id} className="idea-card link-card">
+                    <strong>{project.title}</strong>
+                    <p className="small muted">Link it to a Goal Outcome on its project page.</p>
+                    {onOpenProject && (
+                      <button type="button" className="text-button" onClick={() => onOpenProject(project.id)}>
+                        Open project
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </>
           )}
           {!reviewMode && heldCount > 0 && (

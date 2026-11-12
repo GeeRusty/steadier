@@ -6684,9 +6684,14 @@ button.project-outcome-map-goal:disabled {
 .scan-bill .check-row {
   margin: 10px 0;
 }
+/* Suggested = dashed until the owner confirms (design language). */
+.obligation-card.is-suggested {
+  border: 1.5px dashed var(--muted-foreground);
+}
 .obligation-suggested {
-  color: #8a5a12;
-  background: #fbf0dc;
+  color: var(--muted-foreground);
+  background: transparent;
+  border: 1px dashed var(--muted-foreground);
 }
 .obligation-list {
   display: grid;
@@ -12070,3 +12075,80 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 .derived-row { display: block; min-height: 44px; padding: 10px 0; font-weight: 700; }
 .derived-row .small { display: block; font-weight: 400; }
 .life-matrix-reminder { font-size: 18px; margin: 4px 0 8px; }
+
+/* ---------------------------------------------------------------------------
+   Today = do (docs/design-language.md). Three colours carry meaning:
+   green (serves an Imperative), red (now / genuine risk), grey (quiet).
+   Three text sizes: 13 (meta), 15 (body), 18 (task titles). */
+:root {
+  --tp-green: #3c7a4b;
+  --tp-red: #c23b2a;
+  --tp-chip-bg: #edece7;
+  --tp-chip-ink: #4a4a45;
+  --tp-red-bg: #fbe3df;
+  --tp-red-ink: #9e2a1c;
+  --tp-line: #dcdbd5;
+  --tp-btn-line: #bdbcb5;
+  --tp-strong: #1c1c1a;
+}
+:root[data-theme="dark"] {
+  --tp-green: #6fbf83;
+  --tp-red: #ff7a66;
+  --tp-chip-bg: #2a3038;
+  --tp-chip-ink: #c9d0d8;
+  --tp-red-bg: #4a2420;
+  --tp-red-ink: #ffb3a7;
+  --tp-line: #37414c;
+  --tp-btn-line: #55606c;
+  --tp-strong: #e8ecef;
+}
+.v2-page-title { font-family: Georgia, "Source Serif 4", serif; font-weight: 500; font-size: 18px; }
+.v2-floating-capture { -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
+.tp { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 112px; font-size: 15px; }
+.tp-head { display: flex; justify-content: flex-end; margin-bottom: -6px; }
+.tp-info-button { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: var(--muted-foreground); border-radius: 8px; }
+.tp-info { margin: 0; font-size: 13px; color: var(--muted-foreground); background: var(--card); border: 1px solid var(--tp-line); border-radius: 10px; padding: 10px 12px; }
+.tp-label { margin: 6px 0 0; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; color: var(--muted-foreground); }
+.tp-list { display: flex; flex-direction: column; gap: 8px; }
+.tp-row { background: var(--card); border: 1px solid var(--tp-line); border-radius: 12px; display: flex; flex-direction: column; }
+.tp-row.tp-green { border-left: 5px solid var(--tp-green); }
+.tp-row.tp-suggested { border: 1.5px dashed var(--tp-btn-line); }
+.tp-row.tp-suggested.tp-green { border-left: 5px solid var(--tp-green); }
+.tp-row.tp-faded > .tp-row-main { opacity: 0.55; }
+.tp-row-main { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 10px 12px 10px 14px; border: 0; background: none; color: inherit; text-align: left; font: inherit; width: 100%; border-radius: 12px; }
+.tp-time { font-size: 13px; color: var(--muted-foreground); min-width: 44px; flex: none; }
+.tp-title-wrap { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
+.tp-title { font-size: 18px; font-weight: 600; line-height: 1.3; color: var(--tp-strong); overflow-wrap: normal; word-break: normal; }
+.tp-meta { font-size: 13px; color: var(--muted-foreground); margin: 0; }
+.tp-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; flex: none; max-width: 45%; }
+.tp-chip { font-size: 13px; background: var(--tp-chip-bg); color: var(--tp-chip-ink); border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+.tp-chip--red { background: var(--tp-red-bg); color: var(--tp-red-ink); }
+.tp-broken { color: var(--muted-foreground); flex: none; }
+.tp-open { color: var(--muted-foreground); flex: none; }
+.tp-extra { display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px 68px; }
+.tp-blocked { margin: 0; font-size: 13px; color: var(--tp-chip-ink); }
+.tp-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.tp-actions--three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tp-btn { min-height: 44px; padding: 0 14px; border: 1px solid var(--tp-btn-line); border-radius: 8px; background: var(--card); color: var(--tp-strong); font: inherit; font-size: 15px; }
+.tp-btn:disabled, .tp-big:disabled { opacity: 0.5; }
+.tp-now { padding: 16px; gap: 10px; }
+.tp-now .tp-chips { justify-content: flex-start; max-width: none; }
+.tp-now .tp-extra { padding: 0; }
+.tp-now-title { display: flex; align-items: center; gap: 8px; border: 0; background: none; padding: 0; text-align: left; font: inherit; color: inherit; }
+.tp-progress { position: relative; height: 22px; }
+.tp-track { position: absolute; left: 0; right: 0; top: 9px; height: 4px; border-radius: 2px; background: var(--tp-chip-bg); }
+.tp-fill { position: absolute; left: 0; top: 9px; height: 4px; border-radius: 2px; background: var(--tp-green); }
+.tp-likely { position: absolute; right: 0; top: 9px; height: 4px; background: repeating-linear-gradient(90deg, var(--tp-btn-line) 0 4px, transparent 4px 7px); }
+.tp-nowmark { position: absolute; top: 0; width: 2px; height: 22px; margin-left: -1px; background: var(--tp-red); }
+.tp-times { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted-foreground); margin-top: -6px; }
+.tp-now-text { color: var(--tp-red); }
+.tp-now-actions { display: flex; gap: 10px; margin-top: 4px; }
+.tp-big { flex: 1 1 0; min-height: 56px; border: 0; border-radius: 10px; background: var(--tp-strong); color: var(--card); font: inherit; font-size: 18px; font-weight: 600; }
+.tp-big--second { background: var(--card); color: var(--tp-strong); border: 1px solid var(--tp-btn-line); font-size: 15px; font-weight: 500; }
+.tp-empty { align-items: flex-start; }
+.tp-link { border: 0; background: none; padding: 10px 0; min-height: 44px; color: var(--primary); font: inherit; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
+.tp-attention { display: flex; align-items: center; justify-content: space-between; min-height: 52px; margin-top: 8px; padding: 0 4px; border: 0; border-top: 1px solid var(--tp-line); border-bottom: 1px solid var(--tp-line); background: none; color: var(--tp-strong); font: inherit; font-size: 15px; font-weight: 500; text-align: left; }
+/* Phones use the bottom tabs for Today / Overview; wider screens keep the switch. */
+@media (max-width: 700px) {
+  .today-switch-desktop { display: none; }
+}

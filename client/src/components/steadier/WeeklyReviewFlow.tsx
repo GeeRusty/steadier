@@ -1,3 +1,4 @@
+import { slippedAgainUntouched } from "../../domain/todayPlan";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
@@ -32,6 +33,7 @@ import {
 } from "../../domain/review";
 import { adelaideTimestamp } from "../../../../shared/time";
 import { adelaideClock } from "../../domain/time";
+import { latestWeeklyReviewDate } from "../../domain/review";
 import { UnplacedPanel } from "./CompassPanels";
 import { mapGaps } from "../../domain/goals";
 import { groupByStable, monthGroup } from "../../domain/accordionGroups";
@@ -509,6 +511,13 @@ export default function WeeklyReviewFlow({
       </>
     );
   } else if (step === "Capacity") {
+    const clock = adelaideClock();
+    const slippedTwice = slippedAgainUntouched(
+      workspace.tasks,
+      latestWeeklyReviewDate(workspace),
+      clock.date,
+      clock.minutes
+    );
     const q =
       "Floor Check, capacity. How much do you honestly have this week: low, medium or high?";
     body = (
@@ -551,6 +560,20 @@ export default function WeeklyReviewFlow({
           />
         </label>
         <DictateNote field="capacity" current={draft.floor.capacity.note} />
+        {slippedTwice.length > 0 && (
+          <section className="review-slipped" aria-labelledby="review-slipped-title">
+            <h3 id="review-slipped-title">Slipped twice ({slippedTwice.length})</h3>
+            <p className="small muted">
+              You chose Keep going and it slipped again. Move it, drop it, or
+              give it more room.
+            </p>
+            <ul>
+              {slippedTwice.map(t => (
+                <li key={t.id}>{t.title}</li>
+              ))}
+            </ul>
+          </section>
+        )}
       </>
     );
   } else if (step === "Unplaced") {

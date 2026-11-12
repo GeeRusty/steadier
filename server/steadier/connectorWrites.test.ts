@@ -1450,7 +1450,8 @@ describe("Link check connector rules", () => {
     };
     expect(view.imperativesWithNoWork.map(i => i.imperativeId)).toEqual(["imp-home"]);
     expect(view.imperativeProjectsWithNoImperative.map(p => p.projectId)).toEqual(["project-1"]);
-    expect(view.count).toBe(2);
+    // project-1 also has no Goal Outcome (counted since 2026-11-12).
+    expect(view.count).toBe(3);
 
     const linked = await client.callTool({
       name: "set_my_life_placement",
@@ -1466,7 +1467,7 @@ describe("Link check connector rules", () => {
       count: number;
       imperativeProjectsWithNoImperative: { projectId: string; suggestedImperativeIds?: string[] }[];
     };
-    expect(again.count).toBe(2);
+    expect(again.count).toBe(3);
     expect(again.imperativeProjectsWithNoImperative[0].suggestedImperativeIds).toEqual(["imp-home"]);
 
     // The connector cannot write holds: the tool has no inputs.
