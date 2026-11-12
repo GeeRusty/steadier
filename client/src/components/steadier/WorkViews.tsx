@@ -1,5 +1,6 @@
 import TimeChips from "./TimeChips";
 import TimingShapeMark from "./TimingShapeMark";
+import { Info } from "lucide-react";
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { TaskKindContext } from "./TaskStates";
 import { countLabel, kindCounts, taskKind } from "../../domain/todayStates";
@@ -106,6 +107,7 @@ export default function WorkViews(p: Props) {
     ],
   };
   const [title, sub] = headings[p.view] || headings.all;
+  const [info, setInfo] = useState(false);
   const pastDueIds = new Set(pastDueTasks(p.tasks, today()).map(t => t.id));
   const notReadyCount = notReadyTasks(p.tasks).length;
   const links = { imperatives: p.imperatives ?? [], projects: p.projects };
@@ -188,7 +190,7 @@ export default function WorkViews(p: Props) {
     return (
       <article
         key={task.id}
-        className={`work-row${row.depth ? " is-subtask" : ""}${kindOf(task)}${isFaded(task, p.tasks) ? " work-row--faded" : ""}`}
+        className={`work-row${row.depth ? " is-subtask" : ""}${kindOf(task)}${isFaded(task, p.tasks) ? " work-row--faded" : ""}${effectiveTaskRole(task, links) === "direction" ? " serves-imperative" : ""}`}
         style={
           row.depth
             ? { marginLeft: `${Math.min(row.depth, 4) * 1.25}rem` }
@@ -233,54 +235,32 @@ export default function WorkViews(p: Props) {
           onClick={() => p.onOpen(task)}
         >
           <strong>{task.title}</strong>
-          {isFaded(task, p.tasks) && <CardDotsMark task={task} tasks={p.tasks} />}
-          {task.droppedAt && (
-            <span className="dropped-decision-tag">Dropped — kept decision</span>
-          )}
-          <span className="identity-label">{rowLabel(task, links)}</span>
-          <span>
-            {task.nextAction || "Choose one small next physical step."}
+          <span className="work-row-signals">
+            <TimingShapeMark task={task} noGreen />
+            {isFaded(task, p.tasks) && <CardDotsMark task={task} tasks={p.tasks} />}
           </span>
-          {task.projectId && (
-            <span className="small contribution-note">
-              Outcome:{" "}
-              {p.projects.find(project => project.id === task.projectId)
-                ?.outcome ||
-                p.projects.find(project => project.id === task.projectId)
-                  ?.title}
-            </span>
-          )}
-          {task.state === "done" && task.progressEvidence && (
+          <span className="work-row-when">
+            {[
+              state !== "ready" ? stateLabel(state) : null,
+              deadlineLabel(task) || null,
+              task.droppedAt ? "Dropped — kept" : null,
+              ["waiting", "blocked"].includes(state)
+                ? task.waitingFor ||
+                  (dependencies.length
+                    ? `Blocked by: ${dependencies.map(id => p.tasks.find(t => t.id === id)?.title || "missing task").join(", ")}`
+                    : null)
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
+          {p.view === "progress" && task.state === "done" && task.progressEvidence && (
             <span className="progress-evidence">
               What changed: {task.progressEvidence}
             </span>
           )}
-          <span className="work-row-open-hint">
-            <ChevronRight size={14} aria-hidden="true" /> View task details
-          </span>
-          {task.preparationDate && (
-            <span className="small muted">
-              {task.preparationSource === "suggested"
-                ? "Suggested preparation"
-                : "Preparation planned"}
-              : {task.preparationDate}
-            </span>
-          )}
-          {["waiting", "blocked"].includes(state) && (
-            <span className="waiting-reason">
-              {task.waitingFor ||
-                (dependencies.length
-                  ? `Prerequisite: ${dependencies.map(id => p.tasks.find(t => t.id === id)?.title || "missing task").join(", ")}`
-                  : "Name the missing piece.")}
-              {task.reviewDate && ` · Review ${task.reviewDate}`}
-            </span>
-          )}
         </button>
         <div className="work-row-meta">
-          <span className={`state-tag state-${state}`}>
-            {stateLabel(state)}
-          </span>
-          <span>{deadlineLabel(task)}</span>
           <TimeChips task={task} hideParent={row.depth > 0} />
         </div>
         {p.view === "review" &&
@@ -314,18 +294,21 @@ export default function WorkViews(p: Props) {
   };
   return (
     <>
-      <div className="page-heading">
-        <div className="eyebrow">
-          {p.view === "progress"
-            ? "A RECORD OF PROGRESS"
-            : "A TRUSTED PLACE FOR EVERYTHING"}
-        </div>
-        <h1>{title}</h1>
-        <p>{sub}</p>
+      <div className="work-head">
+        {p.view !== "all" && <h1 className="work-title">{title}</h1>}
+        <button
+          type="button"
+          className="tp-info-button"
+          aria-label="What this page shows"
+          aria-expanded={info}
+          onClick={() => setInfo(v => !v)}
+        >
+          <Info size={18} aria-hidden="true" />
+        </button>
       </div>
-      {p.view === "all" && (
-        <p className="work-row-guidance">
-          Tap <strong>View task details</strong> to inspect a task. Use the separate Done tick to complete it.
+      {info && (
+        <p className="tp-info" role="note">
+          {sub} Tap a row to open it; the Done box completes it.
         </p>
       )}
       {p.view === "all" && activeFlexibleTasks.length > 0 && (
@@ -408,11 +391,9 @@ export default function WorkViews(p: Props) {
             </span>
           )}
         </span>
-        <span className="small muted">
-          {p.view === "review"
-            ? "Acknowledge review ≠ complete work"
-            : "Select any row to see the next step"}
-        </span>
+        {p.view === "review" && (
+          <span className="small muted">Acknowledge review ≠ complete work</span>
+        )}
       </div>
       {groupedView ? (
         <div className="accordion-group-list work-list-groups">

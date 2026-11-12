@@ -3,6 +3,7 @@ import { ChevronRight, Info, Unlink } from "lucide-react";
 import { toast } from "sonner";
 import { adelaideTimestamp } from "../../../../shared/time";
 import { adelaideClock } from "../../domain/time";
+import { poolTasks } from "../../domain/anchorPlanning";
 import {
   clockText,
   keepGoing,
@@ -29,6 +30,8 @@ interface Props {
   onMove: (task: Task) => void;
   onDrop: (id: string) => boolean;
   onMutate: (change: (w: Workspace) => Workspace) => boolean | void;
+  /** Make a task today's Next thing (WHEN trigger + one small DO action). */
+  onChoose: (taskId: string, when: string, doAction: string) => boolean;
 }
 
 export const TODAY_INFO =
@@ -86,6 +89,10 @@ function RowMain({ row, tasks, time, onOpen }: { row: TodayRow; tasks: Task[]; t
 export default function TodayPlanView(p: Props) {
   const [clock, setClock] = useState(() => adelaideClock());
   const [info, setInfo] = useState(false);
+  const [picking, setPicking] = useState(false);
+  const [pickId, setPickId] = useState<string | null>(null);
+  const [pickDo, setPickDo] = useState("");
+  const [showAllPool, setShowAllPool] = useState(false);
   useEffect(() => {
     const id = window.setInterval(() => setClock(adelaideClock()), 30_000);
     return () => window.clearInterval(id);
@@ -138,6 +145,74 @@ export default function TodayPlanView(p: Props) {
       </div>
     );
 
+  const pool = poolTasks(p.tasks, clock.date, minute);
+  const choose = (task: Task) => {
+    const doAction = pickDo.trim() || task.nextAction.trim();
+    if (!doAction) return;
+    if (p.onChoose(task.id, "now", doAction)) {
+      setPickId(null);
+      setPickDo("");
+      setPicking(false);
+    }
+  };
+  const picker = pool.length === 0 ? (
+    <p className="tp-meta">Nothing is waiting. Use + to add something.</p>
+  ) : (
+    <ul className="tp-pick">
+      {(showAllPool ? pool : pool.slice(0, 6)).map(task => (
+        <li key={task.id}>
+          {pickId === task.id ? (
+            <form
+              className="tp-pick-form"
+              onSubmit={event => {
+                event.preventDefault();
+                choose(task);
+              }}
+            >
+              <span className="tp-title">{task.title}</span>
+              <label className="tp-meta" htmlFor={`pick-do-${task.id}`}>First small action</label>
+              <input
+                id={`pick-do-${task.id}`}
+                value={pickDo}
+                maxLength={500}
+                onChange={e => setPickDo(e.target.value)}
+                placeholder="e.g. Open the laptop"
+                autoFocus
+              />
+              <div className="tp-actions">
+                <button type="submit" className="tp-btn" disabled={p.readOnly || !(pickDo.trim() || task.nextAction.trim())}>
+                  Make it my Next thing
+                </button>
+                <button type="button" className="tp-btn" onClick={() => setPickId(null)}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              type="button"
+              className="tp-pick-item"
+              disabled={p.readOnly}
+              onClick={() => {
+                setPickId(task.id);
+                setPickDo(task.nextAction);
+              }}
+            >
+              {task.title}
+            </button>
+          )}
+        </li>
+      ))}
+      {!showAllPool && pool.length > 6 && (
+        <li>
+          <button type="button" className="tp-link" onClick={() => setShowAllPool(true)}>
+            Show all {pool.length}
+          </button>
+        </li>
+      )}
+    </ul>
+  );
+
   const now = plan.now;
   let progress: { at: number; end: number; likely: number } | null = null;
   if (now && now.mode === "block" && now.start !== null && now.end !== null) {
@@ -179,7 +254,9 @@ export default function TodayPlanView(p: Props) {
           <p className="tp-meta">
             {now.mode === "block" && now.start !== null && now.end !== null
               ? `${clockText(now.start)} – ${clockText(now.end)}${now.likelyEnd !== null && now.likelyEnd !== now.end ? ` · likely finish ${clockText(now.likelyEnd)}` : ""}`
-              : now.mode === "focus"
+              : now.mode === "upnext" && now.start !== null
+                ? `Up next in ${now.minutesUntil! >= 60 ? `${Math.floor(now.minutesUntil! / 60)}h ${now.minutesUntil! % 60}m` : `${now.minutesUntil} min`} · ${clockText(now.start)}`
+                : now.mode === "focus"
                 ? "Focus running"
                 : [plan.next === null && p.workspace.nextThing?.when ? p.workspace.nextThing.when : null, now.label].filter(Boolean).join(" · ") || "Your Next thing"}
           </p>
@@ -201,7 +278,7 @@ export default function TodayPlanView(p: Props) {
           )}
           {blocked(now)}
           <div className="tp-now-actions">
-            {now.mode === "next" ? (
+            {now.mode === "next" || now.mode === "upnext" ? (
               <>
                 <button type="button" className="tp-big" disabled={p.readOnly} onClick={() => p.onStart(now.task)}>
                   Start
@@ -227,13 +304,17 @@ export default function TodayPlanView(p: Props) {
               </>
             )}
           </div>
+          {now.mode === "upnext" && !picking && (
+            <button type="button" className="tp-link" onClick={() => setPicking(true)}>
+              Pick a Next thing instead
+            </button>
+          )}
+          {now.mode === "upnext" && picking && picker}
         </section>
       ) : (
         <section className="tp-row tp-now tp-empty" aria-label="Now">
-          <p className="tp-title">Nothing booked now.</p>
-          <button type="button" className="tp-link" onClick={p.onOverview}>
-            Choose a Next thing in Overview
-          </button>
+          <p className="tp-title">Nothing booked now. Pick a Next thing:</p>
+          {picker}
         </section>
       )}
 

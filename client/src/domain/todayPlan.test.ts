@@ -78,9 +78,17 @@ describe("Today: Now · Next · Later, by time only", () => {
     expect(plan.next?.task.id).toBe(b.id);
   });
 
+  it("with nothing running or chosen, Now is the next booking, 'up next in X min'", () => {
+    const plan = todayPlan(ws([b, c]), [b, c], DAY, at(11, 18));
+    expect(plan.now).toMatchObject({ mode: "upnext", minutesUntil: 12 });
+    expect(plan.now?.task.id).toBe(b.id);
+    expect(plan.next?.task.id).toBe(c.id);
+  });
+
   it("a block past its finish is slipped, not Now", () => {
     const plan = todayPlan(ws([a, b]), [a, b], DAY, at(11, 10));
-    expect(plan.now).toBeNull();
+    expect(plan.now).toMatchObject({ mode: "upnext" });
+    expect(plan.now?.task.id).toBe(b.id);
     expect(plan.slipped.map(r => r.task.id)).toEqual([a.id]);
     expect(plan.slipped[0].chips.map(c => c.text)).toContain("slipped");
     expect(plan.slipped[0].again).toBe(false);
@@ -108,7 +116,7 @@ describe("Slip choices", () => {
     const pre = createTask({ title: "Buy downpipe", state: "ready" });
     const a = booked("Fit downpipe", "14:00", 60, { dependencies: [pre.id] });
     const plan = todayPlan(ws([a, pre]), [a, pre], DAY, at(9));
-    const row = [...plan.later, ...(plan.next ? [plan.next] : [])].find(r => r.task.id === a.id)!;
+    const row = [plan.now, plan.next, ...plan.later].find(r => r?.task.id === a.id)!;
     expect(row.blockedBy.map(t => t.title)).toEqual(["Buy downpipe"]);
     const freed = removePrerequisites(a, [pre.id], ["Buy downpipe"], STAMP);
     expect(freed.dependencies).toEqual([]);
@@ -138,7 +146,7 @@ describe("Chips: only what's off normal, max two, grey unless it clashes", () =>
     const a = booked("Long one", "13:00", 150);
     const b = booked("Meeting", "15:00", 60);
     const plan = todayPlan(ws([a, b]), [a, b], DAY, at(9));
-    const row = [plan.next!, ...plan.later].find(r => r.task.id === a.id)!;
+    const row = [plan.now, plan.next, ...plan.later].find(r => r?.task.id === a.id)!;
     expect(row.chips[0]).toEqual({ kind: "clash", text: "clashes 3:00", red: true });
   });
 });

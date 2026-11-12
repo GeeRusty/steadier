@@ -43,3 +43,7 @@ No other colours carry meaning.
 ## Never without the owner's approval
 - Priority, scores or ranking.
 - Data changes, orphan rules, confirmations, or the three dots.
+
+## Standing rules for anyone (or any AI) working on Steadier
+- **Never sign in as the owner or create access passes** (session tokens, keys, login links) without asking the owner first, even temporarily and even for a screenshot.
+- **Never deploy with a failing test.** Fix first, run the full test suite green, then deploy.

@@ -51,8 +51,9 @@ describe("All Work task-row completion control", () => {
     expect(markup).toContain('class="work-row-done-tick"');
     expect(markup).toContain('aria-label="Mark Synthetic workflow task done"');
     expect(markup).toContain('aria-label="Open task Synthetic workflow task"');
-    expect(markup).toContain("View task details");
-    expect(markup).toContain("Use the separate Done tick to complete it.");
+    // Explanations live behind the info button now (design language).
+    expect(markup).not.toContain("View task details");
+    expect(markup).toContain('aria-label="What this page shows"');
     expect(markup).toContain("Filter by workflow");
   });
 });

@@ -27,7 +27,7 @@ The **+** button at the right of the tab bar is the one capture button: **tap** 
 
 ### My life today
 The **Today** tab is for doing. It uses three words only: **Now · Next · Later**, in time order. Nothing is ranked.
-- **Now:** the booked block running now, with its likely finish, a red now mark, and big **Done** / **Finished early** buttons. If nothing is booked, it's your running focus or your chosen Next thing (with **Start**).
+- **Now:** the booked block running now, with its likely finish, a red now mark, and big **Done** / **Finished early** buttons. If nothing is running, it's your running focus, your chosen Next thing, or the next booking as **Up next in X min**, each with **Start** and **Done**. With nothing booked, pick a Next thing right there in the card (tap a task, check its first small action, **Make it my Next thing**). You're never sent to another screen.
 - **Next:** your chosen Next thing, or else the next booking.
 - **Later:** everything else dated or booked for today. Undated work is never on Today.
 - **Slipped:** a block past its likely finish shows **Keep going** (stretches it to its likely finish), **Move** or **Drop** (off today, kept in All work). If it slips again and you leave it, it's listed in the Weekly Review (Capacity step).
@@ -38,7 +38,7 @@ The **Today** tab is for doing. It uses three words only: **Now · Next · Later
 **Signals (everywhere):** a green left bar means it serves an Imperative. Dashed means suggested (tap to confirm). Faded with dots means not set up. Grey chips show only what's off normal: ⏱ +20m / −10m, slipped, overdue 2d, moved 3×, quiet 9d, review due. A chip turns red only when it will clash with a fixed booking or deadline. The broken-link icon means a project, or a task in it, is missing its Goal Outcome or Imperative link (also in Link check). The old shape-and-colour arrows are gone.
 
 ### Overview
-Overview is for seeing: Needs attention, choosing your Next thing from the Pool, today's timeline, Pillars, Movement and the Compass strip.
+Overview is for seeing: Needs attention, links to Calendar, Ideas, Compass and Imperatives, the Pool, today's timeline, Pillars, Movement and the Compass strip.
 
 ### Calendar
 Day, week and month views of your booked anchors (tasks with a day and a clock time).
@@ -47,7 +47,7 @@ Day, week and month views of your booked anchors (tasks with a day and a clock t
 - Month view also shows bills and renewals due, birthdays, and anchors you've marked as major.
 
 ### All work
-Every task in one list. Search, filter and open any task to edit it. Choose the **Not ready** filter to see only faded cards.
+Every task in one list, for finding things. Compact rows: title, signals, and one grey line for state and dates. Search, filter, tap a row to open it; the **Done** box completes it. The **i** button explains the page. Choose the **Not ready** filter to see only faded cards.
 
 ### Sort
 One minute a day. When you have faded tasks, **Needs attention** on Overview shows **Sort** with a count. Sort shows one faded card at a time: tap a big **Place** button (recent projects first, then Life Admin and Erosion Guard), say or type the **First step**, tap **It's an action**, then **Done** or **Skip**. After the last card you go back to Today.

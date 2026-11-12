@@ -379,19 +379,17 @@ export default function TodayVisualTimeline({
   }
 
   return (
-    <section className="today-visual" aria-labelledby="today-visual-title">
+    <section
+      className="today-visual"
+      aria-labelledby="today-visual-title"
+      title="Tap a task bar to view its details and subtasks. This timeline is read-only: edit timing in Calendar. Deadline points do not reserve time. Swipe sideways to inspect the day."
+    >
       <div className="today-visual-heading">
         <div>
-          <div className="eyebrow">TODAY AT A GLANCE</div>
           <h2 id="today-visual-title">Today timeline</h2>
           <p className="small muted today-visual-summary">
             Now · {nowText} · {bookedCount} booked · {deadlinePointCount} deadline point{deadlinePointCount === 1 ? "" : "s"} · {model.freeAfterLabel}: {formatDuration(model.freeAfterMinutes)}
           </p>
-          {model.overrunSamples < 3 && (
-            <p className="small muted today-visual-estimate-note">
-              Overrun learns from your history.
-            </p>
-          )}
         </div>
         <div className="today-visual-actions">
           {onRead && (
@@ -415,9 +413,6 @@ export default function TodayVisualTimeline({
         </div>
       </div>
 
-      <p className="small muted today-visual-readonly">
-        Tap a task bar to view its details and subtasks. This timeline is read-only: edit timing in Calendar. Deadline points do not reserve time. Swipe sideways to inspect the day.
-      </p>
       <p className="small today-sync-status" role="status" aria-live="polite">
         {syncDescription(syncStatus, lastSyncedAt, pendingSync, online)}
       </p>

@@ -28,10 +28,14 @@ import {
 } from "../../domain/statusMarkStaleness";
 import { useStatusMarkAppearance, useStatusMarkData } from "./TaskStates";
 
-export type TimingShapeMarkProps =
+export type TimingShapeMarkProps = (
   | { task: Task; project?: never; imperative?: never }
   | { project: Project; task?: never; imperative?: never }
-  | { imperative: Imperative; task?: never; project?: never };
+  | { imperative: Imperative; task?: never; project?: never }
+) & {
+  /** The row already shows the green left bar. */
+  noGreen?: boolean;
+};
 
 let currentClock = adelaideClock();
 let ticker: number | null = null;
@@ -144,6 +148,7 @@ export default function TimingShapeMark(props: TimingShapeMarkProps) {
     if (stale.quietDays !== null && stale.quietDays >= 7) chips.push(`quiet ${stale.quietDays}d`);
   }
 
+  if (props.noGreen) green = false;
   const shown = chips.slice(0, 2);
   if (!shown.length && !green && !broken && !label) return null;
   const description = [

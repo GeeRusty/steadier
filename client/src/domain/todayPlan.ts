@@ -45,7 +45,7 @@ export interface TodayRow {
 }
 
 export interface TodayPlan {
-  now: (TodayRow & { mode: "block" | "focus" | "next" }) | null;
+  now: (TodayRow & { mode: "block" | "focus" | "next" | "upnext"; minutesUntil?: number }) | null;
   slipped: (TodayRow & { again: boolean })[];
   next: (TodayRow & { when: string | null }) | null;
   later: TodayRow[];
@@ -234,6 +234,13 @@ export function todayPlan(workspace: Workspace, tasks: Task[], day: string, minu
   if (!now && chosen) {
     const slot = slots.find(s => s.task.id === chosen.id);
     now = { ...rowFor(slot ?? { task: chosen, start: null, minutes: slotMinutes(chosen) }), mode: "next" };
+  }
+  // Nothing running or chosen: the next booking today is "Up next in X min".
+  if (!now) {
+    const upcoming = booked
+      .filter(s => s.start! > minute)
+      .sort((a, b) => a.start! - b.start!)[0];
+    if (upcoming) now = { ...rowFor(upcoming), mode: "upnext", minutesUntil: upcoming.start! - minute };
   }
   if (now) used.add(now.task.id);
 

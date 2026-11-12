@@ -5366,8 +5366,10 @@ aside.sidebar {
   padding: 1px 6px;
   white-space: nowrap;
 }
+/* Scheduled is "decided": a solid card. The left bar is reserved for green
+   (serves an Imperative), per the design language. */
 .kind-scheduled {
-  border-left: 6px solid var(--primary) !important;
+  border-left: 0;
 }
 .kind-chosen {
   box-shadow: inset 0 0 0 2px var(--primary);
@@ -12175,3 +12177,23 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 .sig-chip { font-size: 12px; line-height: 1.5; }
 .sig-broken { color: var(--muted-foreground); }
 .sig-label { font-size: 12px; color: var(--muted-foreground); }
+.tp-pick { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tp-pick-item { width: 100%; min-height: 48px; text-align: left; padding: 10px 12px; border: 1px solid var(--tp-line); border-radius: 10px; background: var(--card); color: var(--tp-strong); font: inherit; font-size: 15px; }
+.tp-pick-form { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--tp-btn-line); border-radius: 10px; }
+.tp-pick-form input { min-height: 44px; padding: 0 10px; border: 1px solid var(--tp-btn-line); border-radius: 8px; background: var(--card); color: var(--tp-strong); font: inherit; font-size: 15px; }
+
+/* All work (find): compact rows, signals under the title. */
+.work-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0 8px; }
+.work-title { margin: 0; font-family: Georgia, "Source Serif 4", serif; font-weight: 500; font-size: 18px; }
+.work-head .tp-info-button { margin-left: auto; }
+.work-row.serves-imperative { border-left: 5px solid var(--tp-green); padding-left: 10px; }
+.work-row-main > strong { font-size: 18px !important; line-height: 1.3; }
+.work-row-signals { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.work-row-signals:empty { display: none; }
+.work-row-when { font-size: 13px; color: var(--muted-foreground); }
+.work-row-when:empty { display: none; }
+.breadcrumb strong { font-family: Georgia, "Source Serif 4", serif; font-weight: 500; font-size: 18px; }
+/* Phones: the tab-bar + is the one capture button. */
+@media (max-width: 700px) {
+  .topbar .capture-top, .topbar .voice-top { display: none !important; }
+}

@@ -1,10 +1,10 @@
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { Plus } from "lucide-react";
 
 const HOLD_MS = 450;
 
 /** The one capture button: tap to type, hold to speak to Steadier. */
-export default function CaptureHoldButton({ onTap, onHold, className = "v2-floating-capture" }: { onTap: () => void; onHold: () => void; className?: string }) {
+export default function CaptureHoldButton({ onTap, onHold, className = "v2-floating-capture", label }: { onTap: () => void; onHold: () => void; className?: string; label?: ReactNode }) {
   const timer = useRef<number | null>(null);
   const held = useRef(false);
   const clear = () => {
@@ -42,7 +42,7 @@ export default function CaptureHoldButton({ onTap, onHold, className = "v2-float
         onTap();
       }}
     >
-      <Plus size={23} aria-hidden="true" />
+      {label ?? <Plus size={23} aria-hidden="true" />}
     </button>
   );
 }

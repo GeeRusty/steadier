@@ -71,6 +71,9 @@ interface Props {
   linkCheckCount?: number;
   onLinkCheck?: () => void;
   onIdeas?: () => void;
+  /** Overview: Today already shows Now, so don't repeat it. */
+  hideNow?: boolean;
+  onCompass?: () => void;
 }
 
 type NowMode = "block" | "focus" | "focusDone";
@@ -177,7 +180,7 @@ export default function TodayNow(p: Props) {
           <span>Done: <strong>{justDone}</strong></span>
         </div>
       )}
-      {nowTask && mode && (
+      {!p.hideNow && nowTask && mode && (
         <NowCard
           task={nowTask}
           mode={mode}
@@ -259,6 +262,14 @@ export default function TodayNow(p: Props) {
           <Lightbulb size={15} aria-hidden="true" />
           <b>Ideas</b>
           <span>{p.ideaCount ? `${p.ideaCount} on the shelf` : "Shelf is empty"}</span>
+          <ArrowRight size={14} />
+        </button>
+      )}
+      {p.onCompass && (
+        <button className="line-link" onClick={p.onCompass}>
+          <Compass size={15} aria-hidden="true" />
+          <b>Compass</b>
+          <span>Why: Pillars, Imperatives, projects</span>
           <ArrowRight size={14} />
         </button>
       )}

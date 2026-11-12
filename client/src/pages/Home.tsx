@@ -2255,12 +2255,12 @@ export default function Home() {
                       >
                         <Search size={19} />
                       </button>
-                      <button className="button secondary voice-top" onClick={() => openCapture(true)}>
-                        <Mic size={16} /><span>Speak</span>
-                      </button>
-                      <button className="button primary capture-top" onClick={() => openCapture()}>
-                        <Plus size={17} /><span>Capture</span>
-                      </button>
+                      <CaptureHoldButton
+                        className="button primary capture-top"
+                        label={<><Plus size={17} /><span>Capture</span></>}
+                        onTap={() => openCapture()}
+                        onHold={() => window.location.assign("/voice?listen=1")}
+                      />
                     </div>
                   </>
                 )}
@@ -2394,7 +2394,7 @@ export default function Home() {
                     />
                   </div>
                 )}
-                {!(view === "attention" && todayTab === "today") && <PagePurposeNote view={view} />}
+                {view !== "attention" && <PagePurposeNote view={view} />}
                 {view === "attention" && todayTab === "overview" && (
                   <OrphanBanner
                     workspace={store.workspace}
@@ -2437,6 +2437,7 @@ export default function Home() {
                     onMove={openTaskEditor}
                     onDrop={dropFromPool}
                     onMutate={store.mutate}
+                    onChoose={chooseNextThing}
                   />
                 )}
                 {view === "attention" && todayTab === "overview" && (
@@ -2465,6 +2466,8 @@ export default function Home() {
                       onCommitments={() => openAll("commitments")}
                       onCalendar={() => navigate("calendar")}
                       onImperatives={() => navigate("imperatives")}
+                      hideNow
+                      onCompass={() => navigate("compass-view")}
                     />
                     <ClaudeChangesPanel store={store} voice={voice} compact />
                     <div className="v2-today-card-stack overview-pool">
