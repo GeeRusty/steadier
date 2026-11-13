@@ -85,7 +85,12 @@ export interface ScrubResult {
 }
 
 /** Remove anything that looks like account details, sign-ins or an address. */
-export function scrubSensitive(input: string): ScrubResult {
+export interface ScrubOptions {
+  /** Keep street addresses (a task's address is often the point). */
+  keepAddresses?: boolean;
+}
+
+export function scrubSensitive(input: string, options: ScrubOptions = {}): ScrubResult {
   // Dates look like long numbers; set them aside so they survive.
   const kept: string[] = [];
   let text = input.replace(DATE_LIKE, match => {
@@ -93,7 +98,10 @@ export function scrubSensitive(input: string): ScrubResult {
     return `\u0001${letters(kept.length - 1)}\u0001`;
   });
   let removed = 0;
-  for (const pattern of PATTERNS) {
+  const patterns = options.keepAddresses
+    ? PATTERNS.filter(p => p !== STREET && p !== PO_BOX && p !== SUBURB_LINE)
+    : PATTERNS;
+  for (const pattern of patterns) {
     text = text.replace(pattern, () => {
       removed += 1;
       return " ";
@@ -109,9 +117,9 @@ export function scrubSensitive(input: string): ScrubResult {
 }
 
 /** A short field (provider, what it's for): scrubbed and tidied. */
-export function safeShortText(value: unknown, max = 120): ScrubResult {
+export function safeShortText(value: unknown, max = 120, options: ScrubOptions = {}): ScrubResult {
   if (typeof value !== "string") return { text: "", removed: 0 };
-  const scrubbed = scrubSensitive(value.replace(/\s+/g, " "));
+  const scrubbed = scrubSensitive(value.replace(/\s+/g, " "), options);
   const text = scrubbed.text
     .replace(/^[\s,;:–—-]+|[\s,;:–—-]+$/g, "")
     .slice(0, max)

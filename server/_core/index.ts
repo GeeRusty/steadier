@@ -6,6 +6,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { registerAndroidAppRoutes } from "./androidApp";
 import { registerVoiceRoutes } from "../steadier/voice";
 import { registerBillScanRoutes } from "../steadier/billScan";
+import { registerPasteSplitRoutes } from "../steadier/pasteSplit";
 import { registerVoicePage } from "../steadier/voicePage";
 import { registerGuidePage } from "../steadier/guide";
 import { publicPlatformScript } from "./publicConfig";
@@ -37,6 +38,7 @@ async function startServer() {
   registerGuidePage(app);
   registerVoiceRoutes(app);
   registerBillScanRoutes(app);
+  registerPasteSplitRoutes(app);
   // Owner-scoped data routes must be registered before the Vite/static SPA fallback.
   registerSteadierRoutes(app);
   registerCompassConnectionDiagnostics(app);

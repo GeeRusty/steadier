@@ -3086,6 +3086,10 @@ export default function Home() {
                   setCapture(false);
                   setCaptureAssetSource(null);
                 }}
+                onApplyMany={change => {
+                  if (!allowed()) return false;
+                  return store.mutate(change);
+                }}
                 onCommand={command => {
                   if (!focused || focused.state === "done") return false;
                   if (command === "complete") return done(focused.id);

@@ -23,6 +23,8 @@ On a phone, five tabs sit at the bottom: **Today · Overview · All work · Cale
 
 The **+** button at the right of the tab bar is the one capture button: **tap** to type a task, **hold** to talk to the voice assistant. It never covers a card.
 
+**Paste anything:** paste an email, message or messy list into the **+** box. When it looks like several things, tap **Split into items**. Steadier removes account numbers, logins and passwords (addresses are kept), sends only the cleaned text to Claude, and shows each item dashed with a tick box: Task, Idea, Bill, Cancel by, Note or Shopping, with its date. Tap one to change its words, type or date. A quiet grey line says when one looks like a task you already have. Nothing saves until you tap **Save N ticked**; long pastes are never auto-saved as one task.
+
 ## Areas of the app
 
 ### My life today

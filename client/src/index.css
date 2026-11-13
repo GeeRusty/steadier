@@ -12292,3 +12292,13 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 .board-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .board-done .board-title { text-decoration: line-through; color: var(--muted-foreground); font-weight: 400; }
 .board-empty { margin: 16px 0; }
+/* Paste anything: split drafts, dashed until saved (suggested). */
+.paste-split { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 12px; }
+.paste-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.paste-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.paste-row { display: flex; gap: 10px; align-items: flex-start; background: var(--card); border: 1.5px dashed var(--tp-btn-line); border-radius: 12px; padding: 10px 12px; }
+.paste-row > input[type="checkbox"] { width: 22px; height: 22px; margin-top: 3px; flex: none; }
+.paste-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; border: 0; background: none; padding: 0; text-align: left; font: inherit; color: inherit; min-height: 44px; }
+.paste-text { font-size: 15px; font-weight: 600; color: var(--tp-strong); }
+.paste-edit { flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px; }
+.paste-edit input, .paste-edit select { min-height: 44px; padding: 0 10px; border: 1px solid var(--tp-btn-line); border-radius: 8px; background: var(--card); color: var(--tp-strong); font: inherit; font-size: 15px; }

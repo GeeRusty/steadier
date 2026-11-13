@@ -27,6 +27,8 @@ import {
   type TaskSchedule,
 } from "../../domain/time";
 import { parseQuickAdd, scheduleFromQuickParse } from "../../domain/quickParse";
+import PasteSplitPanel from "./PasteSplitPanel";
+import { looksLikeSeveralThings } from "../../domain/pasteSplit";
 import {
   hasNativeVoiceDraftHandoff,
   isNativeVoiceDraftEvent,
@@ -43,6 +45,7 @@ import {
 } from "../../domain/taskAutosave";
 import { identityLabel } from "../../domain/life";
 import type {
+  Workspace,
   Task,
   TaskState,
   Project,
@@ -73,6 +76,8 @@ interface Props {
   ) => TaskAutosaveSaveResult;
   onClose: () => void;
   onCommand: (command: "complete" | "defer" | "read") => boolean | void;
+  /** Save several split items at once ("Paste anything"). */
+  onApplyMany?: (change: (w: Workspace) => Workspace) => boolean | void;
 }
 export default function CaptureDialog({
   voice,
@@ -89,6 +94,7 @@ export default function CaptureDialog({
   onAutoSave,
   onClose,
   onCommand,
+  onApplyMany,
 }: Props) {
   const [text, setText] = useState(initialText);
   const [notes, setNotes] = useState(initialNotes);
@@ -251,8 +257,11 @@ export default function CaptureDialog({
     textSource === "voice" &&
     voiceTextFinal &&
     commandPhrase !== null;
+  // Pasted text that looks like several things waits for Split or Create task.
+  const severalThings = !!onApplyMany && looksLikeSeveralThings(text);
   const persistDraft = useCallback(() => {
     if (manualReviewOnly || voiceOriginated) return true;
+    if (severalThings && !acceptedTaskRef.current) return true;
     if (!text.trim() || command || unsupportedVoiceCommand) return true;
     if (!hasMeaningfulParsedTaskTitle(draftTask.title)) {
       if (acceptedTaskRef.current) {
@@ -339,6 +348,11 @@ export default function CaptureDialog({
     if (!text.trim() || command || unsupportedVoiceCommand) {
       setAutoSaveState("idle");
       setAutoSaveDetail("");
+      return;
+    }
+    if (severalThings && !acceptedTaskRef.current) {
+      setAutoSaveState("not-saved");
+      setAutoSaveDetail("Split it into items, or save it as one task.");
       return;
     }
     if (!hasMeaningfulParsedTaskTitle(draftTask.title)) {
@@ -625,10 +639,13 @@ export default function CaptureDialog({
                 setTextSource("typed");
               }}
               rows={3}
-              maxLength={3000}
+              maxLength={8000}
               placeholder="Call Sam tomorrow 3pm for 30 min every Tue, remind me 15 min before"
             />
           </label>
+          {onApplyMany && !command && looksLikeSeveralThings(text) && (
+            <PasteSplitPanel text={text} tasks={tasks} onApply={onApplyMany} onSaved={onClose} />
+          )}
           {!command && !unsupportedVoiceCommand && (
             <div className="capture-kind" role="radiogroup" aria-label="Idea or task">
               <button
