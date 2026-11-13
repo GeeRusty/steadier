@@ -486,8 +486,8 @@ export default function Home() {
     setEditing(null);
     setTaskPanelMode("view");
   };
-  const v2Screen = view === "calendar" || view === "attention" || view === "all";
-  const v2Page = view === "calendar" ? "calendar" : view === "all" ? "all" : "today";
+  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects";
+  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : "today";
   const changeAppearance = (next: Appearance) => {
     setAppearance(next);
     persistAppearance(next);
@@ -2202,7 +2202,7 @@ export default function Home() {
                     />
                     <div className="v2-topbar-center" aria-live="polite">
                       <strong className="v2-page-title">
-                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : todayTab === "overview" ? "Overview" : "Today"}
+                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : todayTab === "overview" ? "Overview" : "Today"}
                       </strong>
                       <span className={`v2-sync-status ${topbarConnectionTone}`}>
                         <span>{topbarDate}</span><span aria-hidden="true"> · </span><i aria-hidden="true" />
@@ -2796,6 +2796,7 @@ export default function Home() {
                     focusProjectId={focusProjectId}
                     onFocusDone={() => setFocusProjectId(null)}
                     readOnly={store.readOnly}
+                    onDoneTask={id => done(id)}
                   />
                 ) : view === "cloud" ? (
                   <SharedDataPanel

@@ -2,7 +2,7 @@ import React, { useMemo, useState, type ReactNode } from "react";
 import { ChevronRight, Info } from "lucide-react";
 import { buildCalendar } from "../../domain/calendarModel";
 import { freeAfterLastAnchorMinutes } from "../../domain/anchorPlanning";
-import { effectiveTaskRole } from "../../domain/linkCheck";
+import { effectiveTaskRole, projectRowIsLinked } from "../../domain/linkCheck";
 import { createStatusMarkData, statusMarkColorForProject } from "../../domain/statusMarkColor";
 import { adelaideClock, formatDuration, timeToMinutes } from "../../domain/time";
 import { clockText } from "../../domain/todayPlan";
@@ -93,7 +93,8 @@ export default function OverviewView(p: Props) {
   const markData = useMemo(() => createStatusMarkData(p.workspace), [p.workspace]);
   const active = p.workspace.projects.filter(project => project.status === "active");
   const moving = active.slice(0, 3);
-  const projectGreen = (project: Project) => statusMarkColorForProject(project, markData).color === "green";
+  // Same rule as the Projects list: green when linked to an active Imperative.
+  const projectGreen = (project: Project) => projectRowIsLinked(project, p.workspace);
 
   return (
     <div className="ov">

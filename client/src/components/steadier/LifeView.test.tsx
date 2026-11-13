@@ -5,7 +5,7 @@ import { createTask } from "../../domain/engine";
 import { emptyProjectCompass } from "../../domain/compass";
 import { emptyProjectSchedule } from "../../domain/time";
 import type { Project, Task, Workspace } from "../../domain/types";
-import LifeView from "./LifeView";
+import LifeView, { ProjectPage } from "./LifeView";
 
 const stamp = "2026-11-09T09:00:00+10:30";
 
@@ -62,34 +62,72 @@ function renderProjects(project: Project, tasks: Task[] = []) {
   );
 }
 
-describe("Project Outcomes mobile next-step surface", () => {
-  it("surfaces an existing linked task, its next action and saved state near the project heading", () => {
-    const project = syntheticProject();
-    const task = {
-      ...createTask({ title: "Synthetic next step", state: "ready" }, "2026-11-09"),
-      id: "synthetic-next-task",
-      title: "Synthetic next step",
-      nextAction: "Write the first outline",
-      projectId: project.id,
-      labelSource: "confirmed" as const,
-      updatedAt: stamp,
-    };
-    const html = renderProjects(project, [task]);
+function renderPage(project: Project, tasks: Task[] = []) {
+  const workspace = syntheticWorkspace(project, tasks);
+  return renderToStaticMarkup(
+    <ProjectPage
+      project={project}
+      workspace={workspace}
+      readOnly={false}
+      outcomeOpen={false}
+      onToggleOutcome={vi.fn()}
+      onBack={vi.fn()}
+      onEdit={vi.fn()}
+      onOpenTask={vi.fn()}
+      onAddTask={vi.fn()}
+      onMutate={() => true}
+      updateProject={vi.fn()}
+      milestoneDraft=""
+      onMilestoneDraft={vi.fn()}
+      onAddMilestone={vi.fn()}
+      evidenceDraft=""
+      onEvidenceDraft={vi.fn()}
+      onAddEvidence={vi.fn()}
+    />
+  );
+}
 
-    expect(html.indexOf("NEXT STEP")).toBeLessThan(html.indexOf("LINKED NEXT TASKS"));
-    expect(html).toContain("Synthetic next step");
-    expect(html).toContain("Write the first outline");
-    expect(html).toContain('aria-label="Open next linked task Synthetic next step"');
-    expect(html).toContain("Open next task");
-    expect(html).toMatch(/class="state-tag state-[^"]+"/);
+const nextTask = (project: Project) => ({
+  ...createTask({ title: "Synthetic next step", state: "ready" }, "2026-11-09"),
+  id: "synthetic-next-task",
+  title: "Synthetic next step",
+  nextAction: "Write the first outline",
+  projectId: project.id,
+  labelSource: "confirmed" as const,
+  updatedAt: stamp,
+});
+
+describe("Projects (design language)", () => {
+  it("lists compact project rows: title, open count, no labels or explanations", () => {
+    const project = syntheticProject();
+    const html = renderProjects(project, [nextTask(project)]);
+    expect(html).toContain("Synthetic outcome");
+    expect(html).toContain("1 open");
+    for (const noise of ["Compass makes the choices", "Keep the direction you chose in view", "NEXT STEP", "Can start", "Support ·", "Imperative ·"]) {
+      expect(html).not.toContain(noise);
+    }
+    expect(html).toContain('aria-label="What this page shows"');
   });
 
-  it("offers one Add small task action near the heading when an active outcome has no next step", () => {
-    const html = renderProjects(syntheticProject());
+  it("project page leads with Next step, then Why, Outcome and Tasks", () => {
+    const project = syntheticProject();
+    const html = renderPage(project, [nextTask(project)]);
+    const at = (text: string) => html.indexOf(text);
+    expect(at(">Next step<")).toBeGreaterThan(-1);
+    expect(at(">Next step<")).toBeLessThan(at(">Why<"));
+    expect(at(">Why<")).toBeLessThan(at(">Outcome<"));
+    expect(at(">Outcome<")).toBeLessThan(at(">Tasks"));
+    expect(html).toContain('aria-label="Open task Synthetic next step"');
+    expect(html).toContain('aria-label="Mark Synthetic next step done"');
+    expect(html).not.toMatch(/class="state-tag state-/);
+  });
 
-    expect(html).toContain("No active linked task yet.");
-    expect(html).toContain('aria-label="Add small task to Synthetic outcome"');
-    expect(html.match(/> Add small task<\/button>/g)).toHaveLength(1);
-    expect(html.indexOf("Add small task")).toBeLessThan(html.indexOf("LINKED NEXT TASKS"));
+  it("empty fields offer only + Add …, never an explanation", () => {
+    const html = renderPage({ ...syntheticProject(), outcome: "", purpose: "" });
+    expect(html).toContain("+ Add a step");
+    expect(html).toContain("+ Add outcome");
+    expect(html).toContain("+ Add purpose");
+    expect(html).not.toContain("No active linked task yet");
+    expect(html).not.toContain("written yet");
   });
 });

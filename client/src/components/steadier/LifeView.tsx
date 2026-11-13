@@ -8,6 +8,7 @@ import { emptyProjectCompass } from "../../domain/compass";
 import {
   confirmProjectImperatives,
   effectiveProjectRole,
+  effectiveTaskRole,
   matrixBalance,
   minutesText,
   projectRowIsLinked,
@@ -21,6 +22,11 @@ import ProjectServes from "./ProjectServes";
 import ProjectOutcomesMap from "./ProjectOutcomesMap";
 import AccordionSection from "./AccordionSection";
 import TimingShapeMark from "./TimingShapeMark";
+import CardDotsMark from "./CardDotsMark";
+import { whenChip } from "./WorkViews";
+import { isFaded } from "../../domain/taskCard";
+import { adelaideClock } from "../../domain/time";
+import { ChevronLeft, Info, MoreVertical } from "lucide-react";
 import {
   Check,
   ChevronRight,
@@ -62,6 +68,8 @@ interface Props {
   focusProjectId?: string | null;
   onFocusDone?: () => void;
   readOnly: boolean;
+  /** Complete a task from its round Done circle. */
+  onDoneTask?: (id: string) => boolean | void;
 }
 
 /** Cells have no names: the plain description is all that is shown. */
@@ -183,15 +191,19 @@ function ProjectsView({
   focusProjectId,
   onFocusDone,
   readOnly,
+  onDoneTask,
 }: Omit<Props, "view">) {
   const [editing, setEditing] = useState<Project | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [info, setInfo] = useState(false);
+  const [outcomeOpen, setOutcomeOpen] = useState(false);
   const [projectView, setProjectView] = useState<"list" | "map">("list");
   const [projectSearch, setProjectSearch] = useState("");
   const [highlight, setHighlight] = useState<string | null>(null);
   useEffect(() => {
     if (!focusProjectId) return;
-    const el = document.getElementById(`project-${focusProjectId}`);
-    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setOpenId(focusProjectId);
+    window.scrollTo({ top: 0 });
     setHighlight(focusProjectId);
     onFocusDone?.();
     const t = setTimeout(() => setHighlight(null), 2500);
@@ -245,7 +257,7 @@ function ProjectsView({
                   "Pillar"
               )
               .join(" · ")
-          : "Not yet linked to a Pillar";
+          : "Not linked";
         return { key: pillarIds.join("|") || "unlinked", label };
       }),
     [visibleProjects, workspace]
@@ -333,500 +345,131 @@ function ProjectsView({
     return true;
   };
 
+  const openTasksOf = (projectId: string) =>
+    workspace.tasks.filter(task => task.projectId === projectId && task.state !== "done" && !task.droppedAt);
+  const opened = openId ? projects.find(project => project.id === openId) ?? null : null;
+  const activeGroups = projectGroups
+    .map(group => ({ ...group, items: group.items.filter(project => project.status === "active") }))
+    .filter(group => group.items.length);
+  const achieved = visibleProjects.filter(project => project.status === "achieved");
+
+  const projectRow = (project: Project) => (
+    <button
+      key={project.id}
+      type="button"
+      id={`project-${project.id}`}
+      className={`tp-row pj-row${projectRowIsLinked(project, workspace) ? " tp-green" : ""}${highlight === project.id ? " is-focused" : ""}`}
+      onClick={() => {
+        setOpenId(project.id);
+        setOutcomeOpen(false);
+        window.scrollTo({ top: 0 });
+      }}
+    >
+      <span className="pj-row-top">
+        <span className="tp-title">{project.title}</span>
+        {project.status === "active" && <span className="tp-meta">{openTasksOf(project.id).length} open</span>}
+      </span>
+      <TimingShapeMark project={project} noGreen />
+    </button>
+  );
+
   return (
     <>
-      <div className="page-heading life-heading">
-        <div className="eyebrow">MY LIFE · PROJECT OUTCOMES</div>
-        <h1>Keep the direction you chose in view.</h1>
-        <p>
-          Projects hold purpose, outcomes, observed evidence, and small next
-          tasks. Completing tasks or milestones never marks an outcome achieved
-          for you.
-        </p>
-      </div>
-
-      <div className="life-project-toolbar">
-        <div className="life-project-toolbar-leading">
-          <p className="small muted">
-            Compass makes the choices. This is the place that remembers them.
-          </p>
-          <div
-            className="segmented life-project-view-switch"
-            role="group"
-            aria-label="Project Outcomes view"
-          >
-            <button
-              type="button"
-              className={projectView === "list" ? "on" : ""}
-              aria-pressed={projectView === "list"}
-              onClick={() => setProjectView("list")}
-            >
-              List
-            </button>
-            <button
-              type="button"
-              className={projectView === "map" ? "on" : ""}
-              aria-pressed={projectView === "map"}
-              onClick={() => setProjectView("map")}
-            >
-              Map
-            </button>
-          </div>
-        </div>
-        <button
-          className="button primary"
-          onClick={() => setCreating(true)}
-          disabled={readOnly}
-        >
-          <Plus size={16} />
-          Add project
-        </button>
-      </div>
-
-      {!projects.length && projectView === "list" && (
-        <section className="empty-state life-empty-guidance">
-          <CircleDot size={30} />
-          <h2>Start with one outcome that matters.</h2>
-          <p>
-            A project can hold the purpose, the outcome you want to see, and a
-            few linked next tasks. It does not need to describe everything.
-          </p>
-          <button
-            className="button secondary"
-            onClick={() => setCreating(true)}
-            disabled={readOnly}
-          >
-            <Plus size={16} />
-            Create a project
-          </button>
-        </section>
-      )}
-
-      {projectView === "map" ? (
-        <ProjectOutcomesMap
+      {opened ? (
+        <ProjectPage
+          project={opened}
           workspace={workspace}
-          onOpenProject={setEditing}
-          onOpenGoal={onOpenGoal}
           readOnly={readOnly}
+          outcomeOpen={outcomeOpen}
+          onToggleOutcome={() => setOutcomeOpen(v => !v)}
+          onBack={() => setOpenId(null)}
+          onEdit={() => setEditing(opened)}
+          onOpenTask={onOpenTask}
+          onAddTask={onAddTask}
+          onDoneTask={onDoneTask}
+          onOpenGoal={onOpenGoal}
+          onMutate={onMutate}
+          updateProject={updateProject}
+          milestoneDraft={milestoneDrafts[opened.id] ?? ""}
+          onMilestoneDraft={value => setMilestoneDrafts(current => ({ ...current, [opened.id]: value }))}
+          onAddMilestone={() => addMilestone(opened.id)}
+          evidenceDraft={evidenceDrafts[opened.id] ?? ""}
+          onEvidenceDraft={value => setEvidenceDrafts(current => ({ ...current, [opened.id]: value }))}
+          onAddEvidence={() => addEvidence(opened.id)}
         />
       ) : (
-        <>
-          {projects.length > 0 && (
-            <label className="field accordion-search life-project-search">
-              <span>Search projects and linked outcomes</span>
-              <input
-                type="search"
-                value={projectSearch}
-                onChange={event => setProjectSearch(event.target.value)}
-                placeholder="Project, purpose, outcome or task"
-              />
-            </label>
-          )}
-          {visibleProjects.length === 0 && projects.length > 0 ? (
-            <div className="empty-state life-empty-guidance">
-              <CircleDot size={28} />
-              <h2>No projects match this search.</h2>
-              <p>Try a project name, purpose, outcome or linked task.</p>
+        <div className="pj">
+          <div className="pj-toolbar">
+            <div className="segmented life-project-view-switch" role="group" aria-label="Projects view">
+              <button type="button" className={projectView === "list" ? "on" : ""} aria-pressed={projectView === "list"} onClick={() => setProjectView("list")}>
+                List
+              </button>
+              <button type="button" className={projectView === "map" ? "on" : ""} aria-pressed={projectView === "map"} onClick={() => setProjectView("map")}>
+                Map
+              </button>
             </div>
+            <span className="pj-spacer" />
+            <button type="button" className="tp-btn" onClick={() => setCreating(true)} disabled={readOnly}>
+              + Project
+            </button>
+            <button type="button" className="tp-info-button" aria-label="What this page shows" aria-expanded={info} onClick={() => setInfo(v => !v)}>
+              <Info size={18} aria-hidden="true" />
+            </button>
+          </div>
+          {info && (
+            <p className="tp-info" role="note">
+              Projects hold the outcome you chose, why it matters, and its next steps. Tap a project to open it. Completing tasks or milestones never marks an outcome achieved for you.
+            </p>
+          )}
+          {projectView === "map" ? (
+            <ProjectOutcomesMap
+              workspace={workspace}
+              onOpenProject={project => setOpenId(project.id)}
+              onOpenGoal={onOpenGoal}
+              readOnly={readOnly}
+            />
           ) : (
-            <div className="accordion-group-list life-project-list">
-              {projectGroups.map((group, index) => (
-            <AccordionSection
-              key={group.key}
-              persistenceKey={group.key}
-              title={group.label}
+            <>
+              {projects.length > 5 && (
+                <label className="library-search pj-search">
+                  <input
+                    type="search"
+                    value={projectSearch}
+                    onChange={event => setProjectSearch(event.target.value)}
+                    placeholder="Search"
+                    aria-label="Search projects"
+                  />
+                </label>
+              )}
+              {activeGroups.map((group, index) => (
+                <AccordionSection
+                  key={group.key}
+                  persistenceKey={`pj-${group.key}`}
+                  title={group.label}
                   count={group.items.length}
-              collapsible={visibleProjects.length > 5}
-                  defaultOpen={
-                    index === 0 ||
-                    group.items.some(
-                      project =>
-                        project.id === focusProjectId ||
-                        Boolean(
-                          project.schedule.deadline &&
-                            project.schedule.deadline <= today()
-                        )
-                    )
-                  }
-                  autoOpen={group.items.some(
-                    project =>
-                      Boolean(
-                        project.schedule.deadline &&
-                          project.schedule.deadline <= today()
-                      )
-                  )}
-                  revealToken={
-                    projectSearch && group.items.length ? projectSearch : ""
-                  }
-                  className="life-pillar-project-group"
+                  collapsible={visibleProjects.length > 5}
+                  defaultOpen={index < 3}
+                  revealToken={projectSearch && group.items.length ? projectSearch : ""}
+                  className="pj-group"
                 >
-                  <div className="life-project-group-list">
-                    {group.items.map(project => {
-            const linkedTasks = workspace.tasks.filter(
-              task => task.projectId === project.id
-            );
-            const nextStep = project.status === "active"
-              ? linkedTasks.find(
-                  task => task.state !== "done" && !task.parent?.suggested
-                )
-              : undefined;
-            const nextStepState = nextStep
-              ? derivedState(nextStep, workspace.tasks)
-              : null;
-            const milestoneDraft = milestoneDrafts[project.id] ?? "";
-            const evidenceDraft = evidenceDrafts[project.id] ?? "";
-            return (
-              <section
-                className={`settings-section life-project-card${highlight === project.id ? " is-focused" : ""}`}
-                key={project.id}
-                id={`project-${project.id}`}
-              >
-                <div className="section-heading life-project-card-heading">
-                  <div>
-                    <div className="eyebrow">
-                      {ROLE_LABEL[effectiveProjectRole(project, workspace)]}
-                      {projectRowIsLinked(project, workspace) ? " (linked)" : ""}{" "}
-                      · {project.pattern === "timely" ? "Timely" : "Sustained"}
-                    </div>
-                    <h2>
-                      <TimingShapeMark project={project} /> {project.title}
-                    </h2>
-                  </div>
-                  <button
-                    className="icon-button"
-                    aria-label={`Edit project ${project.title}`}
-                    onClick={() => setEditing(project)}
-                    disabled={readOnly}
-                  >
-                    <Pencil size={16} />
-                  </button>
-                </div>
-
-                <div className="life-project-status">
-                  <span
-                    className={`state-tag ${project.status === "achieved" ? "state-done" : ""}`}
-                  >
-                              {project.status === "achieved"
-                                ? "Achieved"
-                                : "Active"}
-                  </span>
-                  <span className="small muted">
-                    {projectStatusLabel(project)}
-                  </span>
-                  <button
-                    className="text-button"
-                    disabled={readOnly}
-                    onClick={() =>
-                      updateProject(project.id, current => ({
-                        ...current,
-                        status:
-                                    current.status === "achieved"
-                                      ? "active"
-                                      : "achieved",
-                      }))
-                    }
-                  >
-                    {project.status === "achieved"
-                      ? "Reopen outcome"
-                      : "Mark outcome achieved"}
-                  </button>
-                </div>
-
-                <div className="life-project-next-step" aria-label={`Next step for ${project.title}`}>
-                  <div className="life-project-next-step-copy">
-                    <span className="eyebrow">NEXT STEP</span>
-                    {nextStep ? (
-                      <>
-                        <strong>{nextStep.title}</strong>
-                        <span>{nextStep.nextAction || "No next action yet."}</span>
-                        <span className={`state-tag state-${nextStepState}`}>
-                          {stateLabel(nextStepState!)}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="small muted">
-                        {project.status === "achieved"
-                          ? "This outcome is marked achieved."
-                          : "No active linked task yet. Add one small step if this outcome needs work."}
-                      </span>
-                    )}
-                  </div>
-                  {nextStep ? (
-                    <button
-                      type="button"
-                      className="button secondary life-project-next-button"
-                      aria-label={`Open next linked task ${nextStep.title}`}
-                      onClick={() => onOpenTask(nextStep)}
-                    >
-                      Open next task
-                    </button>
-                  ) : project.status === "active" ? (
-                    <button
-                      type="button"
-                      className="button secondary life-project-next-button"
-                      aria-label={`Add small task to ${project.title}`}
-                      disabled={readOnly}
-                      onClick={() => onAddTask(project.id)}
-                    >
-                      <Plus size={15} aria-hidden="true" /> Add small task
-                    </button>
-                  ) : null}
-                </div>
-
-                <div className="life-project-description">
-                  <div>
-                    <strong>Purpose</strong>
-                              <p>
-                                {project.purpose || "No purpose written yet."}
-                              </p>
-                  </div>
-                  <div>
-                    <strong>Outcome</strong>
-                              <p>
-                                {project.outcome || "No outcome written yet."}
-                              </p>
-                  </div>
-                </div>
-
-                <ProjectServes
-                  workspace={workspace}
-                  project={project}
-                  onMutate={onMutate}
-                  onOpenGoal={onOpenGoal}
-                  readOnly={readOnly}
-                />
-                <div className="life-project-section">
-                  <div className="section-heading">
-                    <div>
-                      <div className="eyebrow">MILESTONES</div>
-                      <h2>Explicitly complete</h2>
-                    </div>
-                    <span className="small muted">
-                                {
-                                  project.milestones.filter(item => item.done)
-                                    .length
-                                }
-                                /{project.milestones.length}
-                    </span>
-                  </div>
-                  {project.milestones.length ? (
-                    <div className="life-milestone-list">
-                      {project.milestones.map(milestone => (
-                                  <label
-                                    className="life-milestone"
-                                    key={milestone.id}
-                                  >
-                          <input
-                            type="checkbox"
-                            checked={milestone.done}
-                            disabled={readOnly}
-                            aria-label={`Mark milestone ${milestone.title} ${milestone.done ? "incomplete" : "complete"}`}
-                            onChange={event =>
-                              updateProject(project.id, current => ({
-                                ...current,
-                                          milestones: current.milestones.map(
-                                            item =>
-                                  item.id === milestone.id
-                                                ? {
-                                                    ...item,
-                                                    done: event.target.checked,
-                                                  }
-                                    : item
-                                ),
-                              }))
-                            }
-                          />
-                          <span>{milestone.title}</span>
-                          <input
-                            type="date"
-                            className="milestone-date"
-                            aria-label={`Date for milestone ${milestone.title}`}
-                            disabled={readOnly}
-                            value={
-                              project.schedule.milestoneDates.find(
-                                item => item.id === milestone.id
-                              )?.date ?? ""
-                            }
-                            onClick={event => event.stopPropagation()}
-                            onChange={event => {
-                              const date = event.target.value;
-                              updateProject(project.id, current => ({
-                                ...current,
-                                schedule: {
-                                  ...current.schedule,
-                                  milestoneDates: [
-                                    ...current.schedule.milestoneDates.filter(
-                                      item => item.id !== milestone.id
-                                    ),
-                                    ...(date
-                                      ? [{ id: milestone.id, date }]
-                                      : []),
-                                  ],
-                                },
-                              }));
-                            }}
-                          />
-                        </label>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="small muted">
-                                Add a milestone only when it is useful evidence
-                                of movement; it will not automatically achieve
-                                the outcome.
-                    </p>
-                  )}
-                  <div className="inline-field life-inline-add">
-                    <input
-                      aria-label={`New milestone for ${project.title}`}
-                      value={milestoneDraft}
-                      maxLength={240}
-                      placeholder="Add a concrete milestone"
-                      disabled={readOnly}
-                      onChange={event =>
-                        setMilestoneDrafts(current => ({
-                          ...current,
-                          [project.id]: event.target.value,
-                        }))
-                      }
-                      onKeyDown={event => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          addMilestone(project.id);
-                        }
-                      }}
-                    />
-                    <button
-                      className="button secondary"
-                      type="button"
-                      disabled={readOnly || !milestoneDraft.trim()}
-                      onClick={() => addMilestone(project.id)}
-                    >
-                      <Plus size={15} /> Add
-                    </button>
-                  </div>
-                </div>
-
-                <div className="life-project-section">
-                  <div className="section-heading">
-                    <div>
-                      <div className="eyebrow">OBSERVED EVIDENCE</div>
-                      <h2>What you can point to</h2>
-                    </div>
-                  </div>
-                  <p className="small muted">
-                              Save dated evidence rather than a
-                              pseudo-percentage of progress.
-                  </p>
-                  {project.progress.length ? (
-                    <div className="life-evidence-list">
-                                {[...project.progress]
-                                  .reverse()
-                                  .map((entry, index) => (
-                                    <p
-                                      className="history"
-                                      key={`${entry.at}-${index}`}
-                                    >
-                          <time>{entry.at.slice(0, 10)}</time>
-                          {entry.text}
-                        </p>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="small muted">
-                                No observed evidence yet. A note such as “bench
-                                cleared” or “first customer enquiry received” is
-                                enough.
-                    </p>
-                  )}
-                  <div className="inline-field life-inline-add">
-                    <input
-                      aria-label={`Observed evidence for ${project.title}`}
-                      value={evidenceDraft}
-                      maxLength={1000}
-                      placeholder="Record what you observed"
-                      disabled={readOnly}
-                      onChange={event =>
-                        setEvidenceDrafts(current => ({
-                          ...current,
-                          [project.id]: event.target.value,
-                        }))
-                      }
-                      onKeyDown={event => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          addEvidence(project.id);
-                        }
-                      }}
-                    />
-                    <button
-                      className="button secondary"
-                      type="button"
-                      disabled={readOnly || !evidenceDraft.trim()}
-                      onClick={() => addEvidence(project.id)}
-                    >
-                      <Plus size={15} /> Save evidence
-                    </button>
-                  </div>
-                </div>
-
-                <div className="life-project-section">
-                  <div className="section-heading">
-                    <div>
-                      <div className="eyebrow">LINKED NEXT TASKS</div>
-                      <h2>Small steps held with this outcome</h2>
-                    </div>
-                    {(nextStep || project.status === "achieved") && (
-                      <button
-                        className="button secondary small-button"
-                        disabled={readOnly}
-                        onClick={() => onAddTask(project.id)}
-                      >
-                        <Plus size={15} /> Add small task
-                      </button>
-                    )}
-                  </div>
-                  {linkedTasks.length ? (
-                    <div className="life-linked-tasks">
-                      {linkedTasks.map(task => {
-                        const state = derivedState(task, workspace.tasks);
-                        return (
-                          <button
-                            className="work-row-main life-linked-task"
-                            key={task.id}
-                            aria-label={`Open linked task ${task.title}`}
-                            onClick={() => onOpenTask(task)}
-                          >
-                            <strong>
-                              <TimingShapeMark task={task} /> {task.title}
-                            </strong>
-                            <span>
-                              {task.nextAction || "Choose a small next step."}
-                            </span>
-                            <span className={`state-tag state-${state}`}>
-                              {stateLabel(state)}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="small muted">
-                                There are no linked next tasks. Add one small,
-                                physical step when you are ready to carry this
-                                forward.
-                    </p>
-                  )}
-                </div>
-              </section>
-            );
-          })}
-        </div>
+                  <div className="tp-list">{group.items.map(projectRow)}</div>
                 </AccordionSection>
               ))}
-            </div>
+              {achieved.length > 0 && (
+                <AccordionSection
+                  persistenceKey="pj-achieved"
+                  title="Achieved"
+                  count={achieved.length}
+                  collapsible
+                  defaultOpen={false}
+                  className="pj-group"
+                >
+                  <div className="tp-list">{achieved.map(projectRow)}</div>
+                </AccordionSection>
+              )}
+            </>
           )}
-        </>
+        </div>
       )}
 
       {(creating || editing) && (
@@ -854,6 +497,266 @@ function ProjectsView({
         />
       )}
     </>
+  );
+}
+
+/** A task row on a project page: the same compact row as Today and All work. */
+function ProjectTaskRow({
+  task,
+  workspace,
+  readOnly,
+  onOpen,
+  onDone,
+}: {
+  task: Task;
+  workspace: Workspace;
+  readOnly: boolean;
+  onOpen: (t: Task) => void;
+  onDone?: (id: string) => boolean | void;
+}) {
+  const done = task.state === "done";
+  const state = derivedState(task, workspace.tasks);
+  const when = done ? null : whenChip(task, adelaideClock().date);
+  const faded = isFaded(task, workspace.tasks);
+  return (
+    <article className={`wr${effectiveTaskRole(task, workspace) === "direction" ? " wr-green" : ""}${faded ? " wr-faded" : ""}${done ? " wr-done" : ""}`}>
+      <button
+        type="button"
+        className="wr-tick"
+        aria-label={done ? `${task.title} is done` : `Mark ${task.title} done`}
+        disabled={done || readOnly || !onDone}
+        onClick={() => onDone?.(task.id)}
+      >
+        <span className="wr-circle">{done && <Check size={16} aria-hidden="true" />}</span>
+      </button>
+      <button type="button" className="wr-main" aria-label={`Open task ${task.title}`} onClick={() => onOpen(task)}>
+        <span className="tp-title">{task.title}</span>
+        {!done && (
+          <span className="tp-signals">
+            {when && <span className="tp-chip">{when}</span>}
+            {(state === "blocked" || state === "waiting") && <span className="tp-chip">{state}</span>}
+            <TimingShapeMark task={task} noGreen />
+            {faded && <CardDotsMark task={task} tasks={workspace.tasks} />}
+          </span>
+        )}
+      </button>
+    </article>
+  );
+}
+
+/** One project: Next step, Why, Outcome, Tasks; the rest folded. */
+export function ProjectPage(p: {
+  project: Project;
+  workspace: Workspace;
+  readOnly: boolean;
+  outcomeOpen: boolean;
+  onToggleOutcome: () => void;
+  onBack: () => void;
+  onEdit: () => void;
+  onOpenTask: (t: Task) => void;
+  onAddTask: (projectId: string) => void;
+  onDoneTask?: (id: string) => boolean | void;
+  onOpenGoal?: (id: string) => void;
+  onMutate: (change: (w: Workspace) => Workspace) => boolean | void;
+  updateProject: (projectId: string, change: (project: Project) => Project) => void;
+  milestoneDraft: string;
+  onMilestoneDraft: (value: string) => void;
+  onAddMilestone: () => void;
+  evidenceDraft: string;
+  onEvidenceDraft: (value: string) => void;
+  onAddEvidence: () => void;
+}) {
+  const { project, workspace } = p;
+  const linked = workspace.tasks.filter(task => task.projectId === project.id && !task.droppedAt);
+  const open = linked.filter(task => task.state !== "done");
+  const doneTasks = linked.filter(task => task.state === "done");
+  const nextStep = project.status === "active" ? open.find(task => !task.parent?.suggested) : undefined;
+  const rest = open.filter(task => task.id !== nextStep?.id);
+  const milestonesDone = project.milestones.filter(m => m.done).length;
+  return (
+    <div className="pj pj-page">
+      <div className="pj-page-head">
+        <button type="button" className="tp-info-button" aria-label="Back to Projects" onClick={p.onBack}>
+          <ChevronLeft size={20} aria-hidden="true" />
+        </button>
+        <span className="pj-spacer" />
+        <button type="button" className="tp-info-button" aria-label={`Edit project ${project.title}`} onClick={p.onEdit} disabled={p.readOnly}>
+          <MoreVertical size={18} aria-hidden="true" />
+        </button>
+      </div>
+      <div className={`pj-title${projectRowIsLinked(project, workspace) ? " pj-title--green" : ""}`}>
+        <h2 className="tp-title">{project.title}</h2>
+        <span className="tp-signals">
+          <span className="tp-meta">{project.status === "achieved" ? "Achieved" : "Active"}</span>
+          <TimingShapeMark project={project} noGreen />
+        </span>
+      </div>
+
+      {project.status === "active" && (
+        <>
+          <h3 className="tp-label">Next step</h3>
+          {nextStep ? (
+            <ProjectTaskRow task={nextStep} workspace={workspace} readOnly={p.readOnly} onOpen={p.onOpenTask} onDone={p.onDoneTask} />
+          ) : (
+            <button type="button" className="tp-link pj-add" disabled={p.readOnly} onClick={() => p.onAddTask(project.id)}>
+              + Add a step
+            </button>
+          )}
+        </>
+      )}
+
+      <h3 className="tp-label">Why</h3>
+      <ProjectServes workspace={workspace} project={project} onMutate={p.onMutate} onOpenGoal={p.onOpenGoal} readOnly={p.readOnly} />
+
+      <h3 className="tp-label">Outcome</h3>
+      {project.outcome.trim() ? (
+        <button type="button" className={`pj-outcome${p.outcomeOpen ? " is-open" : ""}`} aria-expanded={p.outcomeOpen} onClick={p.onToggleOutcome}>
+          {project.outcome}
+        </button>
+      ) : (
+        <button type="button" className="tp-link pj-add" disabled={p.readOnly} onClick={p.onEdit}>
+          + Add outcome
+        </button>
+      )}
+
+      <h3 className="tp-label">Tasks{rest.length ? ` (${rest.length} more open)` : ""}</h3>
+      <div className="pj-tasks">
+        {rest.map(task => (
+          <ProjectTaskRow key={task.id} task={task} workspace={workspace} readOnly={p.readOnly} onOpen={p.onOpenTask} onDone={p.onDoneTask} />
+        ))}
+        {(nextStep || project.status === "achieved") && (
+          <button type="button" className="tp-link pj-add" disabled={p.readOnly} onClick={() => p.onAddTask(project.id)}>
+            + Add a step
+          </button>
+        )}
+        {doneTasks.length > 0 && (
+          <details className="pj-fold">
+            <summary>Done ({doneTasks.length})</summary>
+            {doneTasks.map(task => (
+              <ProjectTaskRow key={task.id} task={task} workspace={workspace} readOnly={p.readOnly} onOpen={p.onOpenTask} />
+            ))}
+          </details>
+        )}
+      </div>
+
+      <details className="pj-fold">
+        <summary>
+          Milestones {project.milestones.length ? `${milestonesDone}/${project.milestones.length}` : ""}
+        </summary>
+        {project.milestones.map(milestone => (
+          <label className="life-milestone" key={milestone.id}>
+            <input
+              type="checkbox"
+              checked={milestone.done}
+              disabled={p.readOnly}
+              aria-label={`Mark milestone ${milestone.title} ${milestone.done ? "incomplete" : "complete"}`}
+              onChange={event =>
+                p.updateProject(project.id, current => ({
+                  ...current,
+                  milestones: current.milestones.map(item =>
+                    item.id === milestone.id ? { ...item, done: event.target.checked } : item
+                  ),
+                }))
+              }
+            />
+            <span>{milestone.title}</span>
+            <input
+              type="date"
+              className="milestone-date"
+              aria-label={`Date for milestone ${milestone.title}`}
+              disabled={p.readOnly}
+              value={project.schedule.milestoneDates.find(item => item.id === milestone.id)?.date ?? ""}
+              onChange={event => {
+                const date = event.target.value;
+                p.updateProject(project.id, current => ({
+                  ...current,
+                  schedule: {
+                    ...current.schedule,
+                    milestoneDates: [
+                      ...current.schedule.milestoneDates.filter(item => item.id !== milestone.id),
+                      ...(date ? [{ id: milestone.id, date }] : []),
+                    ],
+                  },
+                }));
+              }}
+            />
+          </label>
+        ))}
+        <div className="inline-field life-inline-add">
+          <input
+            aria-label={`New milestone for ${project.title}`}
+            value={p.milestoneDraft}
+            maxLength={240}
+            placeholder="+ Add a milestone"
+            disabled={p.readOnly}
+            onChange={event => p.onMilestoneDraft(event.target.value)}
+            onKeyDown={event => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                p.onAddMilestone();
+              }
+            }}
+          />
+          <button className="tp-btn" type="button" disabled={p.readOnly || !p.milestoneDraft.trim()} onClick={p.onAddMilestone}>
+            Add
+          </button>
+        </div>
+      </details>
+
+      <details className="pj-fold">
+        <summary>Observed evidence {project.progress.length ? `(${project.progress.length})` : ""}</summary>
+        {[...project.progress].reverse().map((entry, index) => (
+          <p className="history" key={`${entry.at}-${index}`}>
+            <time>{entry.at.slice(0, 10)}</time>
+            {entry.text}
+          </p>
+        ))}
+        <div className="inline-field life-inline-add">
+          <input
+            aria-label={`Observed evidence for ${project.title}`}
+            value={p.evidenceDraft}
+            maxLength={1000}
+            placeholder="+ Add what you observed"
+            disabled={p.readOnly}
+            onChange={event => p.onEvidenceDraft(event.target.value)}
+            onKeyDown={event => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                p.onAddEvidence();
+              }
+            }}
+          />
+          <button className="tp-btn" type="button" disabled={p.readOnly || !p.evidenceDraft.trim()} onClick={p.onAddEvidence}>
+            Save
+          </button>
+        </div>
+      </details>
+
+      <details className="pj-fold">
+        <summary>Purpose</summary>
+        {project.purpose.trim() ? (
+          <p className="pj-purpose">{project.purpose}</p>
+        ) : (
+          <button type="button" className="tp-link pj-add" disabled={p.readOnly} onClick={p.onEdit}>
+            + Add purpose
+          </button>
+        )}
+      </details>
+
+      <button
+        type="button"
+        className="tp-btn pj-achieve"
+        disabled={p.readOnly}
+        onClick={() =>
+          p.updateProject(project.id, current => ({
+            ...current,
+            status: current.status === "achieved" ? "active" : "achieved",
+          }))
+        }
+      >
+        {project.status === "achieved" ? "Reopen outcome" : "Mark outcome achieved"}
+      </button>
+    </div>
   );
 }
 

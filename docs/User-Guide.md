@@ -75,7 +75,8 @@ Tasks waiting on another person or on something else first. Decide when to check
 History of what you've finished. Good for looking back. It isn't your to-do list.
 
 ### Project Outcomes
-Projects with their purpose, milestones and evidence. Connect each project to the Goal Outcome it serves. A project is marked achieved when you decide it is, not just because its tasks are done.
+One compact row per project, grouped by Pillar (with **Not linked** and a folded **Achieved** group): title, "N open", grey chips only when something is off, and the green bar when it's linked to an Imperative. **List** or **Map** (by Goal Outcome).
+Tap a project to open its page: **Next step** first, then **Why**, **Outcome** (tap to read it all) and **Tasks** with round Done circles (**Done** folded). Milestones, Observed evidence and Purpose are folded below. Empty fields show "+ Add …". **Mark outcome achieved** is at the bottom; edit the project from ⋮. A project is achieved only when you decide it is.
 
 ### My life matrix
 **Balance, not ranking.** Four cells, each with a plain description: a chosen thing with a window; a chosen thing that grows through regular engagement; upkeep that falls due; upkeep that recurs. Each cell shows how many open tasks it holds, their estimated time, and time logged this week. The matrix only describes your work. It never changes the order of your suggestions.

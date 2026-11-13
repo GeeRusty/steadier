@@ -12302,3 +12302,23 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 .paste-text { font-size: 15px; font-weight: 600; color: var(--tp-strong); }
 .paste-edit { flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px; }
 .paste-edit input, .paste-edit select { min-height: 44px; padding: 0 10px; border: 1px solid var(--tp-btn-line); border-radius: 8px; background: var(--card); color: var(--tp-strong); font: inherit; font-size: 15px; }
+/* Projects (design language): compact project rows, then a project page. */
+.pj { display: flex; flex-direction: column; gap: 10px; padding: 0 0 24px; font-size: 15px; }
+.pj-toolbar, .pj-page-head { display: flex; align-items: center; gap: 8px; }
+.pj-spacer { flex: 1 1 auto; }
+.pj-search { margin: 0; }
+.pj-row { padding: 12px 14px; gap: 6px; align-items: stretch; text-align: left; font: inherit; color: inherit; }
+.pj-row-top { display: flex; align-items: baseline; gap: 8px; }
+.pj-row-top .tp-title { flex: 1 1 auto; }
+.pj-row.is-focused { box-shadow: 0 0 0 2px var(--tp-green); }
+.pj-title { display: flex; flex-direction: column; gap: 6px; padding-left: 10px; border-left: 5px solid transparent; }
+.pj-title--green { border-left-color: var(--tp-green); }
+.pj-title h2 { margin: 0; }
+.pj-outcome { display: block; width: 100%; padding: 0; border: 0; background: none; text-align: left; font: inherit; font-size: 15px; color: var(--tp-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pj-outcome.is-open { white-space: normal; }
+.pj-tasks { display: flex; flex-direction: column; }
+.pj-add { align-self: flex-start; text-decoration: none; }
+.pj-fold { border-top: 1px solid var(--tp-line); padding: 6px 0; }
+.pj-fold > summary { min-height: 44px; display: flex; align-items: center; font-size: 13px; font-weight: 600; color: var(--muted-foreground); cursor: pointer; }
+.pj-purpose { margin: 0 0 8px; }
+.pj-achieve { align-self: flex-start; margin-top: 8px; }
