@@ -104,6 +104,9 @@ import {
   CompassStrip,
   ReviewDueBanner,
   UnplacedPanel,
+  reviewCardText,
+  unplacedSpokenText,
+  UNPLACED_INTRO,
 } from "../components/steadier/CompassPanels";
 import TimeReview from "../components/steadier/TimeReview";
 import { describeRepeat } from "../domain/time";
@@ -170,7 +173,7 @@ import {
 } from "../domain/engine";
 import type { Context, Task, View, Workspace } from "../domain/types";
 import AttentionView from "../components/steadier/AttentionView";
-import WorkViews from "../components/steadier/WorkViews";
+import WorkViews, { REVIEW_ACK_LINE, REVIEW_LIST_INFO, REVIEW_LIST_INFO_TAIL } from "../components/steadier/WorkViews";
 import TaskEditor from "../components/steadier/TaskEditor";
 import CaptureDialog from "../components/steadier/CaptureDialog";
 import FocusDialog from "../components/steadier/FocusDialog";
@@ -455,6 +458,7 @@ export default function Home() {
   const [install, setInstall] = useState<InstallPrompt | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
   const calendarReadRef = useRef<(() => void) | null>(null);
+  const weeklyReadRef = useRef<(() => void) | null>(null);
   const lastScreenVoiceError = useRef("");
   // Compass map pages have their own address (#map/<id>) so the phone back
   // button moves between them and an item can be referred to by link.
@@ -486,8 +490,8 @@ export default function Home() {
     setEditing(null);
     setTaskPanelMode("view");
   };
-  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects";
-  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : "today";
+  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects" || view === "review" || view === "weekly";
+  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : view === "review" || view === "weekly" ? "plain" : "today";
   const changeAppearance = (next: Appearance) => {
     setAppearance(next);
     persistAppearance(next);
@@ -1979,6 +1983,17 @@ export default function Home() {
       else readOutLoud(CALENDAR_GUIDE);
       return;
     }
+    if (view === "review") {
+      readOutLoud(
+        `${reviewCardText(store.workspace, adelaideClock().date)} ${unplacedSpokenText(orphanReport(tasks))}`
+      );
+      return;
+    }
+    if (view === "weekly") {
+      if (voice.speaking) voice.stopSpeaking();
+      else weeklyReadRef.current?.();
+      return;
+    }
     readOutLoud(todayTab === "overview" ? todaySummaryText() : v2TodaySummaryText());
   };
   const review = (id: string) => {
@@ -2202,7 +2217,7 @@ export default function Home() {
                     />
                     <div className="v2-topbar-center" aria-live="polite">
                       <strong className="v2-page-title">
-                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : todayTab === "overview" ? "Overview" : "Today"}
+                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : view === "review" ? "Review due / unplaced" : view === "weekly" ? "Weekly Review" : todayTab === "overview" ? "Overview" : "Today"}
                       </strong>
                       <span className={`v2-sync-status ${topbarConnectionTone}`}>
                         <span>{topbarDate}</span><span aria-hidden="true"> · </span><i aria-hidden="true" />
@@ -2384,7 +2399,7 @@ export default function Home() {
                   </p>
                 )}
                 {view === "review" && (
-                  <h1 className="page-purpose-heading">Review due / unplaced</h1>
+                  <h1 className="sr-only">Review due / unplaced</h1>
                 )}
                 {view === "attention" && (
                   <div className="today-switch-desktop">
@@ -2397,7 +2412,16 @@ export default function Home() {
                     />
                   </div>
                 )}
-                {view !== "attention" && <PagePurposeNote view={view} />}
+                {view !== "attention" && view !== "weekly" && (
+                  <PagePurposeNote
+                    view={view}
+                    extra={
+                      view === "review"
+                        ? [UNPLACED_INTRO, `${REVIEW_LIST_INFO} ${REVIEW_LIST_INFO_TAIL}`, REVIEW_ACK_LINE]
+                        : undefined
+                    }
+                  />
+                )}
                 {view === "attention" && todayTab === "today" && (
                   <TodayPlanView
                     workspace={store.workspace}
@@ -2485,8 +2509,8 @@ export default function Home() {
                     workspace={store.workspace}
                     onMutate={store.mutate}
                     onOpenTask={openTaskView}
-                    onRead={voice.read}
                     readOnly={store.readOnly}
+                    introInInfo
                   />
                 )}
                 {view === "attention" ? null : view === "time" ? (
@@ -2551,6 +2575,7 @@ export default function Home() {
                     onOpenMap={() => navigate("map")}
                     voice={voice}
                     readOnly={store.readOnly}
+                    readRef={weeklyReadRef}
                   />
                 ) : view === "command-centre" ? (
                   <CommandCentreView

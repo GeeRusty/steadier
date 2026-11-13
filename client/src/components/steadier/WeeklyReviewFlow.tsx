@@ -1,12 +1,13 @@
 import { slippedAgainUntouched } from "../../domain/todayPlan";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
+  ChevronDown,
+  ChevronUp,
   Mic,
   Square,
-  Volume2,
 } from "lucide-react";
 import type { Task, Workspace } from "../../domain/types";
 import type { VoiceControls } from "../../hooks/useVoice";
@@ -34,7 +35,9 @@ import {
 import { adelaideTimestamp } from "../../../../shared/time";
 import { adelaideClock } from "../../domain/time";
 import { latestWeeklyReviewDate } from "../../domain/review";
-import { UnplacedPanel } from "./CompassPanels";
+import { UNPLACED_REVIEW_INTRO, UnplacedPanel, unplacedSpokenText } from "./CompassPanels";
+import { orphanReport } from "../../domain/orphans";
+import PagePurposeNote from "./PagePurposeNote";
 import { mapGaps } from "../../domain/goals";
 import { groupByStable, monthGroup } from "../../domain/accordionGroups";
 import AccordionSection from "./AccordionSection";
@@ -52,7 +55,13 @@ interface Props {
   onOpenMap?: () => void;
   voice: VoiceControls;
   readOnly: boolean;
+  /** The page's one Read aloud (in the ⋮ menu) calls this to read the current step. */
+  readRef?: React.MutableRefObject<(() => void) | null>;
 }
+
+/** Notes moved off the steps; they sit behind the page's info icon, word for word. */
+const ACTION_NOTE =
+  "Done completes the step when you save. Drop keeps it under Someday; nothing is deleted.";
 
 const STEPS = [
   "Start",
@@ -122,6 +131,7 @@ export default function WeeklyReviewFlow({
   onOpenMap,
   voice,
   readOnly,
+  readRef,
 }: Props) {
   const today = adelaideClock().date;
   const status = useMemo(
@@ -318,29 +328,62 @@ export default function WeeklyReviewFlow({
     onDone();
   }
 
+  const [stepListOpen, setStepListOpen] = useState(false);
   const progress = (
-    <ol className="review-steps" aria-label="Review steps">
-      {STEPS.map((s, i) => (
-        <li
-          key={s}
-          className={
-            i === draft.step ? "current" : i < draft.step ? "past" : ""
-          }
+    <div className="review-progress">
+      <div className="review-progress-row">
+        <button
+          type="button"
+          className="review-step-label"
+          aria-expanded={stepListOpen}
+          aria-controls="review-step-list"
+          onClick={() => setStepListOpen(v => !v)}
         >
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => go(i)}
-            aria-current={i === draft.step ? "step" : undefined}
-          >
-            {s}
-          </button>
-        </li>
-      ))}
-    </ol>
+          Step {draft.step + 1} of {STEPS.length}
+          {stepListOpen ? (
+            <ChevronUp size={16} aria-hidden="true" />
+          ) : (
+            <ChevronDown size={16} aria-hidden="true" />
+          )}
+        </button>
+        <PagePurposeNote view="weekly" extra={[UNPLACED_REVIEW_INTRO, ACTION_NOTE]} />
+      </div>
+      <div
+        className="review-progress-bar"
+        role="progressbar"
+        aria-label="Review progress"
+        aria-valuemin={1}
+        aria-valuemax={STEPS.length}
+        aria-valuenow={draft.step + 1}
+      >
+        <span style={{ width: `${((draft.step + 1) / STEPS.length) * 100}%` }} />
+      </div>
+      {stepListOpen && (
+        <ol id="review-step-list" className="review-step-list" aria-label="Review steps">
+          {STEPS.map((s, i) => (
+            <li key={s}>
+              <button
+                type="button"
+                className={i === draft.step ? "current" : i < draft.step ? "past" : ""}
+                aria-current={i === draft.step ? "step" : undefined}
+                onClick={() => {
+                  go(i);
+                  setStepListOpen(false);
+                }}
+              >
+                {i + 1} · {s}
+                {i < draft.step && <Check size={14} aria-label="passed" />}
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
   );
 
   let body: React.ReactNode = null;
+  // What the page's one Read aloud says for this step.
+  let spokenStep = "";
   if (step === "Start") {
     const last = workspace.reviews.slice().reverse();
     const lastGroups = groupByStable(last, review => monthGroup(review.at));
@@ -358,11 +401,13 @@ export default function WeeklyReviewFlow({
         ? `${status.unplaced} unplaced step${status.unplaced === 1 ? "" : "s"}.`
         : "",
     ].filter(Boolean);
+    spokenStep = lines.join(" ");
     body = (
       <>
         <p className="review-lead">
-          Turn this week's reality into what you will faithfully do. Floor Check
-          first, then placement and Imperatives. You decide everything; Steadier
+          Turn this week's reality into what you will faithfully do. Unplaced,
+          Ideas and Link check first, then Floor Check (money, action,
+          capacity), Imperatives and the map. You decide everything; Steadier
           only writes it down.
         </p>
         <ul className="review-facts">
@@ -370,9 +415,6 @@ export default function WeeklyReviewFlow({
             <li key={l}>{l}</li>
           ))}
         </ul>
-        <button className="text-button" onClick={() => read(lines.join(" "))}>
-          <Volume2 size={15} /> Read aloud
-        </button>
         {last.length > 0 && (
           <div className="accordion-group-list review-history-groups">
             {lastGroups.map((group, index) => (
@@ -407,6 +449,7 @@ export default function WeeklyReviewFlow({
   } else if (step === "Money") {
     const q =
       "Floor Check, money. Is money OK this week: bills covered, nothing urgent?";
+    spokenStep = q;
     body = (
       <>
         <h2>Money</h2>
@@ -444,6 +487,10 @@ export default function WeeklyReviewFlow({
       </>
     );
   } else if (step === "Action") {
+    spokenStep = [
+      "Action. Is each commitment done?",
+      ...commitments.map(t => `${t.title}.`),
+    ].join(" ");
     body = (
       <>
         <h2>Action</h2>
@@ -502,10 +549,6 @@ export default function WeeklyReviewFlow({
                 );
               })}
             </ul>
-            <p className="small muted">
-              Done completes the step when you save. Drop keeps it under
-              Someday; nothing is deleted.
-            </p>
           </>
         )}
       </>
@@ -520,6 +563,7 @@ export default function WeeklyReviewFlow({
     );
     const q =
       "Floor Check, capacity. How much do you honestly have this week: low, medium or high?";
+    spokenStep = q;
     body = (
       <>
         <h2>Capacity</h2>
@@ -577,15 +621,16 @@ export default function WeeklyReviewFlow({
       </>
     );
   } else if (step === "Unplaced") {
+    spokenStep = unplacedSpokenText(orphanReport(workspace.tasks), true);
     body = (
       <UnplacedPanel
         workspace={workspace}
         onMutate={onMutate}
         onOpenTask={onOpenTask}
-        onRead={read}
         readOnly={readOnly}
         limit={20}
         reviewMode
+        introInInfo
       />
     );
   } else if (step === "Ideas") {
@@ -609,6 +654,9 @@ export default function WeeklyReviewFlow({
   } else if (step === "Link check") {
     body = <LinkCheckView workspace={workspace} readOnly={readOnly} onMutate={onMutate} reviewMode />;
   } else if (step === "Imperatives") {
+    spokenStep = views
+      .map(v => `${v.imperative.title}${v.quiet ? `, quiet for ${v.quietDays} days` : ""}.`)
+      .join(" ");
     body = (
       <>
         <h2>Imperatives</h2>
@@ -667,27 +715,14 @@ export default function WeeklyReviewFlow({
             </li>
           ))}
         </ul>
-        {views.length > 0 && (
-          <button
-            className="text-button"
-            onClick={() =>
-              read(
-                views
-                  .map(
-                    v =>
-                      `${v.imperative.title}${v.quiet ? `, quiet for ${v.quietDays} days` : ""}.`
-                  )
-                  .join(" ")
-              )
-            }
-          >
-            <Volume2 size={15} /> Read Imperatives aloud
-          </button>
-        )}
       </>
     );
   } else if (step === "Map") {
     const gaps = mapGaps(workspace, today);
+    spokenStep = gaps
+      .slice(0, 10)
+      .map(g => g.text)
+      .join(" ");
     body = (
       <>
         <h2>Compass map</h2>
@@ -718,21 +753,6 @@ export default function WeeklyReviewFlow({
           </ul>
         )}
         <div className="choice-row">
-          {gaps.length > 0 && (
-            <button
-              className="text-button"
-              onClick={() =>
-                read(
-                  gaps
-                    .slice(0, 10)
-                    .map(g => g.text)
-                    .join(" ")
-                )
-              }
-            >
-              <Volume2 size={15} /> Read gaps aloud
-            </button>
-          )}
           {onOpenMap && (
             <button className="text-button" onClick={onOpenMap}>
               Open the Compass map (your answers are kept)
@@ -781,12 +801,18 @@ export default function WeeklyReviewFlow({
     );
   }
 
+  const stepSpeech = `Step ${draft.step + 1} of ${STEPS.length}: ${step}. ${spokenStep}`.trim();
+  useEffect(() => {
+    if (!readRef) return;
+    readRef.current = () => read(stepSpeech);
+    return () => {
+      readRef.current = null;
+    };
+  });
+
   return (
     <section className="weekly-review" aria-labelledby="weekly-review-title">
-      <div className="calendar-toolbar">
-        <h1 id="weekly-review-title">Weekly Reality Review</h1>
-        <span className="small muted">{today}</span>
-      </div>
+      <h1 id="weekly-review-title" className="sr-only">Weekly Reality Review</h1>
       {progress}
       <div className="review-body">{body}</div>
       {message && (

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Check, Compass, Volume2 } from "lucide-react";
 import type { Task, Workspace } from "../../domain/types";
 import {
@@ -46,6 +46,26 @@ function place(
  * The "unplaced" list: flagged, never blocked. Most overdue first. Every
  * entry ends in the owner's own one-tap choice; suggestions need Confirm.
  */
+/** The Unplaced intro lines (shown in the panel, or behind a page's info icon). */
+export const UNPLACED_INTRO =
+  "Open tasks with no confirmed project, Imperative, Life Admin or Erosion Guard. Flagged, never blocked; nothing is filed until you tap.";
+export const UNPLACED_REVIEW_INTRO =
+  "Only what is still unplaced. For each one: does this belong to a project? If not, an Imperative, Life Admin or Erosion Guard.";
+
+/** What Read aloud says for the unplaced list. */
+export function unplacedSpokenText(
+  report: ReturnType<typeof orphanReport>,
+  reviewMode = false
+): string {
+  const lines = [orphanSentence(report)];
+  for (const i of report.items.slice(0, 8))
+    lines.push(
+      `${i.task.title}: ${STAGE_LABEL[i.stage].toLowerCase()}, ${formatAge(i.ageHours)} old${i.urgent ? `, ${i.urgent}` : ""}.`
+    );
+  if (reviewMode) lines.push("For each one: does this belong to a project?");
+  return lines.join(" ");
+}
+
 export function UnplacedPanel({
   workspace,
   onMutate,
@@ -54,6 +74,7 @@ export function UnplacedPanel({
   readOnly,
   limit = 12,
   reviewMode = false,
+  introInInfo = false,
 }: {
   workspace: Workspace;
   onMutate: Mutate;
@@ -63,6 +84,8 @@ export function UnplacedPanel({
   limit?: number;
   /** Weekly review lead-in: ask about projects, add Life Admin watch. */
   reviewMode?: boolean;
+  /** The intro paragraph sits behind the page's info icon instead. */
+  introInInfo?: boolean;
 }) {
   const now = useNow();
   const report = useMemo(
@@ -146,15 +169,7 @@ export function UnplacedPanel({
     return null;
   }
 
-  function spoken(): string {
-    const lines = [orphanSentence(report)];
-    for (const i of unplaced.slice(0, 8))
-      lines.push(
-        `${i.task.title}: ${STAGE_LABEL[i.stage].toLowerCase()}, ${formatAge(i.ageHours)} old${i.urgent ? `, ${i.urgent}` : ""}.`
-      );
-    if (reviewMode) lines.push("For each one: does this belong to a project?");
-    return lines.join(" ");
-  }
+  const spoken = () => unplacedSpokenText(report, reviewMode);
 
   return (
     <section
@@ -179,11 +194,11 @@ export function UnplacedPanel({
           </button>
         )}
       </div>
-      <p className="small muted">
-        {reviewMode
-          ? "Only what is still unplaced. For each one: does this belong to a project? If not, an Imperative, Life Admin or Erosion Guard."
-          : "Open tasks with no confirmed project, Imperative, Life Admin or Erosion Guard. Flagged, never blocked; nothing is filed until you tap."}
-      </p>
+      {!introInInfo && (
+        <p className="small muted">
+          {reviewMode ? UNPLACED_REVIEW_INTRO : UNPLACED_INTRO}
+        </p>
+      )}
       {unplaced.length > 0 && (
         <ul className="unplaced-list">
           {unplaced.slice(0, shown).map(info => {
@@ -446,6 +461,24 @@ export function CompassStrip({
   );
 }
 
+/** The review card's line: last review (or first), time to allow, what's waiting. */
+export function reviewCardText(workspace: Workspace, today: string): string {
+  const status = reviewStatus(workspace, today);
+  return [
+    status.daysSince === null
+      ? "Not done yet. Unplaced, Ideas and Link check first, then Floor Check (money, action, capacity), Imperatives and the map, in about 30–40 minutes."
+      : `Last done ${status.lastReviewDate} (${status.daysSince} day${status.daysSince === 1 ? "" : "s"} ago). About 15–25 minutes.`,
+    status.commitments
+      ? `${status.commitments} commitment${status.commitments === 1 ? "" : "s"} to confirm.`
+      : "",
+    status.quiet.length
+      ? `${status.quiet.length} Imperative${status.quiet.length === 1 ? "" : "s"} gone quiet.`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 /** Start point on the Review page; louder when a review is overdue. */
 export function ReviewDueBanner({
   workspace,
@@ -463,15 +496,7 @@ export function ReviewDueBanner({
       <div>
         <strong>Weekly Reality Review</strong>
         <p className="small muted">
-          {status.daysSince === null
-            ? "Not done yet. Floor Check (money, action, capacity), placement and Imperatives in about ten minutes."
-            : `Last done ${status.lastReviewDate} (${status.daysSince} day${status.daysSince === 1 ? "" : "s"} ago).`}
-          {status.commitments
-            ? ` ${status.commitments} commitment${status.commitments === 1 ? "" : "s"} to confirm.`
-            : ""}
-          {status.quiet.length
-            ? ` ${status.quiet.length} Imperative${status.quiet.length === 1 ? "" : "s"} gone quiet.`
-            : ""}
+          {reviewCardText(workspace, adelaideClock().date)}
         </p>
       </div>
       <button

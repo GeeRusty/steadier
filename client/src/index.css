@@ -12217,6 +12217,8 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 .page-purpose { display: flex; flex-direction: column; align-items: flex-end; margin: 0 0 4px; }
 .page-purpose > summary { list-style: none; width: 44px; height: 44px; display: grid; place-items: center; color: var(--muted-foreground); cursor: pointer; border-radius: 8px; }
 .page-purpose > summary::-webkit-details-marker { display: none; }
+/* <details> ignores flex layout in Chrome, so the margin puts the icon at the right. */
+.page-purpose > summary { margin-left: auto; }
 .page-purpose[open] { align-items: stretch; }
 .page-purpose[open] > summary { align-self: flex-end; }
 .main-content .page-heading .eyebrow,
@@ -12322,3 +12324,31 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 .pj-fold > summary { min-height: 44px; display: flex; align-items: center; font-size: 13px; font-weight: 600; color: var(--muted-foreground); cursor: pointer; }
 .pj-purpose { margin: 0 0 8px; }
 .pj-achieve { align-self: flex-start; margin-top: 8px; }
+
+/* Info note with relocated explanations (Review due, Weekly Review). */
+.page-purpose-note p { margin: 0 0 6px; }
+.page-purpose-note p:last-child { margin-bottom: 0; }
+
+/* Weekly Review: one step line, a thin bar, the step list on tap. */
+.review-progress { display: flex; flex-direction: column; gap: 6px; }
+.review-progress-row { display: flex; flex-wrap: wrap; align-items: center; }
+.review-progress-row .page-purpose { margin: 0 0 0 auto; }
+.review-progress-row .page-purpose[open] { flex-basis: 100%; }
+.review-step-label {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px;
+  padding: 0; border: 0; background: none; font: inherit; font-weight: 600;
+  color: var(--v2-text, var(--foreground)); cursor: pointer;
+}
+.review-progress-bar { height: 3px; border-radius: 2px; background: var(--border); overflow: hidden; }
+.review-progress-bar > span { display: block; height: 100%; background: var(--v2-muted, var(--muted-foreground)); border-radius: 2px; }
+.review-step-list {
+  list-style: none; margin: 4px 0 0; padding: 4px 0;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--card);
+}
+.review-step-list button {
+  display: flex; align-items: center; justify-content: space-between; width: 100%;
+  min-height: 44px; padding: 0 14px; border: 0; background: none; font: inherit;
+  text-align: left; color: var(--v2-text, var(--foreground)); cursor: pointer;
+}
+.review-step-list button.past { color: var(--v2-muted, var(--muted-foreground)); }
+.review-step-list button.current { background: var(--muted); font-weight: 600; }

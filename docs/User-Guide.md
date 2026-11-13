@@ -67,6 +67,7 @@ The Ideas shelf: open it from Overview (**Ideas**) or the menu. Each idea has **
 
 ### Review due / unplaced
 Quick tidy-up: tasks due for a review, and tasks that don't have a place yet. It's for quick maintenance. The full weekly process is Weekly Reality Review.
+The top card opens the Weekly Reality Review and says how long to allow: about 30–40 minutes for your first review, 15–25 minutes after that. Each unplaced task shows its age (for example **Unplaced · 19h**) and four ways to place it: **Project…**, **Imperative…**, **Life Admin**, **Erosion Guard**. Tasks due for a review have a **Reviewed** button (this acknowledges the review; it doesn't complete the work). Explanations sit behind the **i**; Read aloud is in the ⋮ menu.
 
 ### Waiting & blocked
 Tasks waiting on another person or on something else first. Decide when to check back.
@@ -102,7 +103,7 @@ Only links you made count. Suggested links show a **Confirm** button. **Not yet*
 A rules-based check-in on your current Imperatives and decisions. Open the real item to act on it.
 
 ### Weekly Reality Review
-The full weekly decision process: look at what happened, what's waiting, and what to change. Decisions you make are saved to the **Decision Log**. The **Link check** step shows everything you held with Not yet. Decide each one, or tap **Not yet again** to hold it one more week. Anything you leave comes back to Link check when you save the review.
+The full weekly decision process: look at what happened, what's waiting, and what to change. The steps run Start → Unplaced → Ideas → Link check → Money → Action → Capacity → Imperatives → Map → Save. One line at the top shows **Step n of 10** with a thin bar; tap it to see the steps and jump to one. **Back** and **Next** move one step. Notes about how a step works sit behind the **i**, and Read aloud (in the ⋮ menu) reads the step you're on. Decisions you make are saved to the **Decision Log**. The **Link check** step shows everything you held with Not yet. Decide each one, or tap **Not yet again** to hold it one more week. Anything you leave comes back to Link check when you save the review.
 
 ### Decision Log
 Read-only list of decisions saved during Weekly Reality Reviews.

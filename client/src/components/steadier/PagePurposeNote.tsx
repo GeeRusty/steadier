@@ -47,11 +47,13 @@ export const SPECIALIST_PAGE_PURPOSES: Partial<Record<View, string>> = {
 
 interface Props {
   view: View;
+  /** Explanations moved off the page body, shown word for word under the purpose. */
+  extra?: string[];
 }
 
-export default function PagePurposeNote({ view }: Props) {
+export default function PagePurposeNote({ view, extra = [] }: Props) {
   const purpose = SPECIALIST_PAGE_PURPOSES[view];
-  if (!purpose) return null;
+  if (!purpose && !extra.length) return null;
 
   // Show, don't explain: the explanation sits behind an info icon. Opening it
   // also reveals the page's own intro text (see .page-purpose in index.css).
@@ -61,7 +63,14 @@ export default function PagePurposeNote({ view }: Props) {
         <Info size={18} aria-hidden="true" />
       </summary>
       <aside className="page-purpose-note" role="note" aria-label="What this page is for">
-        <strong>What this page is for:</strong> <span>{purpose}</span>
+        {purpose && (
+          <p>
+            <strong>What this page is for:</strong> <span>{purpose}</span>
+          </p>
+        )}
+        {extra.map(line => (
+          <p key={line}>{line}</p>
+        ))}
       </aside>
     </details>
   );

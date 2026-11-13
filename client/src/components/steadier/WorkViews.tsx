@@ -73,6 +73,12 @@ interface Props {
   onReview: (id: string) => void;
   onAdd: () => void;
 }
+/** Review due list explanations; on that page they sit behind the page's info icon. */
+export const REVIEW_LIST_INFO =
+  "Fill the gaps that matter: next steps, provisional identity and when to return. This is not another deadline.";
+export const REVIEW_LIST_INFO_TAIL = "Tap a row to open it; the Done box completes it.";
+export const REVIEW_ACK_LINE = "Acknowledge review ≠ complete work";
+
 export default function WorkViews(p: Props) {
   const [page, setPage] = useState(0);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
@@ -114,10 +120,7 @@ export default function WorkViews(p: Props) {
       "The whole picture.",
       "Everything is here. You only need to work on a little of it.",
     ],
-    review: [
-      "A small check-in.",
-      "Fill the gaps that matter: next steps, provisional identity and when to return. This is not another deadline.",
-    ],
+    review: ["", REVIEW_LIST_INFO],
     waiting: [
       "Some things need time.",
       "Waiting is a real state. Name the missing piece, and return when it makes sense.",
@@ -329,12 +332,12 @@ export default function WorkViews(p: Props) {
   };
   return (
     <>
-      {p.view !== "all" && (
+      {p.view !== "all" && p.view !== "review" && (
         <div className="work-head">
           <h1 className="work-title">{title}</h1>
         </div>
       )}
-      {info && (
+      {info && p.view !== "review" && (
         <p className="tp-info" role="note">
           {sub} Tap a row to open it; the Done box completes it.
         </p>
@@ -407,7 +410,7 @@ export default function WorkViews(p: Props) {
           <option value="preparation">Preparation date reached</option>
           <option value="commitments">Approaching / passed commitments</option>
         </select>
-        <button
+        {p.view !== "review" && <button
           type="button"
           className="tp-info-button"
           aria-label="What this page shows"
@@ -415,15 +418,12 @@ export default function WorkViews(p: Props) {
           onClick={() => setInfo(v => !v)}
         >
           <Info size={18} aria-hidden="true" />
-        </button>
+        </button>}
       </div>
       <div className="list-heading">
         <span>
           {list.length} {list.length === 1 ? "task" : "tasks"}
         </span>
-        {p.view === "review" && (
-          <span className="small muted">Acknowledge review ≠ complete work</span>
-        )}
       </div>
       {groupedView ? (
         <div className="accordion-group-list work-list-groups">

@@ -55,6 +55,13 @@ No other colours carry meaning.
 - Priority, scores or ranking.
 - Data changes, orphan rules, confirmations, or the three dots.
 
+## Review due and Weekly Review
+- **Header:** the same as Today (title, date · sync, ⋮). The theme toggle, Undo and Read aloud live in the menu. No footer.
+- **One Read aloud per page**, in ⋮. It reads the page: on Review due, the review card and the unplaced list; on Weekly Review, the current step.
+- **Explanations** sit behind the **i**, word for word, never on the page.
+- **Weekly Review steps:** one line, "Step n of 10", with a thin grey bar. Tap it for the step list. Back and Next stay.
+- **Review card time:** first review 30–40 min, after that 15–25 min.
+
 ## Standing rules for anyone (or any AI) working on Steadier
 - **Never sign in as the owner or create access passes** (session tokens, keys, login links) without asking the owner first, even temporarily and even for a screenshot.
 - **Never deploy with a failing test.** Fix first, run the full test suite green, then deploy.

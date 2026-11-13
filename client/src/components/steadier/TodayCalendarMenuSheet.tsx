@@ -3,7 +3,8 @@ import { Flag, Info, Mic, RotateCcw, ShieldCheck, Volume2, X } from "lucide-reac
 import type { Appearance } from "../../domain/appearance";
 import AppearanceToggle from "./AppearanceToggle";
 
-export type ScreenMenuPage = "today" | "calendar" | "all";
+/** "plain": a page whose explanation sits behind its own info icon (Review due, Weekly Review). */
+export type ScreenMenuPage = "today" | "calendar" | "all" | "plain";
 export type ScreenMenuKind = "app" | "page";
 
 interface Props {
@@ -142,7 +143,7 @@ export default function TodayCalendarMenuSheet({
             >
               <span>Undo</span><RotateCcw size={16} aria-hidden="true" />
             </button>
-            <button
+            {page !== "plain" && <button
               type="button"
               className="v2-menu-row"
               aria-expanded={guideOpen}
@@ -150,8 +151,8 @@ export default function TodayCalendarMenuSheet({
             >
               <span>{page === "calendar" ? "How this calendar works" : "How this page works"} <Info size={15} aria-hidden="true" /></span>
               <span className="v2-menu-row-value">{guideOpen ? "Hide" : "Show"}</span>
-            </button>
-            {guideOpen && (
+            </button>}
+            {page !== "plain" && guideOpen && (
               <p className="v2-menu-guide" role="note">
                 {guide}
               </p>
