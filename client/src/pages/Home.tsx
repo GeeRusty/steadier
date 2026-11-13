@@ -2430,6 +2430,7 @@ export default function Home() {
                     attention={attentionItems}
                     nextThing={
                       <TodayNextThing
+                      poolFolded
                       workspace={store.workspace}
                       tasks={tasks}
                       day={now}

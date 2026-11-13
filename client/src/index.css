@@ -12246,3 +12246,7 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 .ov-strip-ends { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted-foreground); }
 .ov-project { padding: 12px 14px; gap: 6px; align-items: flex-start; text-align: left; font: inherit; color: inherit; }
 .ov-all { align-self: flex-start; }
+/* All work on the Today-style screen: no gap above search; readable filter. */
+.v2-main-content .library-toolbar { margin: 4px 0 12px; }
+.v2-main-content .library-toolbar select { font-size: 15px; min-height: 44px; }
+.v2-main-content .library-toolbar .tp-info-button { flex: none; }

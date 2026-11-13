@@ -329,18 +329,11 @@ export default function WorkViews(p: Props) {
   };
   return (
     <>
-      <div className="work-head">
-        {p.view !== "all" && <h1 className="work-title">{title}</h1>}
-        <button
-          type="button"
-          className="tp-info-button"
-          aria-label="What this page shows"
-          aria-expanded={info}
-          onClick={() => setInfo(v => !v)}
-        >
-          <Info size={18} aria-hidden="true" />
-        </button>
-      </div>
+      {p.view !== "all" && (
+        <div className="work-head">
+          <h1 className="work-title">{title}</h1>
+        </div>
+      )}
       {info && (
         <p className="tp-info" role="note">
           {sub} Tap a row to open it; the Done box completes it.
@@ -385,7 +378,7 @@ export default function WorkViews(p: Props) {
           <input
             value={p.search}
             onChange={e => p.onSearch(e.target.value)}
-            placeholder="Find a responsibility or next step…"
+            placeholder="Search"
             aria-label="Search all responsibilities"
           />
         </label>
@@ -394,7 +387,7 @@ export default function WorkViews(p: Props) {
           value={p.filter}
           onChange={e => p.onFilter(e.target.value)}
         >
-          <option value="">Every state</option>
+          <option value="">Everything</option>
           <option value="pastdue">Past due (date or window passed)</option>
           <option value="held">Held</option>
           <option value="active">Active (scheduled or chosen)</option>
@@ -414,6 +407,15 @@ export default function WorkViews(p: Props) {
           <option value="preparation">Preparation date reached</option>
           <option value="commitments">Approaching / passed commitments</option>
         </select>
+        <button
+          type="button"
+          className="tp-info-button"
+          aria-label="What this page shows"
+          aria-expanded={info}
+          onClick={() => setInfo(v => !v)}
+        >
+          <Info size={18} aria-hidden="true" />
+        </button>
       </div>
       <div className="list-heading">
         <span>

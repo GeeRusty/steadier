@@ -125,7 +125,6 @@ export default function OverviewView(p: Props) {
       )}
       {p.claudeRequests}
 
-      <h2 className="tp-label">Next thing</h2>
       {p.nextThing}
 
       <h2 className="tp-label">Today</h2>

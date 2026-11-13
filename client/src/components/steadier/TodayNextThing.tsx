@@ -19,6 +19,8 @@ interface Props {
   onOpenPastDue?: () => void;
   /** Optional read-only content between the primary Next thing and Pool cards. */
   afterNextThing?: React.ReactNode;
+  /** Overview keeps the Pool folded until asked. */
+  poolFolded?: boolean;
 }
 
 export default function TodayNextThing({
@@ -34,6 +36,7 @@ export default function TodayNextThing({
   onDrop,
   onOpenPastDue,
   afterNextThing,
+  poolFolded = false,
 }: Props) {
   const [choosingId, setChoosingId] = useState<string | null>(null);
   const [editingSelected, setEditingSelected] = useState(false);
@@ -197,8 +200,8 @@ export default function TodayNextThing({
       <V2FoldableCard
         title="Pool"
         count={candidates.length}
-        storageKey="today-task-pool"
-        defaultOpen
+        storageKey={poolFolded ? "overview-task-pool" : "today-task-pool"}
+        defaultOpen={!poolFolded}
         className="v2-pool-card"
       >
         {pastDueCount > 0 && onOpenPastDue && (
