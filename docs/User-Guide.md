@@ -38,7 +38,12 @@ The **Today** tab is for doing. It uses three words only: **Now · Next · Later
 **Signals (everywhere):** a green left bar means it serves an Imperative. Dashed means suggested (tap to confirm). Faded with dots means not set up. Grey chips show only what's off normal: ⏱ +20m / −10m, slipped, overdue 2d, moved 3×, quiet 9d, review due. A chip turns red only when it will clash with a fixed booking or deadline. The broken-link icon means a project, or a task in it, is missing its Goal Outcome or Imperative link (also in Link check). The old shape-and-colour arrows are gone.
 
 ### Overview
-Overview is for seeing: Needs attention, links to Calendar, Ideas, Compass and Imperatives, the Pool, today's timeline, Pillars, Movement and the Compass strip.
+Overview is for seeing, top to bottom:
+- **Needs attention (n):** one row per kind (Review due, Link check, Weekly review, Sort, Unplaced, Past due, Claude requests). Only rows above zero show, and the total matches Today's.
+- **Next thing:** your chosen one, and the Pool to choose from (Not now, Still on and Drop work as before).
+- **Today:** booked count and free time, with a thin strip of your day and the red now mark. Tap it for Calendar.
+- **Moving:** up to three active projects with their signals, then **All projects**.
+- **Held and waiting**, then **Why:** Compass, Pillars, Ideas and Movement.
 
 ### Calendar
 Day, week and month views of your booked anchors (tasks with a day and a clock time).

@@ -3,6 +3,9 @@ import LinkCheckView from "../components/steadier/LinkCheckView";
 import { linkCheckCount } from "../domain/linkCheck";
 import { pastDueOffToday, todayPlan, todayTaskIds } from "../domain/todayPlan";
 import TodayPlanView from "../components/steadier/TodayPlanView";
+import OverviewView, { type AttentionItem } from "../components/steadier/OverviewView";
+import { kindCounts } from "../domain/todayStates";
+import { activeImperatives } from "../domain/compass";
 import CaptureHoldButton from "../components/steadier/CaptureHoldButton";
 import { privateOwnerJSON } from "../lib/cloudApi";
 import ClaudeConsent from "../components/steadier/ClaudeConsent";
@@ -2054,20 +2057,26 @@ export default function Home() {
   const nowTask =
     nowBlock ?? focused ?? intentionTask ?? liveResult.items[0]?.task;
   const nowIds = nowTask ? [nowTask.id] : [];
-  const todayAttentionCount = (() => {
-    if (view !== "attention") return 0;
+  const attentionItems: AttentionItem[] = (() => {
+    if (view !== "attention") return [];
     const clock = adelaideClock();
     const onToday = todayTaskIds(todayPlan(store.workspace, tasks, clock.date, clock.minutes));
-    return (
-      pastDueOffToday(tasks, clock.date, onToday).length +
-      liveResult.reviewDue.length +
-      (reviewStatus(store.workspace, clock.date).due ? 1 : 0) +
-      notReadyTasks(tasks).length +
-      linkCheckCount(store.workspace) +
-      orphanReport(tasks).count +
-      pendingDeleteCount
-    );
+    return [
+      { key: "review", label: "Review due", count: liveResult.reviewDue.length, onOpen: () => navigate("review") },
+      { key: "linkcheck", label: "Link check", count: linkCheckCount(store.workspace), onOpen: () => navigate("linkcheck") },
+      { key: "weekly", label: "Weekly review", count: reviewStatus(store.workspace, clock.date).due ? 1 : 0, onOpen: () => navigate("weekly") },
+      { key: "sort", label: "Sort (not set up)", count: notReadyTasks(tasks).length, onOpen: () => navigate("sort") },
+      { key: "unplaced", label: "Unplaced", count: orphanReport(tasks).count, onOpen: () => setOrphanOpen(true) },
+      { key: "pastdue", label: "Past due", count: pastDueOffToday(tasks, clock.date, onToday).length, onOpen: () => openAll("pastdue") },
+      {
+        key: "claude",
+        label: "Claude requests",
+        count: pendingDeleteCount,
+        onOpen: () => document.getElementById("overview-claude")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      },
+    ];
   })();
+  const todayAttentionCount = attentionItems.reduce((sum, item) => sum + item.count, 0);
   return (
     <TaskListContext.Provider value={tasks}>
       <TaskKindContext.Provider value={kindValue}>
@@ -2389,26 +2398,6 @@ export default function Home() {
                   </div>
                 )}
                 {view !== "attention" && <PagePurposeNote view={view} />}
-                {view === "attention" && todayTab === "overview" && (
-                  <OrphanBanner
-                    workspace={store.workspace}
-                    onOpen={() => setOrphanOpen(true)}
-                    onRead={voice.read}
-                  />
-                )}
-                {view === "attention" && todayTab === "overview" && (
-                  <CompassStrip
-                    workspace={store.workspace}
-                    onOpenImperatives={() => navigate("imperatives")}
-                    onOpenUnplaced={() => setOrphanOpen(true)}
-                    onOpenReview={() => navigate("weekly")}
-                    onOpenMap={() => navigate("map")}
-                    mapGapCount={
-                      mapGaps(store.workspace, adelaideClock().date).length
-                    }
-                    onRead={voice.read}
-                  />
-                )}
                 {view === "attention" && todayTab === "today" && (
                   <TodayPlanView
                     workspace={store.workspace}
@@ -2435,37 +2424,12 @@ export default function Home() {
                   />
                 )}
                 {view === "attention" && todayTab === "overview" && (
-                  <>
-                    <TodayNow
-                      workspace={store.workspace}
-                      tasks={tasks}
-                      sortCount={notReadyTasks(tasks).length}
-                      ideaCount={ideaList(tasks).length}
-                      onSort={() => navigate("sort")}
-                      linkCheckCount={linkCheckCount(store.workspace)}
-                      onLinkCheck={() => navigate("linkcheck")}
-                      onIdeas={() => navigate("ideas")}
-                      result={liveResult}
-                      orphanCount={orphanReport(tasks).count}
-                      readOnly={store.readOnly}
-                      onDone={id => done(id)}
-                      onNotNow={notNow}
-                      onStart={start}
-                      onOpenFocus={() => setFocusOpen(true)}
-                      onFinishedEarly={finishEarly}
-                      onOpen={openTaskView}
-                      onConfirmPlacement={confirmHome}
-                      onOpenOrphans={() => setOrphanOpen(true)}
-                      onReview={() => navigate("review")}
-                      onCommitments={() => openAll("commitments")}
-                      onCalendar={() => navigate("calendar")}
-                      onImperatives={() => navigate("imperatives")}
-                      hideNow
-                      onCompass={() => navigate("compass-view")}
-                    />
-                    <ClaudeChangesPanel store={store} voice={voice} compact />
-                    <div className="v2-today-card-stack overview-pool">
-                    <TodayNextThing
+                  <OverviewView
+                    workspace={store.workspace}
+                    tasks={tasks}
+                    attention={attentionItems}
+                    nextThing={
+                      <TodayNextThing
                       workspace={store.workspace}
                       tasks={tasks}
                       day={now}
@@ -2477,55 +2441,37 @@ export default function Home() {
                       onStillOn={stillOn}
                       onDrop={dropFromPool}
                       onOpenPastDue={() => openAll("pastdue")}
-                      afterNextThing={
-                        <TodayVisualTimeline
-                          tasks={tasks}
-                          projects={store.workspace.projects}
-                          planning={store.workspace.planning}
-                          syncStatus={
-                            !store.cloud.active
-                              ? "local"
-                              : store.cloud.status === "synced" ||
-                                  store.cloud.status === "saving" ||
-                                  store.cloud.status === "loading" ||
-                                  store.cloud.status === "offline" ||
-                                  store.cloud.status === "conflict"
-                                ? store.cloud.status
-                                : "error"
-                          }
-                          lastSyncedAt={store.cloud.lastSyncedAt}
-                          pendingSync={!!store.cloud.pending}
-                          online={online}
-                          onCalendar={() => navigate("calendar")}
-                          onOpenTask={openTaskView}
-                          onRead={voice.read}
-                        />
-                      }
-                    />
-                    <V2FoldableCard
-                      title="Pillars"
-                      count={`${todayPillarCount} of ${PILLAR_SLOTS} set`}
-                      storageKey="today-pillars"
-                      defaultOpen={false}
-                      className="v2-pillars-card"
-                    >
-                      <PillarStrip
-                        workspace={store.workspace}
-                        today={now}
-                        readOnly={store.readOnly}
-                        onOpenGoal={openGoal}
-                        onAddPillar={() => {
-                          setAddPillarPending(true);
-                          navigate("map");
-                        }}
-                        onOpenMap={() => navigate("map")}
-                        onRead={voice.read}
-                        todayV2
                       />
-                    </V2FoldableCard>
-                    </div>
-                    <MoveFloorTodayCard day={now} onOpen={() => navigate("moveEnergy")} />
-                  </>
+                    }
+                    claudeRequests={
+                      <div id="overview-claude">
+                        <ClaudeChangesPanel store={store} voice={voice} compact />
+                      </div>
+                    }
+                    held={[
+                      { key: "held", label: "Held", value: String((kindValue ? kindCounts(tasks, kindValue.ctx).held : 0)), onOpen: () => openAll("held") },
+                      {
+                        key: "waiting",
+                        label: "Waiting and blocked",
+                        value: String(liveResult.waitingCount + liveResult.blockedCount),
+                        onOpen: () => navigate("waiting"),
+                      },
+                    ]}
+                    why={[
+                      {
+                        key: "compass",
+                        label: "Compass",
+                        value: `${activeImperatives(store.workspace).length} Imperative${activeImperatives(store.workspace).length === 1 ? "" : "s"}${reviewStatus(store.workspace, now).quiet.length ? ` · ${reviewStatus(store.workspace, now).quiet.length} quiet` : ""}`,
+                        onOpen: () => navigate("compass-view"),
+                      },
+                      { key: "pillars", label: "Pillars", value: `${todayPillarCount} of ${PILLAR_SLOTS} set`, onOpen: () => navigate("map") },
+                      { key: "ideas", label: "Ideas", value: String(ideaList(tasks).length), onOpen: () => navigate("ideas") },
+                      { key: "movement", label: "Movement", value: "Open", onOpen: () => navigate("moveEnergy") },
+                    ]}
+                    onCalendar={() => navigate("calendar")}
+                    onOpenProject={openProjectById}
+                    onAllProjects={() => navigate("projects")}
+                  />
                 )}
                 {view === "review" && (
                   <ReviewDueBanner
@@ -2542,27 +2488,7 @@ export default function Home() {
                     readOnly={store.readOnly}
                   />
                 )}
-                {view === "attention" && todayTab === "overview" ? (
-                  <AttentionView
-                    tasks={tasks}
-                    projects={store.workspace.projects}
-                    part="overview"
-                    excludeIds={nowIds}
-                    onProjects={() => navigate("projects")}
-                    result={liveResult}
-                    context={context}
-                    minutes={minutes}
-                    onContext={setContext}
-                    onMinutes={setMinutes}
-                    onOpen={openTaskView}
-                    onStart={start}
-                    onDone={done}
-                    onDefer={defer}
-                    onAll={openAll}
-                    onReview={() => navigate("review")}
-                    onWaiting={() => navigate("waiting")}
-                  />
-                ) : view === "time" ? (
+                {view === "attention" ? null : view === "time" ? (
                   <TimeReview
                     tasks={tasks}
                     projects={store.workspace.projects}
@@ -2937,7 +2863,7 @@ export default function Home() {
                     }}
                     readOnly={store.readOnly}
                   />
-                ) : view === "attention" ? null : (
+                ) : (
                   <WorkViews
                     view={view}
                     tasks={tasks}
@@ -2954,7 +2880,7 @@ export default function Home() {
                     onAdd={() => openCapture()}
                   />
                 )}
-                {(!v2Screen || (view === "attention" && todayTab === "overview")) && <footer className="app-footer">
+                {!v2Screen && <footer className="app-footer">
                   <span>
                     <ShieldCheck size={13} />
                     {store.kind === "demo"
