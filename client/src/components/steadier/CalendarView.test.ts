@@ -50,7 +50,8 @@ describe("CalendarView anchor-only grids", () => {
 
     expect(markup).toContain("calendar-date-marker");
     expect(markup).toContain("Planned date · not booked");
-    expect(markup).toContain("To add a booked anchor, tap an empty time.");
+    // Explanations live in the page menu's "How this calendar works" now.
+    expect(markup).not.toContain("To add a booked anchor, tap an empty time.");
     expect(markup).toContain("Synthetic existing unbooked task");
     expect(markup).not.toContain("Synthetic existing unbooked task · 09:00");
     expect(markup).toContain('style="top:50px">09:00</span>');
@@ -180,7 +181,8 @@ describe("CalendarView anchor-only grids", () => {
     expect(markup).toContain("v2-free-block");
     expect(markup).toContain("calendar-deadline-point");
     expect(markup).toContain("hard deadline point at 16:30");
-    expect(markup).toContain("height:550px");
+    // Equal hour rows plus room for the last label (was 550px with a squashed last row).
+    expect(markup).toContain("height:570px");
     expect(markup).toContain("left:calc(0% + 8px + 0%);width:calc(100% - 8px)");
     expect(markup).toContain(">07:00</span>");
     expect(markup).toContain(">18:00</span>");
@@ -270,7 +272,7 @@ describe("CalendarView anchor-only grids", () => {
       })
     );
 
-    expect(markup).toContain("This month view previews up to three items per day.");
+    expect(markup).not.toContain("This month view previews up to three items per day.");
     expect(markup).toMatch(/class="month-day-open"[^>]*aria-label="Open .+ in Day view"/);
     expect(markup).toContain(">+1 more</button>");
     expect(markup).toMatch(/aria-label="Show 1 more item for .+ in Day view"/);

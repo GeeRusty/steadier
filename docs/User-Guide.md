@@ -46,7 +46,8 @@ Overview is for seeing, top to bottom:
 - **Held and waiting**, then **Why:** Compass, Pillars, Ideas and Movement.
 
 ### Calendar
-Day, week and month views of your booked anchors (tasks with a day and a clock time).
+Day, 3-day, week, month and **Board** views of your booked anchors (tasks with a day and a clock time). Blocks show the title first; the green left bar marks Imperative work. Week shows titles only, with "Nh free" under each date. Explanations are in the ⋮ menu under **How this calendar works**.
+- **Board** lists the day's bookings like a departure board: time · task · status. Status shows only when something is off: Done, Due, Now, Slipped, or the likely finish (e.g. "~10:55 · +10m") when it's 10 or more minutes late. It's red only if that runs into the next booking or a deadline.
 - This is where you **change a booked time**: open the task and change its day, time or length.
 - Untimed tasks and flexible windows are not shown as blocks.
 - Month view also shows bills and renewals due, birthdays, and anchors you've marked as major.

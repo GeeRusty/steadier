@@ -40,6 +40,37 @@ import {
 } from "../../domain/quickParse";
 import { timingShapeForTask } from "../../domain/timingShape";
 import TimingShapeMark from "./TimingShapeMark";
+import { boardRows, type BoardRow } from "../../domain/calendarBoard";
+import { effectiveTaskRole } from "../../domain/linkCheck";
+
+/** Board view: time · title · status, like a departure board. */
+function BoardView({ rows, onOpen }: { rows: BoardRow[]; onOpen: (taskId: string | null) => void }) {
+  if (!rows.length) return <p className="tp-meta board-empty">Nothing booked on this day.</p>;
+  return (
+    <div className="board" role="table" aria-label="Bookings">
+      <div className="board-row board-head" role="row">
+        <span role="columnheader">Time</span>
+        <span role="columnheader">Task</span>
+        <span role="columnheader">Status</span>
+      </div>
+      {rows.map(row => (
+        <button
+          key={row.id}
+          type="button"
+          role="row"
+          className={`board-row${row.green ? " board-green" : ""}${row.done ? " board-done" : ""}`}
+          onClick={() => onOpen(row.taskId)}
+        >
+          <span role="cell" className="board-time">{row.timeText}</span>
+          <span role="cell" className="board-title">{row.title}</span>
+          <span role="cell" className="board-status">
+            {row.status && <span className={`tp-chip${row.red ? " tp-chip--red" : ""}`}>{row.status}</span>}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
 import { CALENDAR_GUIDE } from "./TodayCalendarMenuSheet";
 import { isNativeVoiceDraftEvent } from "../../domain/nativeVoice";
 import {
@@ -54,7 +85,7 @@ import {
   type TaskAutosaveSaveResult,
 } from "../../domain/taskAutosave";
 
-type Mode = "day" | "3day" | "week" | "month";
+type Mode = "day" | "3day" | "week" | "month" | "board";
 const PX_PER_MIN = 0.9;
 const SNAP = 15;
 const MONTHS = [
@@ -164,7 +195,7 @@ export default function CalendarView({
   }, [initialMode]);
 
   const dates = useMemo(() => {
-    if (mode === "day") return [anchor];
+    if (mode === "day" || mode === "board") return [anchor];
     if (mode === "3day") return dateRange(anchor, 3);
     if (mode === "week") return dateRange(weekStart(anchor), 7);
     const [y, m] = anchor.split("-").map(Number);
@@ -289,7 +320,8 @@ export default function CalendarView({
     { length: endHour - startHour + 1 },
     (_, i) => startHour + i
   );
-  const height = (endHour - startHour + (mode === "day" ? 0 : 1)) * 60 * pxPerMinute;
+  // Every hour row is the same height; the last label sits on its own line.
+  const height = (endHour - startHour + (mode === "day" ? 0 : 1)) * 60 * pxPerMinute + (mode === "day" ? 20 : 0);
 
   useEffect(() => {
     if (mode === "month" || !scrollRef.current) return;
@@ -306,7 +338,7 @@ export default function CalendarView({
   }, [mode, dates[0]]);
 
   function step(direction: -1 | 1) {
-    if (mode === "day") setAnchor(shiftDays(anchor, direction));
+    if (mode === "day" || mode === "board") setAnchor(shiftDays(anchor, direction));
     else if (mode === "3day") setAnchor(shiftDays(anchor, 3 * direction));
     else if (mode === "week") setAnchor(shiftDays(anchor, 7 * direction));
     else {
@@ -681,7 +713,7 @@ export default function CalendarView({
       : dates.length === 1
         ? `${friendlyDate(dates[0], today)} · ${dates[0].split("-").reverse().join("/")}`
         : `${friendlyDate(dates[0], today)} – ${friendlyDate(dates[dates.length - 1], today)}`;
-  const toolbarDate = mode === "day"
+  const toolbarDate = mode === "day" || mode === "board"
     ? new Intl.DateTimeFormat("en-AU", {
         timeZone: "Australia/Adelaide",
         weekday: "short",
@@ -784,7 +816,7 @@ export default function CalendarView({
         </div>
         <span className="v2-calendar-current-date" aria-live="polite">{toolbarDate}</span>
         <div className="segmented v2-calendar-segmented" role="group" aria-label="Calendar range">
-            {(["day", "3day", "week", "month"] as Mode[]).map(m => (
+            {(["day", "3day", "week", "month", "board"] as Mode[]).map(m => (
               <button
                 key={m}
                 className={mode === m ? "on" : ""}
@@ -797,17 +829,14 @@ export default function CalendarView({
                     ? "3d"
                     : m === "week"
                       ? "Week"
-                      : "Month"}
+                      : m === "month"
+                        ? "Month"
+                        : "Board"}
               </button>
             ))}
         </div>
       </div>
-      <p className="calendar-anchor-cue" role="note">
-        {mode === "month"
-          ? "This month view previews up to three items per day. Tap a date or +N more for its full day; to add a booked anchor, open Day and tap an empty time."
-          : "To add a booked anchor, tap an empty time. Flexible windows and date-only deadlines stay untimed."}
-      </p>
-      {mode !== "month" && dueTasks.length > 0 && (
+      {mode !== "month" && mode !== "board" && dueTasks.length > 0 && (
         <div className="v2-calendar-due-row" aria-label="Hard deadlines">
           <span className="v2-calendar-due-label">DUE</span>
           <div className="v2-calendar-due-chips">
@@ -825,31 +854,12 @@ export default function CalendarView({
           </div>
         </div>
       )}
-      {mode === "week" && (
-        <section className="calendar-week-summary" aria-label="Week overview">
-          <div>
-            <h2>What matters this week</h2>
-            {activeImperatives.length ? (
-              <ul className="week-imperatives">
-                {activeImperatives.map(imperative => (
-                  <li key={imperative.id}>{imperative.title}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="small muted">No active Imperatives yet.</p>
-            )}
-          </div>
-          <p className="small muted">Free capacity is shown under each day.</p>
-        </section>
-      )}
       {(note || overlapCount > 0) && (
         <p className="small muted calendar-note" role="status">
           {note && <span>{note}</span>}
           {overlapCount > 0 && (
             <span className="calendar-overlap-summary">
-              {overlapCount} overlapping time-block pair
-              {overlapCount === 1 ? "" : "s"} in this view. Review the times below;
-              no schedule change was made.
+              {overlapCount} overlap{overlapCount === 1 ? "" : "s"} in view
             </span>
           )}
         </p>
@@ -955,7 +965,15 @@ export default function CalendarView({
         </form>
       )}
 
-      {mode === "month" ? (
+      {mode === "board" ? (
+        <BoardView
+          rows={boardRows(days[0], tasks, workspace, today, clock.minutes)}
+          onOpen={taskId => {
+            const task = taskId ? taskById.get(taskId) : undefined;
+            if (task) onOpenTask(task);
+          }}
+        />
+      ) : mode === "month" ? (
         <div className="month-grid" role="grid" aria-label={monthTitle(anchor)}>
           {WEEKDAY_SHORT.slice(1)
             .concat(WEEKDAY_SHORT[0])
@@ -1049,7 +1067,7 @@ export default function CalendarView({
           <div
             className={`timeline-head${mode === "day" ? " v2-day-grid-head" : ""}`}
             style={{
-              gridTemplateColumns: `${mode === "day" ? 36 : 52}px repeat(${dates.length}, minmax(0, 1fr))`,
+              gridTemplateColumns: `${mode === "day" ? 52 : 52}px repeat(${dates.length}, minmax(0, 1fr))`,
             }}
           >
             <span />
@@ -1073,7 +1091,7 @@ export default function CalendarView({
                 </button>
                 {mode === "week" && (
                   <span className="week-capacity">
-                    Free {formatDuration(freeCapacityForDay(day))}
+                    {formatCompactDuration(freeCapacityForDay(day))} free
                   </span>
                 )}
                 <div className="allday-list">
@@ -1145,7 +1163,7 @@ export default function CalendarView({
             <div
               className={`timeline-body${mode === "day" ? " v2-day-grid-body" : ""}`}
               style={{
-                gridTemplateColumns: `${mode === "day" ? 36 : 52}px repeat(${dates.length}, minmax(0, 1fr))`,
+                gridTemplateColumns: `${mode === "day" ? 52 : 52}px repeat(${dates.length}, minmax(0, 1fr))`,
                 height,
               }}
             >
@@ -1154,9 +1172,7 @@ export default function CalendarView({
                   <span
                     key={h}
                     style={{
-                      top: mode === "day" && h === endHour
-                        ? Math.max(0, height - 16)
-                        : (h - startHour) * 60 * pxPerMinute,
+                      top: (h - startHour) * 60 * pxPerMinute,
                     }}
                   >
                     {mode === "day" ? minutesToTime(h * 60) : formatTime(minutesToTime(h * 60))}
@@ -1186,9 +1202,7 @@ export default function CalendarView({
                         key={h}
                         className="hour-line"
                         style={{
-                          top: mode === "day" && h === endHour
-                            ? Math.max(0, height - 1)
-                            : (h - startHour) * 60 * pxPerMinute,
+                          top: (h - startHour) * 60 * pxPerMinute,
                         }}
                         aria-hidden
                       />
@@ -1261,7 +1275,7 @@ export default function CalendarView({
                       return (
                         <div
                           key={item.id}
-                          className={`time-block kind-${item.kind}${item.done ? " done" : ""}${item.fixed ? " fixed" : ""}${item.overdue ? " overdue" : ""}${(item.lanes ?? 1) > 1 ? " overlap" : ""}`}
+                          className={`time-block kind-${item.kind}${item.done ? " done" : ""}${item.fixed ? " fixed" : ""}${item.overdue ? " overdue" : ""}${(item.lanes ?? 1) > 1 ? " overlap" : ""}${sourceTask && effectiveTaskRole(sourceTask, workspace) === "direction" ? " imp" : ""}`}
                           style={blockStyle(item)}
                           role="button"
                           tabIndex={0}
@@ -1282,30 +1296,19 @@ export default function CalendarView({
                             if (e.key === "Enter") openItem(item);
                           }}
                         >
-                          <span className="block-time">
-                            <span className="block-time-label">{timeRangeLabel(item)}</span>
-                            {item.fixed && (
-                              <Lock size={10} aria-label="fixed" />
-                            )}
-                            {item.repeating && (
-                              <Repeat size={10} aria-label="repeats" />
-                            )}
-                            {(item.lanes ?? 1) > 1 && (
-                              <span
-                                className="block-overlap-indicator"
-                                aria-hidden="true"
-                                title="Overlaps another timed block"
-                              >
-                                !
-                              </span>
-                            )}
-                          </span>
-                          <span className="block-title">
-                            {sourceTask && (
-                              <TimingShapeMark task={sourceTask} />
-                            )}{" "}
-                            {item.title}
-                          </span>
+                          <span className="block-title">{item.title}</span>
+                          {mode !== "week" && (
+                            <span className="block-time">
+                              <span className="block-time-label">{timeRangeLabel(item)}</span>
+                              {item.repeating && <Repeat size={12} aria-label="repeats" />}
+                              {(item.lanes ?? 1) > 1 && (
+                                <span className="block-overlap-indicator" title="Overlaps another timed block">
+                                  overlaps
+                                </span>
+                              )}
+                              {sourceTask && <TimingShapeMark task={sourceTask} noGreen />}
+                            </span>
+                          )}
                           {item.kind === "slot" && !item.done && !readOnly && (
                             <span
                               className="resize-handle"

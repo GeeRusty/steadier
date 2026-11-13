@@ -28,7 +28,7 @@ interface Props {
 const ALL_GUIDE =
   "All work is for finding anything. Rows are grouped by project, with the project's Outcome once at the top. Tap the circle to complete a task; tap the row to open it. Grey chips show only what's off normal.";
 const CALENDAR_GUIDE =
-  "Calendar grids show booked anchors and hard-deadline points. Deadline points don't reserve time. To book a task, open its When settings and choose Booked anchor.";
+  "Calendar grids show booked anchors and hard-deadline points. Deadline points don't reserve time. To add a booked anchor, tap an empty time in Day view; flexible windows and date-only deadlines stay untimed. Month previews up to three items per day; tap a date for its full day. Board lists each booking as time · task · status; status shows only when something is off, such as the likely finish when it's 10 or more minutes late (red if it runs into the next booking).";
 const TODAY_GUIDE =
   "Use the Today / Overview switch at the top of My life today. Today shows the read-only day timeline above Next thing; edit booked timing in Calendar. Choose one task as your Next thing, then complete it with Done or return it to the pool with Not now.";
 

@@ -40,7 +40,18 @@ No other colours carry meaning.
 - **Later** = dated or booked for today, after Next. Nothing undated appears on Today.
 - **Order is by time only.** No priority, scores or ranking, anywhere.
 
-## Never without the owner's approval
+## Calendar
+- **Blocks** are neutral cards with primary text on a neutral surface. The title comes first, then the time and chips.
+- **Colour:** the green left bar is for Imperative work only. Blue/lavender fills and lock icons are gone.
+- **Day** shows the title, time and chips. **Week** shows titles only, with one short "Nh free" line under each date. **Month** previews up to three items per day.
+- **Every hour row is the same height**, and the time column fits two-digit hours.
+- **Explanations** live in the page menu's "How this calendar works"; there are no boxes on the page. A real risk (an overlap) is one short line.
+- **Board** (beside Day/3d/Week/Month) works like a departure board: one line per booking, **time · task · status**, with the status last.
+  - Status shows only when something is off. The words are 1–3, in sentence case: Done, Due, Now, Slipped.
+  - The likely finish ("~10:55 · +10m") shows only when it is **10 minutes or more** past the schedule. Below that, nothing shows.
+  - Red only when the slip runs into the next fixed booking or a deadline.
+
+
 - Priority, scores or ranking.
 - Data changes, orphan rules, confirmations, or the three dots.
 
