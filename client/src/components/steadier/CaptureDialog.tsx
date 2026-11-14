@@ -358,8 +358,9 @@ export default function CaptureDialog({
       return;
     }
     if (kind === "idea" && onAddFrontOfMind) {
-      setAutoSaveState("not-saved");
-      setAutoSaveDetail("An idea saves to Front of Mind when you tap Save.");
+      // Calm: nothing is wrong, it just saves when you tap Save.
+      setAutoSaveState("idle");
+      setAutoSaveDetail("");
       return;
     }
     if (severalThings && !acceptedTaskRef.current) {

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { today } from "../domain/engine";
 import { makeSampleProjects } from "../domain/life";
 import { makeSampleTasks } from "../domain/samples";
+import { moveIdeasToFrontOfMind } from "../domain/frontOfMind";
 import {
   addRecoveryCopy,
   corruptCopyKey,
@@ -61,7 +62,8 @@ function freshWorkspace(
     kind === "demo"
       ? makeSampleProjects(makeSampleTasks(scenario, day), day)
       : { tasks: [], projects: [] };
-  return {
+  // Sample ideas start on Front of Mind, as a saved workspace's would.
+  return moveIdeasToFrontOfMind({
     version: 2,
     tasks: sample.tasks,
     projects: sample.projects,
@@ -74,7 +76,7 @@ function freshWorkspace(
     reviews: [],
     goals: [],
     obligations: [],
-  };
+  });
 }
 
 function preferred(): WorkspaceKind {
