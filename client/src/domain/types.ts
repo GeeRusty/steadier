@@ -24,7 +24,6 @@ export type Scenario =
   | "quiet";
 export type View =
   | "attention"
-  | "command-centre"
   | "all"
   | "review"
   | "waiting"

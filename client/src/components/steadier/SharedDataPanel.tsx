@@ -17,6 +17,7 @@ import type { useSharedWorkspace } from "../../hooks/useSharedWorkspace";
 import type { CompassKeyInfo } from "../../../../shared/cloud";
 import { startLogin } from "../../const";
 import { exportBackup } from "../../domain/transfer";
+import { latestRecordAt } from "../../domain/commandCentre";
 import {
   copyPrivate,
   downloadPrivate,
@@ -194,6 +195,10 @@ export default function SharedDataPanel({
               ? `${formatAdelaide(c.lastSyncedAt)} (Adelaide)`
               : "No saved changes yet"}
             .{" "}
+            {(() => {
+              const latest = latestRecordAt(store.workspace);
+              return latest ? `Latest record: ${formatAdelaide(latest)} (Adelaide). ` : "";
+            })()}
             {c.pending
               ? "This browser has changes not yet confirmed on the server; Compass cannot see them yet."
               : "Compass can retrieve the saved server version, not other-device unsynced drafts."}

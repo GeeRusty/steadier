@@ -12,7 +12,6 @@ export const PAGE_PURPOSE_CORE_VIEWS = [
 export const SPECIALIST_PAGE_PURPOSES: Partial<Record<View, string>> = {
   sort: "One minute a day: set up faded tasks one card at a time. Light Action, Place and First step; skip anything you're unsure about.",
   ideas: "Ideas you might act on one day. No timers or warnings. Make one a task, keep it, or let it go (archived, never deleted).",
-  "command-centre": "A rules-based check-in for current Imperatives and decisions; open the real Steadier item to act.",
   review: "Quick maintenance for work due for review or still unplaced. Weekly Reality Review is the separate full decision process.",
   waiting: "Track work waiting on a person or dependency, and decide when to return to it.",
   progress: "Look back at completed work and recent movement; this is history, not the active backlog.",

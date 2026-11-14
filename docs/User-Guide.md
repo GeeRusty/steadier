@@ -29,12 +29,13 @@ The **+** button at the right of the tab bar is the one capture button: **tap** 
 
 ### My life today
 The **Today** tab is for doing. It uses three words only: **Now · Next · Later**, in time order. Nothing is ranked.
+- **Check-in (weekdays):** when there's a question for you, one line sits above Now, showing the question. Tap it to answer: the morning check-in (from 08:00) asks where tasks overdue for placement should live, and on Mondays about weekend changes; the evening one (from 17:00) asks whether today's dated tasks are done. Answer each one, or tap **Later**; either way the line folds away until the next check-in. No line at weekends, before 08:00, or when there's nothing to ask. It's a question, never a count.
 - **Now:** the booked block running now, with its likely finish, a red now mark, and big **Done** / **Finished early** buttons. If nothing is running, it's your running focus, your chosen Next thing, or the next booking as **Up next in X min**, each with **Start** and **Done**. With nothing booked, pick a Next thing right there in the card (tap a task, check its first small action, **Make it my Next thing**). You're never sent to another screen.
 - **Next:** your chosen Next thing, or else the next booking.
 - **Later:** everything else dated or booked for today. Undated work is never on Today.
 - **Slipped:** a block past its likely finish shows **Keep going** (stretches it to its likely finish), **Move** or **Drop** (off today, kept in All work). If it slips again and you leave it, it's listed in the Weekly Review (Capacity step).
 - **Blocked by:** a booked task waiting on an unfinished prerequisite offers **Move it** or **Remove prerequisite**.
-- **Needs attention (n)** opens Overview: past-due work, review due, Sort, Link check, unplaced, Claude requests.
+- **Needs attention (n)** opens Overview: past-due work, review due, Sort, Link check, unplaced, Claude requests. This is the only count in Steadier: one row per kind, and the total is the sum of the rows (a task can count in more than one row).
 - Tap any row to open its sheet: notes, outcome, prerequisites, subtasks. The **i** button explains the signals.
 
 **Signals (everywhere):** a green left bar means it serves an Imperative. Dashed means suggested (tap to confirm). Faded with dots means not set up. Grey chips show only what's off normal: ⏱ +20m / −10m, slipped, overdue 2d, moved 3×, quiet 9d, review due. A chip turns red only when it will clash with a fixed booking or deadline. The broken-link icon means a project, or a task in it, is missing its Goal Outcome or Imperative link (also in Link check). The old shape-and-colour arrows are gone.
@@ -99,8 +100,8 @@ Only links you made count. Suggested links show a **Confirm** button. **Not yet*
 - **Compass map**: traces Pillars, Goals, Outcomes and Projects, and shows where a purpose link is missing.
 - **Pillars & Goals**: where you add and edit the Pillar and Goal structure behind the map.
 
-### Command Centre
-A rules-based check-in on your current Imperatives and decisions. Open the real item to act on it.
+### Compass Library
+Five reference links in the menu (Projects, Pillars, Goal Outcomes, Front of Mind, Compass Library). They open Notion in a new tab for now and will be swapped for server library links when Notion is retired. (The old Command Centre page is gone: its check-in is on Today, its Imperatives summary is Overview's Compass row, and its sync details are on Server & Compass.)
 
 ### Weekly Reality Review
 The full weekly decision process: look at what happened, what's waiting, and what to change. The steps run Start → Unplaced → Ideas → Link check → Money → Action → Capacity → Imperatives → Map → Save. One line at the top shows **Step n of 10** with a thin bar; tap it to see the steps and jump to one. **Back** and **Next** move one step. Notes about how a step works sit behind the **i**, and Read aloud (in the ⋮ menu) reads the step you're on. Decisions you make are saved to the **Decision Log**. The **Link check** step shows everything you held with Not yet. Decide each one, or tap **Not yet again** to hold it one more week. Anything you leave comes back to Link check when you save the review.
@@ -141,7 +142,7 @@ Reference cards and links for useful places and websites.
 - CSV export is a spreadsheet view, not a full backup.
 
 ### Server & Compass
-Sync status, conflicts and connections.
+Sync status, conflicts and connections. It shows the server revision, the last confirmed server update, and the time of the latest saved record.
 - Make sure **Use shared personal space** is chosen, so your phone and other devices share one copy on the server.
 - If the status strip mentions "this browser", your changes are only on this device.
 

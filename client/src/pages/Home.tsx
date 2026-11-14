@@ -83,11 +83,6 @@ import { applyAppearance, persistAppearance, readAppearance, type Appearance } f
 import { MOBILE_TABS } from "../domain/mobileQuickNavigation";
 import { PILLAR_SLOTS, pillarStrip } from "../domain/pillarStrip";
 import { buildCalendar } from "../domain/calendarModel";
-import {
-  commandCentreReadAloudText,
-  commandCentreSnapshot,
-  confirmActiveImperative,
-} from "../domain/commandCentre";
 import { latestWeeklyReviewDate, reviewStatus } from "../domain/review";
 import {
   adelaideClock,
@@ -128,7 +123,6 @@ import {
   Map as MapIcon,
   Layers3,
   CheckCheck,
-  ClipboardCheck,
   FlaskConical,
   Plus,
   Mic,
@@ -231,7 +225,7 @@ import WeatherView from "../components/steadier/WeatherView";
 import PeopleView from "../components/steadier/PeopleView";
 import CredentialRenewalsView from "../components/steadier/CredentialRenewalsView";
 import InvoicesView from "../components/steadier/InvoicesView";
-import CommandCentreView from "../components/steadier/CommandCentreView";
+import TodayCheckIn from "../components/steadier/TodayCheckIn";
 import PageNavigation from "../components/steadier/PageNavigation";
 import TaskCard, { type CardChange } from "../components/steadier/TaskCard";
 import { DatedTodayCard, IdeasShelf, SortView } from "../components/steadier/SetupViews";
@@ -247,7 +241,6 @@ import {
 } from "../domain/taskCard";
 const nav: { id: View; title: string; Icon: typeof CircleDot }[] = [
   { id: "attention", title: "My life today", Icon: CircleDot },
-  { id: "command-centre", title: "Command Centre", Icon: ClipboardCheck },
   { id: "all", title: "All work", Icon: ListTodo },
   { id: "sort", title: "Sort", Icon: Shuffle },
   { id: "ideas", title: "Ideas", Icon: Lightbulb },
@@ -1243,44 +1236,6 @@ export default function Home() {
     openImperativeById(id);
     return true;
   };
-  const commandCentreConfirmImperative = async (
-    id: string,
-    expectedUpdatedAt: string,
-    expectedRevision: number
-  ): Promise<boolean> => {
-    const workspace = await commandCentreWorkspaceFor(
-      "imperative",
-      id,
-      expectedUpdatedAt,
-      expectedRevision,
-      true
-    );
-    const imperative = workspace?.imperatives.find(item => item.id === id);
-    if (!imperative || imperative.status !== "active") {
-      toast.message("That Imperative is no longer Active; refresh and review it.");
-      return false;
-    }
-    const current = storeRef.current;
-    if (current.cloud.revision !== expectedRevision || current.readOnly || current.cloud.pending) {
-      toast.message("Steadier changed before the confirmation could be saved. Refresh and try again.");
-      if (current.cloud.active) void current.cloud.retry();
-      return false;
-    }
-    const stamp = adelaideTimestamp();
-    let changed = false;
-    const accepted = current.mutate(w => {
-      const next = confirmActiveImperative(w, id, expectedUpdatedAt, stamp);
-      changed = next !== w;
-      return next;
-    });
-    if (accepted === false || !changed) {
-      toast.error("That confirmation wasn't saved. Steadier will refresh; review it and try again.");
-      if (current.cloud.active) void current.cloud.retry();
-      return false;
-    }
-    toast.success(`Confirmed Active: ${imperative.title}.`);
-    return true;
-  };
   // Finished early: the block is shortened to end now, then completed.
   // Repeating tasks keep their usual length for the next occurrence.
   const finishEarly = (task: Task) => {
@@ -1970,8 +1925,6 @@ export default function Home() {
   };
   const summary = () => {
     if (voice.speaking) voice.stopSpeaking();
-    else if (view === "command-centre")
-      readOutLoud(commandCentreReadAloudText(commandCentreSnapshot(store.workspace)));
     else voice.read(todaySummaryText());
   };
   const readCurrentScreen = () => {
@@ -2428,6 +2381,17 @@ export default function Home() {
                     tasks={tasks}
                     readOnly={store.readOnly}
                     attentionCount={todayAttentionCount}
+                    checkIn={
+                      <TodayCheckIn
+                        workspace={store.workspace}
+                        revision={store.cloud.revision}
+                        readOnly={store.readOnly}
+                        onOpenTask={commandCentreOpenTask}
+                        onCompleteTask={commandCentreCompleteTask}
+                        onOpenProject={commandCentreOpenProject}
+                        onOpenImperative={commandCentreOpenImperative}
+                      />
+                    }
                     onAttention={() => {
                       setTodayTab("overview");
                       window.scrollTo({ top: 0 });
@@ -2576,30 +2540,6 @@ export default function Home() {
                     voice={voice}
                     readOnly={store.readOnly}
                     readRef={weeklyReadRef}
-                  />
-                ) : view === "command-centre" ? (
-                  <CommandCentreView
-                    workspace={store.workspace}
-                    revision={store.cloud.revision}
-                    readOnly={store.readOnly}
-                    lastSyncedAt={store.cloud.lastSyncedAt}
-                    dataSource={
-                      store.cloud.active
-                        ? `Steadier server · ${store.cloud.status}`
-                        : store.kind === "demo"
-                          ? "Sample workspace · this browser"
-                        : "Personal workspace · this browser"
-                    }
-                    onConfirmImperative={commandCentreConfirmImperative}
-                    onOpenTask={commandCentreOpenTask}
-                    onCompleteTask={commandCentreCompleteTask}
-                    onOpenProject={commandCentreOpenProject}
-                    onOpenImperative={commandCentreOpenImperative}
-                    onOpenCalendar={() => navigate("calendar")}
-                    onOpenReview={() => navigate("weekly")}
-                    onOpenObligation={openObligationById}
-                    onOpenPeople={() => navigate("people")}
-                    onOpenCredentialRenewals={() => navigate("credentialRenewals")}
                   />
                 ) : view === "near" ? (
                   <NearMeView

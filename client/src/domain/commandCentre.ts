@@ -53,35 +53,11 @@ export interface CommandCentreSnapshot {
   questions: CommandCentreQuestion[];
   todayItems: CalendarItem[];
   upcomingDays: CalendarDay[];
-  fridayMondayItems: CalendarItem[];
   weekendChanges: CommandCentreWeekendChange[];
-  fridayLookAhead: boolean;
   review: ReviewStatus;
   lastUpdatedAt: string | null;
 }
 
-export const COMMAND_CENTRE_REFERENCES = [
-  {
-    label: "Projects",
-    href: "https://app.notion.com/p/56f75cfbbbe54ce697f53a3931440473?pvs=204",
-  },
-  {
-    label: "Pillars",
-    href: "https://app.notion.com/p/74e2849e076f4b10a79d4411da910317?pvs=204",
-  },
-  {
-    label: "Goal Outcomes",
-    href: "https://app.notion.com/p/c795061ae12945d18a90922fac60d44f?pvs=204",
-  },
-  {
-    label: "Front of Mind · Compass Library copy",
-    href: "https://app.notion.com/p/40cdb2c862a18100b7aef55998d7bbcf?pvs=204",
-  },
-  {
-    label: "Compass Library",
-    href: "https://app.notion.com/p/40cdb2c862a181079f55dd63a4a51cac?pvs=204",
-  },
-] as const;
 
 const MAX_QUESTIONS = 5;
 const MORNING_START_MINUTES = 8 * 60;
@@ -125,7 +101,8 @@ function datedItems(day: CalendarDay): CalendarItem[] {
   ];
 }
 
-function lastUpdated(workspace: Workspace): string | null {
+/** The newest saved record time in the workspace (shown on Server & Compass). */
+export function latestRecordAt(workspace: Workspace): string | null {
   const records: { updatedAt?: string; at?: string }[] = [
     ...workspace.tasks,
     ...workspace.projects,
@@ -335,7 +312,8 @@ function buildQuestions(
 }
 
 /**
- * Current Command Centre information, selected from existing Steadier rules.
+ * The weekday check-in (shown as one line above Now on Today).
+ * Current check-in information, selected from existing Steadier rules.
  * All dates are Adelaide-local; this function never changes the workspace.
  */
 export function commandCentreSnapshot(
@@ -353,17 +331,6 @@ export function commandCentreSnapshot(
   });
   const todayItems = datedItems(calendar[0]);
   const upcomingDays = calendar.slice(1);
-  const fridayMondayItems =
-    mode === "weekday-evening" && weekdayOf(today) === 5
-      ? datedItems(upcomingDays.find(day => day.date === shiftDays(today, 3)) ?? {
-          date: shiftDays(today, 3),
-          timed: [],
-          allDay: [],
-          dateMarkers: [],
-          falldue: [],
-          actual: [],
-        })
-      : [];
   const activeImperatives = imperativeViews(workspace, today)
     .filter(view => view.imperative.status === "active")
     .sort((a, b) => {
@@ -386,11 +353,9 @@ export function commandCentreSnapshot(
     ),
     todayItems,
     upcomingDays,
-    fridayMondayItems,
     weekendChanges,
-    fridayLookAhead: mode === "weekday-evening" && weekdayOf(today) === 5,
     review: reviewStatus(workspace, today),
-    lastUpdatedAt: lastUpdated(workspace),
+    lastUpdatedAt: latestRecordAt(workspace),
   };
 }
 
@@ -403,71 +368,4 @@ export function commandCentreWorkspaceKey(workspace: Workspace): string {
     hash = Math.imul(hash, 16777619);
   }
   return (hash >>> 0).toString(36);
-}
-
-/** Build an explicit owner-confirmation update only for the current Active record. */
-export function confirmActiveImperative(
-  workspace: Workspace,
-  id: string,
-  expectedUpdatedAt: string,
-  stamp: string
-): Workspace {
-  const current = workspace.imperatives.find(item => item.id === id);
-  if (!current || current.status !== "active" || current.updatedAt !== expectedUpdatedAt)
-    return workspace;
-  return {
-    ...workspace,
-    imperatives: workspace.imperatives.map(item =>
-      item.id === id
-        ? {
-            ...item,
-            decision: {
-              outcome: "sustain",
-              at: stamp,
-              by: "owner",
-              confirmed: true,
-              note: "Confirmed active in Command Centre.",
-            },
-            updatedAt: stamp,
-            history: [
-              ...item.history.slice(-499),
-              { at: stamp, text: "Confirmed it remains Active in Command Centre." },
-            ],
-          }
-        : item
-    ),
-  };
-}
-
-export function commandCentreReadAloudText(
-  snapshot: CommandCentreSnapshot
-): string {
-  const rhythm = snapshot.mode === "weekday-before-morning"
-    ? "The morning check-in opens at 8 today, Adelaide time. There are no questions yet."
-    : "Weekday check-ins are at 8 in the morning and 5 in the afternoon, Adelaide time.";
-  const imperativeText = snapshot.activeImperatives.length
-    ? snapshot.activeImperatives
-        .map(view =>
-          `${view.imperative.title}${view.quiet ? `, quiet for ${view.quietDays} days` : ""}.`
-        )
-        .join(" ")
-    : "There are no Active Imperatives.";
-  const questions = snapshot.questions.length
-    ? snapshot.questions.map(question => question.question).join(" ")
-    : "There are no check-in questions right now.";
-  const today = snapshot.todayItems.length
-    ? snapshot.todayItems.map(item => `${item.label ?? item.kind}: ${item.title}`).join(". ")
-    : "There are no dated commitments today.";
-  const comingUp = snapshot.upcomingDays
-    .map(day => {
-      const items = datedItems(day);
-      return items.length
-        ? `${day.date}: ${items.map(item => `${item.label ?? item.kind}: ${item.title}`).join(", ")}.`
-        : `${day.date}: no dated items.`;
-    })
-    .join(" ");
-  const review = snapshot.review.due
-    ? "Weekly Reality Review is due."
-    : "Weekly Reality Review is not due.";
-  return `Command Centre. Check-in rhythm: ${rhythm} Active Imperatives. ${imperativeText} Needs a decision. ${questions} Today, dated Steadier commitments only. ${today} Coming up. ${comingUp} Reference links open Notion reference pages; Notion Tasks are not shown or changed. ${review}`;
 }

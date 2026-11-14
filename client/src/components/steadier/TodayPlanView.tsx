@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ChevronRight, Info, Unlink } from "lucide-react";
 import { toast } from "sonner";
 import { adelaideTimestamp } from "../../../../shared/time";
@@ -20,6 +20,8 @@ interface Props {
   tasks: Task[];
   readOnly: boolean;
   attentionCount: number;
+  /** The weekday check-in line, shown above Now when a question is set. */
+  checkIn?: ReactNode;
   onAttention: () => void;
   onOverview: () => void;
   onDone: (id: string) => boolean;
@@ -227,6 +229,7 @@ export default function TodayPlanView(p: Props) {
 
   return (
     <div className="tp">
+      {p.checkIn}
       <div className="tp-head">
         <h2 className="tp-label">Now</h2>
         <button

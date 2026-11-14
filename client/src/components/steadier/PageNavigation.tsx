@@ -1,8 +1,9 @@
 import React from "react";
-import { Mic } from "lucide-react";
+import { BookOpen, ExternalLink, Mic } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { View } from "../../domain/types";
 import { groupPageNavigation } from "../../domain/pageNavigation";
+import { COMPASS_LIBRARY_LINKS } from "../../domain/compassLibrary";
 
 export interface PageNavigationItem {
   id: View;
@@ -53,7 +54,8 @@ export default function PageNavigation({
       </p>
       <nav className="sidebar-navigation" aria-label="All Steadier pages">
         {groups.map(group => (
-          <section className="sidebar-nav-group" key={group.title}>
+          <React.Fragment key={group.title}>
+          <section className="sidebar-nav-group">
             <h2 className="sidebar-nav-heading">{group.title}</h2>
             <div className="sidebar-nav-items">
               {group.items.map(({ id, title, Icon }) => (
@@ -83,8 +85,35 @@ export default function PageNavigation({
               ))}
             </div>
           </section>
+          {group.title === "Imperatives" && <CompassLibrary />}
+          </React.Fragment>
         ))}
+        {!groups.some(group => group.title === "Imperatives") && <CompassLibrary />}
       </nav>
     </div>
+  );
+}
+
+/** Reference links (Notion for now; server library links when Notion retires). Open in a new tab. */
+function CompassLibrary() {
+  return (
+    <section className="sidebar-nav-group" aria-label="Compass Library">
+      <h2 className="sidebar-nav-heading">Compass Library</h2>
+      <div className="sidebar-nav-items">
+        {COMPASS_LIBRARY_LINKS.map(link => (
+          <a
+            key={link.label}
+            className="nav-item"
+            href={link.href}
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            <BookOpen size={19} aria-hidden="true" />
+            <span>{link.label}</span>
+            <ExternalLink size={14} aria-hidden="true" className="nav-external" />
+          </a>
+        ))}
+      </div>
+    </section>
   );
 }

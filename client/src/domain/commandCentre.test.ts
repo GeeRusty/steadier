@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createTask } from "./engine";
 import {
-  COMMAND_CENTRE_REFERENCES,
-  confirmActiveImperative,
   commandCentreSnapshot,
   commandCentreWorkspaceKey,
+  latestRecordAt,
 } from "./commandCentre";
+import { COMPASS_LIBRARY_LINKS } from "./compassLibrary";
 import type { Imperative } from "./compass";
 import type { Obligation, Task, Workspace } from "./types";
 
@@ -173,7 +173,7 @@ describe("Command Centre rule-based selection", () => {
     expect(result.upcomingDays.flatMap(day => day.timed).some(item => item.taskId === "tomorrow")).toBe(true);
   });
 
-  it("shows Friday's Monday look-ahead including Falldue, and Monday catches up weekend changes", () => {
+  it("Friday evening is an evening check-in, and Monday catches up weekend changes", () => {
     const friday = new Date("2026-11-06T17:00:00+10:30");
     const mondayDue = obligation("2026-11-09");
     const fridaySnapshot = commandCentreSnapshot(
@@ -181,8 +181,6 @@ describe("Command Centre rule-based selection", () => {
       friday
     );
     expect(fridaySnapshot.mode).toBe("weekday-evening");
-    expect(fridaySnapshot.fridayLookAhead).toBe(true);
-    expect(fridaySnapshot.fridayMondayItems.some(item => item.kind === "obligation")).toBe(true);
     expect(fridaySnapshot.upcomingDays.map(day => day.date)).toEqual([
       "2026-11-07",
       "2026-11-08",
@@ -235,54 +233,17 @@ describe("Command Centre rule-based selection", () => {
     const first = workspace([task("synthetic-a", "2026-11-01T00:00:00Z")]);
     const afterTaskEdit = workspace([task("synthetic-b", "2026-11-01T00:00:00Z")]);
     expect(commandCentreWorkspaceKey(first)).toBe(commandCentreWorkspaceKey(afterTaskEdit));
-    expect(COMMAND_CENTRE_REFERENCES).toHaveLength(5);
-    expect(COMMAND_CENTRE_REFERENCES.map(reference => reference.label)).toContain("Projects");
-    expect(COMMAND_CENTRE_REFERENCES.map(reference => reference.label)).toContain("Pillars");
-    expect(COMMAND_CENTRE_REFERENCES.map(reference => reference.label)).toContain("Goal Outcomes");
-    expect(COMMAND_CENTRE_REFERENCES.map(reference => reference.label)).toContain("Compass Library");
+    expect(COMPASS_LIBRARY_LINKS).toHaveLength(5);
+    expect(COMPASS_LIBRARY_LINKS.map(reference => reference.label)).toContain("Projects");
+    expect(COMPASS_LIBRARY_LINKS.map(reference => reference.label)).toContain("Pillars");
+    expect(COMPASS_LIBRARY_LINKS.map(reference => reference.label)).toContain("Goal Outcomes");
+    expect(COMPASS_LIBRARY_LINKS.map(reference => reference.label)).toContain("Compass Library");
   });
 
-  it("confirms an Active Imperative only when its current ID, status and updatedAt still match", () => {
-    const active = imperative("confirm-me", "2026-11-03T10:00:00+10:30");
-    const original = workspace([], { imperatives: [active] });
-    const stamp = "2026-11-04T08:15:00+10:30";
-    const confirmed = confirmActiveImperative(
-      original,
-      active.id,
-      active.updatedAt,
-      stamp
-    );
-    expect(confirmed.imperatives[0].id).toBe(active.id);
-    expect(confirmed.imperatives[0].decision).toEqual({
-      outcome: "sustain",
-      at: stamp,
-      by: "owner",
-      confirmed: true,
-      note: "Confirmed active in Command Centre.",
-    });
-    expect(confirmed.imperatives[0].history.at(-1)?.text).toBe(
-      "Confirmed it remains Active in Command Centre."
-    );
-    expect(
-      confirmActiveImperative(original, active.id, "stale-version", stamp)
-    ).toBe(original);
-    const retired = { ...active, status: "retired" as const };
-    expect(
-      confirmActiveImperative(
-        workspace([], { imperatives: [retired] }),
-        retired.id,
-        retired.updatedAt,
-        stamp
-      ).imperatives[0].status
-    ).toBe("retired");
-  });
-
-  it("keeps Friday look-ahead visible when Monday has no calendar items", () => {
-    const friday = commandCentreSnapshot(
-      workspace(),
-      new Date("2026-11-06T17:00:00+10:30")
-    );
-    expect(friday.fridayLookAhead).toBe(true);
-    expect(friday.fridayMondayItems).toEqual([]);
+  it("finds the newest saved record time for Server & Compass", () => {
+    const older = task("older", "2026-11-01T00:00:00Z", { updatedAt: "2026-11-01T00:00:00Z" });
+    const newer = task("newer", "2026-11-01T00:00:00Z", { updatedAt: "2026-11-05T03:00:00Z" });
+    expect(latestRecordAt(workspace([older, newer]))).toBe("2026-11-05T03:00:00Z");
+    expect(latestRecordAt(workspace())).toBeNull();
   });
 });

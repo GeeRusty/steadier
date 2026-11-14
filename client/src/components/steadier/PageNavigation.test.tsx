@@ -12,7 +12,6 @@ const items: PageNavigationItem[] = [
   { id: "calendar", title: "Calendar", Icon: CircleDot },
   { id: "review", title: "Review due / unplaced", Icon: CircleDot },
   { id: "weekly", title: "Weekly Reality Review", Icon: CircleDot },
-  { id: "command-centre", title: "Command Centre", Icon: CircleDot },
   { id: "map", title: "Compass map", Icon: CircleDot },
   { id: "settings", title: "Backups & trial", Icon: CircleDot },
 ];

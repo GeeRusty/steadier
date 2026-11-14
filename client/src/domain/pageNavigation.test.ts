@@ -4,7 +4,6 @@ import type { View } from "./types";
 
 const allPageIds: View[] = [
   "attention",
-  "command-centre",
   "all",
   "calendar",
   "review",
@@ -43,7 +42,7 @@ describe("full page navigation groups", () => {
   it("puts daily, work and weekly-review routes first", () => {
     expect(PAGE_NAVIGATION_SECTIONS[0]).toEqual({
       title: "Start here",
-      ids: ["attention", "all", "sort", "ideas", "calendar", "review", "weekly", "command-centre"],
+      ids: ["attention", "all", "sort", "ideas", "calendar", "review", "weekly"],
     });
     expect(PAGE_NAVIGATION_SECTIONS[1].title).toBe("Imperatives");
   });

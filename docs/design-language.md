@@ -62,6 +62,11 @@ No other colours carry meaning.
 - **Weekly Review steps:** one line, "Step n of 10", with a thin grey bar. Tap it for the step list. Back and Next stay.
 - **Review card time:** first review 30–40 min, after that 15–25 min.
 
+## One count, one check-in
+- **Needs attention** is the only count. One row per kind; the total is the sum of the rows, the same on Today and Overview.
+- **The weekday check-in** is one line above Now showing the first question, never a number. Answered or Later, it folds until the next check-in (08:00 / 17:00). It never pushes Now off the first screen.
+- **Compass Library** links live in the menu, not on a page.
+
 ## Standing rules for anyone (or any AI) working on Steadier
 - **Never sign in as the owner or create access passes** (session tokens, keys, login links) without asking the owner first, even temporarily and even for a screenshot.
 - **Never deploy with a failing test.** Fix first, run the full test suite green, then deploy.
