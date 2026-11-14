@@ -12379,7 +12379,7 @@ a.nav-item { text-decoration: none; }
 .av-timeline .lv-row-top { justify-content: space-between; align-items: center; }
 .av-notes { font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .av-problem { color: var(--tp-red); }
-.av-retire { min-height: 44px; margin-top: 12px; border: 1px dashed var(--tp-btn-line); border-radius: 10px; background: transparent; color: var(--muted-foreground); font: inherit; cursor: pointer; }
+.av-retire { min-height: 44px; margin-top: 12px; border: 1px solid var(--tp-btn-line); border-radius: 10px; background: transparent; color: var(--muted-foreground); font: inherit; cursor: pointer; }
 .av-log-form .lv-inline-form .lv-field, .lv-form .lv-inline-form .lv-field { flex: 1 1 140px; }
 .uk-list { list-style: none; margin: 0; padding: 0 0 8px 12px; border-left: 2px solid var(--tp-line); display: flex; flex-direction: column; gap: 10px; }
 .uk-item { display: flex; flex-direction: column; gap: 4px; }

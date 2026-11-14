@@ -64,7 +64,7 @@ import {
   type TaskAutosaveCloudState,
   type TaskAutosaveSaveResult,
 } from "../domain/taskAutosave";
-import { ASSETS_INFO_MORE, linkUpkeepTask, shortDate, upkeepDue, type UpkeepItem } from "../domain/assets";
+import { ASSETS_INFO_MORE, linkUpkeepTask, upkeepDraftTitle, upkeepDue, type UpkeepItem } from "../domain/assets";
 import { setRoutineChecklistItem } from "../domain/routineRunner";
 import {
   appendEvidenceEntry,
@@ -1591,8 +1591,8 @@ export default function Home() {
     openCapture(
       false,
       projectId,
-      // "by 25 Nov" becomes the draft's deadline (the capture parser reads it); a passed date isn't added.
-      `${asset.name}: ${item.what}${item.dueDate && item.dueDate >= adelaideClock().date ? ` by ${shortDate(item.dueDate, adelaideClock().date)}` : ""}`,
+      // "by 25 Nov 2026" becomes the draft's deadline; overdue items get today. Editable before saving.
+      upkeepDraftTitle(asset.name, item, adelaideClock().date),
       `Upkeep due: ${item.detail}.`,
       true,
       { assetId: asset.id, kind: item.kind, refId: item.refId, templateId: item.listTemplateId }

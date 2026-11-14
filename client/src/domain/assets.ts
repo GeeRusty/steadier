@@ -333,6 +333,18 @@ export function dueChip(asset: Asset, today: string): string | null {
   return null;
 }
 
+/**
+ * Title for the Create task draft. The date is written with its year, so the
+ * capture reader can't roll it into next year; an overdue item gets today.
+ */
+export function upkeepDraftTitle(assetName: string, item: Pick<UpkeepItem, "what" | "dueDate" | "overdue">, today: string): string {
+  const base = `${assetName}: ${item.what}`;
+  if (!item.dueDate) return base;
+  const date = item.overdue || item.dueDate < today ? today : item.dueDate;
+  const [y, m, d] = date.split("-").map(Number);
+  return `${base} by ${d} ${MONTHS[m - 1]} ${y}`;
+}
+
 // ---------------------------------------------------------------------------
 // Changes (each returns the same workspace when nothing valid changed)
 

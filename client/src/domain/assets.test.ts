@@ -19,9 +19,11 @@ import {
   recordRevisit,
   removeAsset,
   setAssetStatus,
+  upkeepDraftTitle,
   upkeepDue,
   validateAssets,
 } from "./assets";
+import { parseQuickAdd } from "./quickParse";
 import { exportBackup, parseBackup, validateWorkspace } from "./transfer";
 import { emptyProjectSchedule, emptyTaskSchedule } from "./time";
 import type { AssetLogEntry, AssetServicePlan, Project, Workspace } from "./types";
@@ -263,6 +265,23 @@ describe("Upkeep due", () => {
     let w = car();
     w = addRevisit(w, "asset-car", { id: "rv", what: "Brakes", by: "2026-11-01", taskId: null, createdAt: STAMP });
     expect(dueChip(w.assets![0], TODAY)).toBe("service due");
+  });
+});
+
+describe("Create task draft title", () => {
+  it("writes the year so the date can't roll into next year, and gives an overdue item today", () => {
+    expect(upkeepDraftTitle("Freelander 2", { what: "Major service", dueDate: "2026-11-25", overdue: false }, TODAY)).toBe("Freelander 2: Major service by 25 Nov 2026");
+    expect(upkeepDraftTitle("Freelander 2", { what: "Major service", dueDate: "2026-11-02", overdue: true }, TODAY)).toBe("Freelander 2: Major service by 14 Nov 2026");
+    expect(upkeepDraftTitle("Shack", { what: "Roof", dueDate: null, overdue: false }, TODAY)).toBe("Shack: Roof");
+  });
+
+  it("the capture reader turns those titles into the right deadline", () => {
+    const due = parseQuickAdd("Freelander 2: Major service by 25 Nov 2026", TODAY, 600);
+    expect([due.title, due.deadline]).toEqual(["Freelander 2: Major service", "2026-11-25"]);
+    const overdue = parseQuickAdd("Freelander 2: Major service by 14 Nov 2026", TODAY, 600);
+    expect(overdue.deadline).toBe(TODAY);
+    const nextYear = parseQuickAdd("Car: Rego check by 10 Jan 2027", TODAY, 600);
+    expect(nextYear.deadline).toBe("2027-01-10");
   });
 });
 

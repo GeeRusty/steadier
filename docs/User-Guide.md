@@ -149,7 +149,7 @@ Physical things you look after: vehicles, places, equipment and appliances. (Ass
 - **Revisit:** something to check by a date (roof and gutters by 30 Nov). **Record check** logs an Inspection with the condition you found, and can set the next revisit.
 - **Log entry:** Service, Repair, Inspection or Note, with date, reading, cost, who did it, notes and condition after.
 - **Places hold assets** (the shack holds the hot water system). A place's history includes what it holds.
-- **Edit** is on the page; **Delete** is behind **⋯**. **Retire** is the quiet dashed button at the bottom and keeps the history. Retiring a place asks whether to retire what it holds too (default: keep them active).
+- **Edit** is on the page; **Delete** is behind **⋯**. **Retire** is the quiet button at the bottom and keeps the history. Retiring a place asks whether to retire what it holds too (default: keep them active).
 - **Upkeep due:** a service due within 14 days or 500 km (10 h), a revisit due within 14 days, or a vehicle or equipment reading over 60 days old shows once in Needs attention and in the Weekly Review's Action step. Nothing else reminds you. **Create task** opens an editable draft linked to the asset; nothing is saved until you confirm. When the task is done, **Log it done** so the next one counts from then.
 - **Costs:** the ⋮ menu has **Export costs (CSV)**: total per asset per year.
 - Fuel, photos and warranty alerts aren't tracked; the warranty end date just shows under Details.

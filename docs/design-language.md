@@ -12,7 +12,7 @@ Every change to Steadier must follow this. If something doesn't serve a screen's
 7. **Built for working hands:** voice first, big targets, glanceable.
 
 ## Screen jobs
-Today = do · Overview = see · All work = find · Calendar = time · Compass = why · Weekly Review = decide.
+Today = do · Overview = see · All work = find · Calendar = time · Compass = why · Weekly Review = decide · Assets = look after.
 
 ## Colours (three jobs only)
 - **Green** = serves an Imperative (left bar).
@@ -77,7 +77,7 @@ No other colours carry meaning.
 ## Assets & Upkeep
 - **Grouped by type**, counts singular or plural ("Vehicle (1)").
 - **Two chips at most:** condition (none until checked), plus one due chip (service due/overdue, revisit due/overdue, reading due). Everything else is plain text.
-- **Edit is a button, Delete is behind ⋯, Retire is a dashed quiet button at the bottom.**
+- **Edit is a button, Delete is behind ⋯, Retire is a solid, quiet button at the bottom** (it's a decision; dashed means suggested).
 - **No second reminder system:** due upkeep is one "Upkeep due" row in Needs attention (counted once per item) and the Weekly Review's Action step. Create task only opens a draft.
 
 ## Standing rules for anyone (or any AI) working on Steadier
