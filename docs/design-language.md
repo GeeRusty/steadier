@@ -81,6 +81,12 @@ No other colours carry meaning.
 - **Ticking a task made from Upkeep due asks once** ("Log the service now?", Yes / Not now). Not now changes nothing.
 - **No second reminder system:** due upkeep is one "Upkeep due" row in Needs attention (counted once per item) and the Weekly Review's Action step. Create task only opens a draft.
 
+## Front of Mind
+- **One list, calm:** no counts that nag; Overview's row has no number.
+- **Two chips at most**, only what's off normal: added by Claude, suggested: Let go (dashed), quiet Nd (after 30 days).
+- **Four actions, the same everywhere:** Make it a task · Promote to Imperative · Keep · Let go. Promote is a draft; Imperatives change only in the Weekly Review.
+- **Claude adds, rewords (History kept) and suggests.** Only the owner decides.
+
 ## Standing rules for anyone (or any AI) working on Steadier
 - **Never sign in as the owner or create access passes** (session tokens, keys, login links) without asking the owner first, even temporarily and even for a screenshot.
 - **Never deploy with a failing test.** Fix first, run the full test suite green, then deploy.

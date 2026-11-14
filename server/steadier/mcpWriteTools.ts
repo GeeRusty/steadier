@@ -26,7 +26,6 @@ import {
 } from "./changes";
 import {
   planCreateProject,
-  planAddIdea,
   planCreateTask,
   planRequestDelete,
   planUpdateProject,
@@ -72,7 +71,9 @@ import { connectorName } from "./connectorOps";
 import { findNotes, planAddNote } from "./notesOps";
 import { planSuggestObligation } from "./obligationOps";
 import { isDate } from "../../client/src/domain/time";
-import { ideasView, linkCheckView, setupView } from "./cardOps";
+import { linkCheckView, setupView } from "./cardOps";
+import { planAddFrontOfMind, planEditFrontOfMindWording, planSuggestFrontOfMindLetGo } from "./frontOfMindOps";
+import { frontOfMindForRead } from "../../client/src/domain/frontOfMind";
 import { guideFor } from "./guide";
 import {
   planStartRun,
@@ -587,10 +588,10 @@ export function registerBackupReadTools(
   );
 
   server.registerTool(
-    "read_my_life_ideas",
+    "read_my_life_front_of_mind",
     {
-      title: "Read My Life Ideas shelf",
-      description: `Read the owner's Ideas shelf (ideas they captured but have not made into tasks), newest first. Read-only: only the owner can make an idea a task or let it go, in Steadier. Optional: includeLetGo (also list ideas that were let go; they are archived, never deleted). ${UNTRUSTED_DATA_RULE}`,
+      title: "Read My Life Front of Mind",
+      description: `Read the owner's Front of Mind: what's on their mind that isn't a task yet (ideas, concerns, things they're weighing). Check it before advising or planning, and mention an item only when it genuinely connects to what's being discussed; nothing on it is due or owed. Each item has its wording, notes, date added, who added it, labels ("added by Claude" until the owner keeps it, "suggested: Let go", "quiet Nd"), when the owner last looked at it, any Imperative draft, and its full History, including every earlier wording. Optional includeLetGo also lists items the owner let go. Only the owner can Keep, Let go, make a task or promote. ${UNTRUSTED_DATA_RULE}`,
       inputSchema: fromJsonSchema({
         type: "object",
         properties: { includeLetGo: { type: "boolean" } },
@@ -604,9 +605,9 @@ export function registerBackupReadTools(
       try {
         const stored = await changes.readWorkspace(userId);
         if (!stored) return failure("NO_WORKSPACE", "There is no shared My Life workspace yet.");
-        return result({ ...ideasView(stored.workspace, parsed.data.includeLetGo ?? false), dataNotice: UNTRUSTED_DATA_RULE });
+        return result({ ...frontOfMindForRead(stored.workspace, adelaideDate(), parsed.data.includeLetGo ?? false), dataNotice: UNTRUSTED_DATA_RULE });
       } catch {
-        return failure("UNAVAILABLE", "The Ideas shelf is unavailable right now.");
+        return failure("UNAVAILABLE", "Front of Mind is unavailable right now.");
       }
     }
   );
@@ -1133,37 +1134,99 @@ export function registerWriteTools(
   actor: ConnectorActor = "claude"
 ): void {
   server.registerTool(
-    "add_my_life_idea",
+    "add_my_life_front_of_mind",
     {
-      title: "Add an idea to the My Life Ideas shelf",
-      description: `Add one idea to the owner's Ideas shelf: something they might do one day, not a task. Use it when the owner says "add that as an idea" or similar. title is the idea in the owner's words; note is optional detail. Ideas have no dates, timers or warnings. Only the owner can make an idea a task or let it go, in Steadier. ${writeGuidance(actor, false)}`,
+      title: "Add to My Life Front of Mind",
+      description: `Add one item to the owner's Front of Mind: something on their mind that isn't a task yet (an idea, a concern, something they're weighing). Use it when the owner says "add that as an idea", "put that on Front of Mind" or similar. text is the item in the owner's words, a few words to a sentence; notes is optional detail. It shows labelled "added by Claude" until the owner keeps it. You cannot keep, let go, make a task or promote; those are the owner's. ${writeGuidance(actor, false)}`,
       inputSchema: fromJsonSchema({
         type: "object",
         properties: {
-          title: { type: "string", minLength: 1, maxLength: 500 },
-          note: { type: "string", maxLength: 20000 },
+          text: { type: "string", minLength: 1, maxLength: 500 },
+          notes: { type: "string", maxLength: 20000 },
         },
-        required: ["title"],
+        required: ["text"],
         additionalProperties: false,
       }),
       annotations: WRITE_ANNOTATIONS,
     },
     async input => {
       const parsed = z
-        .object({
-          title: z.string().trim().min(1).max(500),
-          note: z.string().max(20000).optional(),
-        })
+        .object({ text: z.string().trim().min(1).max(500), notes: z.string().max(20000).optional() })
         .strict()
         .safeParse(input);
       if (!parsed.success) return invalid(parsed.error);
       try {
         const applied = await applyGuardedChange(changes, userId, actor, workspace =>
-          planAddIdea(workspace, parsed.data.title, parsed.data.note, new Date(), actor)
+          planAddFrontOfMind(workspace, parsed.data.text, parsed.data.notes, new Date(), "claude")
         );
-        return written(applied.summary, applied.revision, {
-          idea: { taskId: applied.result.task.id, title: applied.result.task.title },
-        });
+        return written(applied.summary, applied.revision, { item: applied.result });
+      } catch (error) {
+        return fromError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "edit_my_life_front_of_mind_wording",
+    {
+      title: "Change the wording of a Front of Mind item",
+      description: `Change the wording of one Front of Mind item (itemId from read_my_life_front_of_mind), for example to make it clearer or add a detail the owner just gave. The earlier wording is kept in the item's History, where the owner can see it. Optional reason is a short note on why. Don't use this to change what the item means; ask the owner instead. ${writeGuidance(actor, false)}`,
+      inputSchema: fromJsonSchema({
+        type: "object",
+        properties: {
+          itemId: { type: "string", minLength: 1, maxLength: 128 },
+          text: { type: "string", minLength: 1, maxLength: 500 },
+          reason: { type: "string", maxLength: 300 },
+        },
+        required: ["itemId", "text"],
+        additionalProperties: false,
+      }),
+      annotations: WRITE_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z
+        .object({ itemId: z.string().min(1).max(128), text: z.string().trim().min(1).max(500), reason: z.string().max(300).optional() })
+        .strict()
+        .safeParse(input);
+      if (!parsed.success) return invalid(parsed.error);
+      try {
+        const applied = await applyGuardedChange(changes, userId, actor, workspace =>
+          planEditFrontOfMindWording(workspace, parsed.data.itemId, parsed.data.text, parsed.data.reason, new Date(), actor)
+        );
+        return written(applied.summary, applied.revision, { item: applied.result });
+      } catch (error) {
+        return fromError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "suggest_my_life_front_of_mind_let_go",
+    {
+      title: "Suggest letting go of a Front of Mind item",
+      description: `Suggest that the owner let go of one Front of Mind item (itemId from read_my_life_front_of_mind), with a short reason in plain words. It shows dashed as "suggested: Let go" with Let go and Keep buttons that only the owner can tap. Nothing is removed. Use it sparingly, when something the owner said makes the item clearly no longer matter. ${writeGuidance(actor, false)}`,
+      inputSchema: fromJsonSchema({
+        type: "object",
+        properties: {
+          itemId: { type: "string", minLength: 1, maxLength: 128 },
+          reason: { type: "string", minLength: 1, maxLength: 2000 },
+        },
+        required: ["itemId", "reason"],
+        additionalProperties: false,
+      }),
+      annotations: WRITE_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z
+        .object({ itemId: z.string().min(1).max(128), reason: z.string().trim().min(1).max(2000) })
+        .strict()
+        .safeParse(input);
+      if (!parsed.success) return invalid(parsed.error);
+      try {
+        const applied = await applyGuardedChange(changes, userId, actor, workspace =>
+          planSuggestFrontOfMindLetGo(workspace, parsed.data.itemId, parsed.data.reason, new Date(), actor)
+        );
+        return written(applied.summary, applied.revision, { suggestion: applied.result });
       } catch (error) {
         return fromError(error);
       }

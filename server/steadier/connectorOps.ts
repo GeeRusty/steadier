@@ -224,37 +224,6 @@ export function planCreateTask(
   };
 }
 
-/** Add an idea to the Ideas shelf: the existing Someday state, no review date. */
-export function planAddIdea(
-  workspace: Workspace,
-  title: string,
-  ideaNote: string | undefined,
-  now: Date,
-  actor: ConnectorActor = "claude",
-  historyNote?: string
-): ChangePlan<{ task: Task }> {
-  const stamp = adelaideTimestamp(now);
-  const task: Task = {
-    ...createTask({
-      title: title.trim(),
-      notes: ideaNote?.trim() ?? "",
-      state: "someday",
-      reviewDate: null,
-      createdAt: stamp,
-      updatedAt: stamp,
-      history: [
-        { at: stamp, text: connectorLine(actor, "Added to the Ideas shelf.", historyNote) },
-      ],
-    }),
-    actionConfirmed: false,
-  };
-  return {
-    workspace: { ...workspace, tasks: [...workspace.tasks, task] },
-    summary: `${connectorName(actor)}: added idea ${quoted(task.title)}`,
-    result: { task },
-  };
-}
-
 function sameValue(left: unknown, right: unknown): boolean {
   return JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
 }

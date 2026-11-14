@@ -19,7 +19,8 @@ import { adelaideClock, copyTaskSchedule, shiftDays } from "../../client/src/dom
 import type { Task, Workspace } from "../../client/src/domain/types";
 import { sdk } from "../_core/sdk";
 import { applyGuardedChange, ChangeError, type ChangePlan, type WorkspaceChangeRepository } from "./changes";
-import { planAddIdea, planCreateTask, planSetTaskTime, planUpdateTask } from "./connectorOps";
+import { planAddFrontOfMind } from "./frontOfMindOps";
+import { planCreateTask, planSetTaskTime, planUpdateTask } from "./connectorOps";
 import { createProductionRepository } from "./repository";
 import { DEFAULT_LIST_TITLE, listForRequest, planAddItemsToRun } from "./listOps";
 import { planAddNote } from "./notesOps";
@@ -124,7 +125,7 @@ The text comes from phone speech recognition, so expect missing punctuation and 
 
 Intents:
 - add_tasks: they want something added, booked, scheduled or remembered. Put each separate thing in its own tasks entry; a long ramble ("brain dump") becomes several entries. Keep titles short and in their words. Drop filler like "remind me to" or "put in".
-- add_idea: they want something kept on their Ideas shelf, not done now: they say "idea", "as an idea", "save an idea", or start with "Idea:" ("idea: trailer hire side business", "add build a shed as an idea"). An idea is never a task and has no date. Put the idea in idea_title and any extra detail in idea_note.
+- add_idea: they want something kept on their Front of Mind list, not done now: they say "idea", "as an idea", "save an idea", or start with "Idea:" ("idea: trailer hire side business", "add build a shed as an idea"). An idea is never a task and has no date. Put the idea in idea_title and any extra detail in idea_note.
 - mark_done: they say they finished something ("done with the mechanic call", "I've had the coffee"). Pick the matching task_id from the open tasks list. If nothing clearly matches, use unclear and ask which one.
 - move_task: they want an existing task at a different day or time ("push the coffee to tomorrow morning"). Pick task_id from the list and give the full new_date and new_time. If they only changed the day, keep its current time. "Morning" with no time means 09:00, "afternoon" 14:00, "evening" 18:00.
 - shopping_add: they want things on a shopping list ("add eggs and bread to the shopping list", "we need milk"). One entry per item, in their words, without quantities words like "some".
@@ -308,7 +309,7 @@ export function confirmationSpeech(p: Proposal, today: string): string {
     case "shopping_add":
       return `Add ${spokenList(p.items)} to the ${p.listTitle} list?`;
     case "add_idea":
-      return `Add idea: ${p.title.length > 160 ? `${p.title.slice(0, 157).trimEnd()}…` : p.title}. Save it?`;
+      return `Add to Front of Mind: ${p.title.length > 160 ? `${p.title.slice(0, 157).trimEnd()}…` : p.title}. Save it?`;
     case "add_note": {
       const text = p.text.length > 160 ? `${p.text.slice(0, 157).trimEnd()}…` : p.text;
       return `Save a note${p.date === today ? "" : ` for ${spokenDate(p.date, today)}`}: ${text}. Save it?`;
@@ -414,8 +415,9 @@ export function planVoiceProposal(workspace: Workspace, p: Proposal, now: Date):
       return { ...planned, result: { speech: "Moved." } };
     }
     case "add_idea": {
-      const planned = planAddIdea(workspace, p.title, p.note ?? undefined, now, "claude", "Added by voice.");
-      return { ...planned, summary: `${planned.summary} by voice`, result: { speech: "Saved to your Ideas." } };
+      // Confirmed by the owner before it runs, so it's theirs (no "added by Claude" label).
+      const planned = planAddFrontOfMind(workspace, p.title, p.note ?? undefined, now, "owner", "By voice.");
+      return { ...planned, summary: `${planned.summary} by voice`, result: { speech: "Saved to Front of Mind." } };
     }
     case "add_note": {
       const planned = planAddNote(workspace, p.text, p.date, now);

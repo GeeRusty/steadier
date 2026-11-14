@@ -78,6 +78,8 @@ interface Props {
   onCommand: (command: "complete" | "defer" | "read") => boolean | void;
   /** Save several split items at once ("Paste anything"). */
   onApplyMany?: (change: (w: Workspace) => Workspace) => boolean | void;
+  /** "Idea" saves to Front of Mind; replacesTaskId is a task this draft autosaved before switching. */
+  onAddFrontOfMind?: (text: string, notes: string, replacesTaskId: string | null) => boolean;
 }
 export default function CaptureDialog({
   voice,
@@ -95,6 +97,7 @@ export default function CaptureDialog({
   onClose,
   onCommand,
   onApplyMany,
+  onAddFrontOfMind,
 }: Props) {
   const [text, setText] = useState(initialText);
   const [notes, setNotes] = useState(initialNotes);
@@ -261,6 +264,8 @@ export default function CaptureDialog({
   const severalThings = !!onApplyMany && looksLikeSeveralThings(text);
   const persistDraft = useCallback(() => {
     if (manualReviewOnly || voiceOriginated) return true;
+    // An idea goes to Front of Mind only when Create is tapped; never autosaved as a task.
+    if (kind === "idea" && onAddFrontOfMind) return true;
     if (severalThings && !acceptedTaskRef.current) return true;
     if (!text.trim() || command || unsupportedVoiceCommand) return true;
     if (!hasMeaningfulParsedTaskTitle(draftTask.title)) {
@@ -323,6 +328,8 @@ export default function CaptureDialog({
     voice.finalTranscript,
     voice.listening,
     voiceTranscriptPending,
+    kind,
+    onAddFrontOfMind,
   ]);
   const persistDraftRef = useRef(persistDraft);
   useLayoutEffect(() => {
@@ -348,6 +355,11 @@ export default function CaptureDialog({
     if (!text.trim() || command || unsupportedVoiceCommand) {
       setAutoSaveState("idle");
       setAutoSaveDetail("");
+      return;
+    }
+    if (kind === "idea" && onAddFrontOfMind) {
+      setAutoSaveState("not-saved");
+      setAutoSaveDetail("An idea saves to Front of Mind when you tap Save.");
       return;
     }
     if (severalThings && !acceptedTaskRef.current) {
@@ -383,6 +395,8 @@ export default function CaptureDialog({
     unsupportedVoiceCommand,
     voice.listening,
     voiceTranscriptPending,
+    kind,
+    onAddFrontOfMind,
   ]);
   useEffect(() => {
     const ticket = pendingServerAutosaveRef.current;
@@ -561,6 +575,14 @@ export default function CaptureDialog({
                 setError(
                   "The action was not saved. Check sync or take focus explicitly first."
                 );
+                return;
+              }
+              close();
+            } else if (kind === "idea" && onAddFrontOfMind) {
+              const wording = text.replace(IDEA_PREFIX, "").trim();
+              if (!wording) return;
+              if (!onAddFrontOfMind(wording, notes.trim(), acceptedTaskRef.current?.id ?? null)) {
+                setError("This was not saved to Front of Mind. Keep it here and check sync before retrying.");
                 return;
               }
               close();
@@ -763,7 +785,7 @@ export default function CaptureDialog({
               )}
               {kind === "idea" ? (
                 <p className="small muted capture-idea-note">
-                  Saved to the Ideas shelf. No timers or warnings. Make it a task whenever you're ready.
+                  Saves to Front of Mind. No dates, timers or warnings. Make it a task whenever you're ready.
                 </p>
               ) : (
                 <>
@@ -920,7 +942,7 @@ export default function CaptureDialog({
                   : voiceTranscriptPending
                     ? "Waiting for speech"
                     : kind === "idea"
-                      ? "Save idea"
+                      ? "Save to Front of Mind"
                       : manualReviewOnly || voiceOriginated
                         ? "Create task"
                         : "Save & close"}

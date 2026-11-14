@@ -406,7 +406,7 @@ export default function WorkViews(p: Props) {
           <option value="blocked">Blocked</option>
           <option value="scheduled">Not available yet</option>
           <option value="deferred">Set aside</option>
-          <option value="someday">Ideas (Someday)</option>
+          <option value="someday">Someday</option>
           <option value="direction">Imperative</option>
           <option value="support">Support</option>
           <option value="timely">Timely</option>

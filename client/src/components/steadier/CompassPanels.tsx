@@ -466,7 +466,7 @@ export function reviewCardText(workspace: Workspace, today: string): string {
   const status = reviewStatus(workspace, today);
   return [
     status.daysSince === null
-      ? "Not done yet. Unplaced, Ideas and Link check first, then Floor Check (money, action, capacity), Imperatives and the map, in about 30–40 minutes."
+      ? "Not done yet. Unplaced, Front of Mind and Link check first, then Floor Check (money, action, capacity), Imperatives and the map, in about 30–40 minutes."
       : `Last done ${status.lastReviewDate} (${status.daysSince} day${status.daysSince === 1 ? "" : "s"} ago). About 15–25 minutes.`,
     status.commitments
       ? `${status.commitments} commitment${status.commitments === 1 ? "" : "s"} to confirm.`

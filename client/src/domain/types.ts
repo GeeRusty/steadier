@@ -365,6 +365,8 @@ export interface Workspace {
    * saves with `shoppingLists` are converted into this on load.
    */
   lists?: ListsStore;
+  /** Front of Mind: what's on the owner's mind that isn't a task yet (replaced the Ideas shelf 2026-11-14). */
+  frontOfMind?: FrontOfMindStore;
   /** Notes to self (Daily Log); absent until the first note. */
   dailyLog?: DailyLogEntry[];
   /**
@@ -495,6 +497,39 @@ export interface ShoppingList {
   updatedAt: string;
 }
 /** Pre-2026-11-14 shape, kept only so old backups convert (see assets.ts). */
+export interface FrontOfMindEntry {
+  at: string;
+  by: "owner" | "claude";
+  text: string;
+  /** Earlier wording, on wording changes. */
+  was?: string;
+}
+export interface FrontOfMindItem {
+  id: string;
+  text: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+  addedBy: "owner" | "claude";
+  /** "added by Claude" shows until the owner Keeps it. */
+  claudeLabel: boolean;
+  /** Last Keep (looked at). */
+  lookedAt: string | null;
+  letGoAt: string | null;
+  /** Claude's suggestion; only the owner can act on it. */
+  letGoSuggestion: { at: string; reason: string } | null;
+  /** Waits for the Weekly Review's Imperatives step. */
+  imperativeDraft: { title: string; reason: string; at: string } | null;
+  /** Set once it became a task or an Imperative; it then leaves the list. */
+  became: { kind: "task" | "imperative"; id: string; at: string } | null;
+  /** Links it had as an idea. */
+  projectId: string | null;
+  imperativeIds: string[];
+  history: FrontOfMindEntry[];
+}
+export interface FrontOfMindStore {
+  items: FrontOfMindItem[];
+}
 export type LegacyAssetCondition =
   | "unknown"
   | "good"

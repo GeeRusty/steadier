@@ -12395,3 +12395,21 @@ a.nav-item { text-decoration: none; }
 .uk-prompt input, .uk-prompt select { box-sizing: border-box; width: 100%; height: 44px; min-height: 44px; padding: 0 10px; border: 1px solid var(--tp-btn-line); border-radius: 10px; background: var(--card); color: var(--tp-strong); font: inherit; }
 /* Inputs inside a labelled field (a column) keep their own height; the 180px basis is for bare inputs in a row. */
 .lv-inline-form .lv-field input, .lv-inline-form .lv-field select, .lv-add .lv-field input { flex: 0 0 auto; }
+
+/* Front of Mind: calm rows; tap to show the four actions. Dashed = suggested. */
+.fm-row { display: flex; flex-direction: column; gap: 6px; }
+.fm-head { display: flex; flex-direction: column; gap: 4px; width: 100%; border: 0; background: none; padding: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.fm-text { font-size: 17px; font-weight: 600; flex: 1 1 auto; overflow-wrap: anywhere; }
+.tp-chip.fm-dashed { background: transparent; border: 1.5px dashed var(--tp-btn-line); }
+.fm-suggestion { border: 1.5px dashed var(--tp-btn-line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.fm-body { display: flex; flex-direction: column; gap: 8px; }
+.fm-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.fm-actions .tp-btn { min-height: 40px; }
+.fm-actions .tp-btn.fm-on { border-color: var(--tp-strong); font-weight: 600; box-shadow: inset 0 0 0 1px var(--tp-strong); }
+.fm-promote { border-top: 1px solid var(--tp-line); padding-top: 8px; }
+.fm-tag { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); }
+.fm-notes { margin: 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fm-history-toggle { min-height: 36px; }
+.fm-was { font-size: 14px; }
+.fm-gone .fm-text { color: var(--muted-foreground); font-weight: 500; }
+.fm-review { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }

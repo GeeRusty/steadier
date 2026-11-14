@@ -26,7 +26,7 @@ describe("Review due card", () => {
   it("allows 30–40 minutes for a first review, in the current step order", () => {
     const text = reviewCardText(emptyWorkspace(), "2026-11-13");
     expect(text).toContain("about 30–40 minutes");
-    expect(text).toContain("Unplaced, Ideas and Link check first, then Floor Check (money, action, capacity), Imperatives and the map");
+    expect(text).toContain("Unplaced, Front of Mind and Link check first, then Floor Check (money, action, capacity), Imperatives and the map");
   });
 
   it("allows 15–25 minutes once a review has been done", () => {
@@ -68,7 +68,7 @@ describe("Weekly Review", () => {
   });
 
   it("Start card names the steps in their current order and keeps the closing line", () => {
-    expect(html).toContain("Unplaced, Ideas and Link check first, then Floor Check (money, action, capacity), Imperatives and the map.");
+    expect(html).toContain("Unplaced, Front of Mind and Link check first, then Floor Check (money, action, capacity), Imperatives and the map.");
     expect(html).toContain("You decide everything; Steadier only writes it down.");
     expect(html).toContain("This is your first Weekly Reality Review.");
   });

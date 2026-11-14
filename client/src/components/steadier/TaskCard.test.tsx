@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { createTask } from "../../domain/engine";
 import type { Project, Task, Workspace } from "../../domain/types";
 import TaskCard from "./TaskCard";
-import { DatedTodayCard, IdeasShelf, SortView } from "./SetupViews";
+import { DatedTodayCard, SortView } from "./SetupViews";
 
 const TODAY = "2026-11-11";
 const project = { id: "p1", title: "Ute repairs", status: "active", updatedAt: "2026-11-01" } as Project;
@@ -60,17 +60,6 @@ describe("Sort, Ideas and Today", () => {
   it("Sort says when there is nothing to sort", () => {
     const html = renderToStaticMarkup(<SortView workspace={ws([solid()])} today={TODAY} readOnly={false} onApply={() => true} onFinish={() => {}} />);
     expect(html).toContain("Nothing to sort");
-  });
-
-  it("the Ideas shelf offers make it a task, keep and let go", () => {
-    const idea = createTask({ title: "Trailer hire business", state: "someday" });
-    const html = renderToStaticMarkup(
-      <IdeasShelf tasks={[idea]} readOnly={false} onMakeTask={() => true} onKeep={() => true} onLetGo={() => true} onBringBack={() => true} />
-    );
-    expect(html).toContain("Trailer hire business");
-    expect(html).toContain("Make it a task");
-    expect(html).toContain("Keep");
-    expect(html).toContain("Let go");
   });
 
   it("dated tasks always show on Today, with Set up on faded ones", () => {

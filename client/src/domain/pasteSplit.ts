@@ -3,6 +3,7 @@
  * exactly as if each had been captured on its own. Nothing here decides for
  * the owner; only ticked drafts are saved.
  */
+import { addFrontOfMind, newFrontOfMindId } from "./frontOfMind";
 import { parseCapture } from "./capture";
 import { createTask } from "./engine";
 import { defaultLeadTimeDays, newObligationDraft, saveObligation } from "./obligations";
@@ -116,12 +117,7 @@ export function applyPasteDrafts(
     if (draft.kind === "task" && text) {
       next = { ...next, tasks: [...next.tasks, taskFromWords(text, today, minutes, stamp)] };
     } else if (draft.kind === "idea" && text) {
-      const idea: Task = {
-        ...createTask({ title: text, state: "someday", reviewDate: null, createdAt: stamp, updatedAt: stamp }),
-        actionConfirmed: false,
-        history: [{ at: stamp, text: "Added to the Ideas shelf from pasted text." }],
-      };
-      next = { ...next, tasks: [...next.tasks, idea] };
+      next = addFrontOfMind(next, newFrontOfMindId(), text, stamp, { note: "From pasted text." });
     } else if ((draft.kind === "bill" || draft.kind === "cancel-by") && text) {
       const due = draft.date ?? today;
       next = saveObligation(

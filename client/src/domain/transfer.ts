@@ -14,6 +14,7 @@ import { obligationsField, taskObligationField } from "./obligations";
 import { MAX_EVIDENCE_ENTRIES, MAX_EVIDENCE_TEXT_LENGTH } from "./evidence";
 import { MAX_SITE_CARDS, isCanonicalPublicHttpsUrl } from "./siteCards";
 import { pruneAssetLinks, validateAssets } from "./assets";
+import { moveIdeasToFrontOfMind, pruneFrontOfMindLinks, validateFrontOfMind } from "./frontOfMind";
 import {
   MAX_SHOPPING_ITEMS_PER_LIST,
   MAX_SHOPPING_ITEMS_TOTAL,
@@ -51,6 +52,7 @@ import type {
   SiteCard,
   ShoppingList,
   ListsStore,
+  FrontOfMindStore,
   WorkspaceContact,
   Workspace,
   WorkspaceEvidence,
@@ -1556,6 +1558,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
     "siteCards",
     "shoppingLists",
     "lists",
+    "frontOfMind",
     "dailyLog",
     "linkCheckHolds",
     "hideAmountsFromAI",
@@ -1585,6 +1588,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
   const hasSiteCards = hasKey("siteCards");
   const hasShoppingLists = hasKey("shoppingLists");
   const hasLists = hasKey("lists");
+  const hasFrontOfMind = hasKey("frontOfMind");
   const hasDailyLog = hasKey("dailyLog");
   const hasLinkCheckHolds = hasKey("linkCheckHolds");
   if (hasKey("hideAmountsFromAI") && typeof value.hideAmountsFromAI !== "boolean") {
@@ -1653,6 +1657,14 @@ function validateV2Workspace(value: JsonRecord): Workspace {
   } else if (hasShoppingLists) {
     lists = listsFromShoppingLists(shoppingListsField(value.shoppingLists));
   }
+  let frontOfMind: FrontOfMindStore | undefined;
+  if (hasFrontOfMind) {
+    try {
+      frontOfMind = validateFrontOfMind(value.frontOfMind);
+    } catch (error) {
+      fail(error instanceof Error ? error.message : "frontOfMind is not valid.");
+    }
+  }
   const dailyLog = hasDailyLog ? dailyLogField(value.dailyLog) : undefined;
   const linkCheckHolds = hasLinkCheckHolds
     ? linkCheckHoldsField(value.linkCheckHolds)
@@ -1685,7 +1697,8 @@ function validateV2Workspace(value: JsonRecord): Workspace {
     }
   }
 
-  return pruneListLinks(pruneAssetLinks(
+  // Front of Mind replaced the Ideas shelf (2026-11-14): ideas move over once.
+  return pruneFrontOfMindLinks(moveIdeasToFrontOfMind(pruneListLinks(pruneAssetLinks(
     prunePlaceLinks(
       pruneGoalLinks(
         pruneImperativeLinks({
@@ -1708,6 +1721,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
           ...(evidence ? { evidence } : {}),
           ...(hasSiteCards ? { siteCards } : {}),
           ...(lists ? { lists } : {}),
+          ...(frontOfMind ? { frontOfMind } : {}),
           ...(dailyLog ? { dailyLog } : {}),
           ...(linkCheckHolds ? { linkCheckHolds } : {}),
           ...(typeof value.hideAmountsFromAI === "boolean"
@@ -1721,7 +1735,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
         })
       )
     )
-  ));
+  ))));
 }
 
 /**

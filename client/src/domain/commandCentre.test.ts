@@ -229,11 +229,13 @@ describe("Command Centre rule-based selection", () => {
     expect(standard.mode).toBe("weekday-morning");
   });
 
-  it("keeps acknowledgement workspace keys stable through task changes and includes only the five approved references", () => {
+  it("keeps acknowledgement workspace keys stable through task changes and includes only the four approved references", () => {
     const first = workspace([task("synthetic-a", "2026-11-01T00:00:00Z")]);
     const afterTaskEdit = workspace([task("synthetic-b", "2026-11-01T00:00:00Z")]);
     expect(commandCentreWorkspaceKey(first)).toBe(commandCentreWorkspaceKey(afterTaskEdit));
-    expect(COMPASS_LIBRARY_LINKS).toHaveLength(5);
+    // Front of Mind's Notion link left when Front of Mind moved into Steadier (2026-11-14).
+    expect(COMPASS_LIBRARY_LINKS).toHaveLength(4);
+    expect(COMPASS_LIBRARY_LINKS.map(reference => reference.label).join(" ")).not.toContain("Front of Mind");
     expect(COMPASS_LIBRARY_LINKS.map(reference => reference.label)).toContain("Projects");
     expect(COMPASS_LIBRARY_LINKS.map(reference => reference.label)).toContain("Pillars");
     expect(COMPASS_LIBRARY_LINKS.map(reference => reference.label)).toContain("Goal Outcomes");

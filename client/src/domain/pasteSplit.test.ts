@@ -41,7 +41,8 @@ describe("Paste anything", () => {
     const task = next.tasks.find(t => t.title.startsWith("Quote the Patel fence"))!;
     expect(task.deadline).toBe("2026-11-16");
     expect(task.history[0].text).toBe("Captured from pasted text.");
-    expect(next.tasks.find(t => t.title === "Trailer hire on weekends")?.state).toBe("someday");
+    expect(next.tasks.some(t => t.title === "Trailer hire on weekends")).toBe(false);
+    expect(next.frontOfMind!.items.map(i => i.text)).toContain("Trailer hire on weekends");
     expect(next.obligations!.map(o => [o.kind, o.dueDate, o.status, o.amountDue])).toEqual([
       ["bill", "2026-11-28", "draft", "$480.00"],
       ["cancel-by", "2026-12-01", "draft", null],

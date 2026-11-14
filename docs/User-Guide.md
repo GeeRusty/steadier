@@ -12,7 +12,7 @@ Steadier holds everything you're responsible for, then shows you a manageable fe
 - **Imperatives** are the few focus areas that matter most right now.
 - **Compass** is your bigger picture: **Pillars** (the big parts of your life), **Goals** under them, and **Goal Outcomes** that projects work towards.
 - **The task card** has three dots: **Action** (you've confirmed the title reads as something to do), **Place** (a project, Life Admin or Erosion Guard) and **First step** (one small physical action, or tap **Title is the step**). **When** (a date or deadline) is optional and has no dot. While any dot is unlit the card is **faded** (not ready). When all three are lit it turns **solid** and the task is ready. A missing dot never stops you saving.
-- **Ideas** are things you might do one day. They sit on the **Ideas shelf** with no timers or warnings.
+- **Front of Mind** holds what's on your mind that isn't a task yet: ideas, concerns, things you're weighing. No dates, timers or warnings.
 - **Suggestions** Steadier makes (like a role or a project link) stay marked as suggested until you confirm them.
 
 ## Getting around
@@ -46,7 +46,7 @@ Overview is for seeing, top to bottom:
 - **Next thing:** your chosen one, and the Pool to choose from (Not now, Still on and Drop work as before).
 - **Today:** booked count and free time, with a thin strip of your day and the red now mark. Tap it for Calendar.
 - **Moving:** up to three active projects with their signals, then **All projects**.
-- **Held and waiting**, then **Why:** Compass, Pillars, Ideas and Movement.
+- **Held and waiting**, then **Why:** Compass, Pillars, Front of Mind (no number) and Movement.
 
 ### Calendar
 Day, 3-day, week, month and **Board** views of your booked anchors (tasks with a day and a clock time). Blocks show the title first; the green left bar marks Imperative work. Week shows titles only, with "Nh free" under each date. Explanations are in the ⋮ menu under **How this calendar works**.
@@ -63,8 +63,17 @@ Every task in one list, for finding things. Search, one filter, and groups by pr
 ### Sort
 One minute a day. When you have faded tasks, **Needs attention** on Overview shows **Sort** with a count. Sort shows one faded card at a time: tap a big **Place** button (recent projects first, then Life Admin and Erosion Guard), say or type the **First step**, tap **It's an action**, then **Done** or **Skip**. After the last card you go back to Today.
 
-### Ideas
-The Ideas shelf: open it from Overview (**Ideas**) or the menu. Each idea has **Make it a task** (it becomes a faded task waiting in Sort), **Keep**, or **Let go**. Let go archives it and never deletes it; **Show ideas you let go** lets you bring one back. The Weekly Reality Review has an **Ideas** step too.
+### Front of Mind
+What's on your mind that isn't a task yet: ideas, concerns, things you're weighing. (It replaced the Ideas shelf on 14 Nov 2026; every idea came across with its wording, date and history.) Open it from the menu or Overview (**Front of Mind ›**).
+- **Add** with the **+** button and choose **Idea**, or say "Idea: …" to the voice assistant, or use Paste anything.
+- **Tap an item** for the four actions, the same everywhere:
+  - **Make it a task:** the usual unsaved task draft with the wording filled in. Once you save it, the item leaves the list, and its history says it became a task.
+  - **Promote to Imperative:** saves a draft on the item only. Your next Weekly Review's Imperatives step offers **Add as Imperative** or **Not now**. Nothing changes your Imperatives until you say yes there.
+  - **Keep:** it stays, marked as looked at today.
+  - **Let go:** it moves under **Let go** with its history, and **Bring back** returns it.
+- **Chips** show only what's off normal, two at most: **added by Claude** (until you Keep it), **suggested: Let go** (dashed, with Let go and Keep), and **quiet Nd** after 30 days without being looked at.
+- **History** on each item shows every change, including earlier wording.
+- Tasks dropped to Someday in the Weekly Review, and held obligation tasks, stay tasks: All work's **Someday** filter shows them.
 
 ### Review due / unplaced
 Quick tidy-up: tasks due for a review, and tasks that don't have a place yet. It's for quick maintenance. The full weekly process is Weekly Reality Review.
@@ -101,10 +110,10 @@ Only links you made count. Suggested links show a **Confirm** button. **Not yet*
 - **Pillars & Goals**: where you add and edit the Pillar and Goal structure behind the map.
 
 ### Compass Library
-Five reference links in the menu (Projects, Pillars, Goal Outcomes, Front of Mind, Compass Library). They open Notion in a new tab for now and will be swapped for server library links when Notion is retired. (The old Command Centre page is gone: its check-in is on Today, its Imperatives summary is Overview's Compass row, and its sync details are on Server & Compass.)
+Four reference links in the menu (Projects, Pillars, Goal Outcomes, Compass Library). Front of Mind's Notion page was retired when Front of Mind moved into Steadier. They open Notion in a new tab for now and will be swapped for server library links when Notion is retired. (The old Command Centre page is gone: its check-in is on Today, its Imperatives summary is Overview's Compass row, and its sync details are on Server & Compass.)
 
 ### Weekly Reality Review
-The full weekly decision process: look at what happened, what's waiting, and what to change. The steps run Start → Unplaced → Ideas → Link check → Money → Action → Capacity → Imperatives → Map → Save. One line at the top shows **Step n of 10** with a thin bar; tap it to see the steps and jump to one. **Back** and **Next** move one step. Notes about how a step works sit behind the **i**, and Read aloud (in the ⋮ menu) reads the step you're on. Decisions you make are saved to the **Decision Log**. The **Link check** step shows everything you held with Not yet. Decide each one, or tap **Not yet again** to hold it one more week. Anything you leave comes back to Link check when you save the review.
+The full weekly decision process: look at what happened, what's waiting, and what to change. The steps run Start → Unplaced → Front of Mind → Link check → Money → Action → Capacity → Imperatives → Map → Save. One line at the top shows **Step n of 10** with a thin bar; tap it to see the steps and jump to one. **Back** and **Next** move one step. Notes about how a step works sit behind the **i**, and Read aloud (in the ⋮ menu) reads the step you're on. Decisions you make are saved to the **Decision Log**. The **Link check** step shows everything you held with Not yet. Decide each one, or tap **Not yet again** to hold it one more week. Anything you leave comes back to Link check when you save the review. The **Front of Mind** step lists every item, Claude's items and suggestions first, each with Make it a task, Promote, Keep or Let go; choices apply when you save, and an item you skip stays as it was. Items promoted (or with a draft) appear in the **Imperatives** step under **From Front of Mind**, with **Add as Imperative** or **Not now**.
 
 ### Decision Log
 Read-only list of decisions saved during Weekly Reality Reviews.
@@ -194,7 +203,7 @@ Things you can say:
 - **Mark done:** "Done with the mechanic call."
 - **Move:** "Push the coffee to tomorrow morning." Repeating tasks have to be moved in the app.
 - **Lists:** "Add eggs and bread to the shopping list." It goes on that list's run (one is started if needed).
-- **Idea:** "Idea: trailer hire side business", or "add build a shed as an idea". It goes on the Ideas shelf, not into your tasks. Starting with "Idea" always makes it an idea.
+- **Idea:** "Idea: trailer hire side business", or "add build a shed as an idea". It goes on Front of Mind, not into your tasks. Starting with "Idea" always makes it an idea.
 - **Notes:** "Note: the car's making a rattle."
 - **Check your day:** "What's next?" or "What's on today?"
 - **Ask how to use Steadier:** "How do I move a task?" or "What's the Compass map for?"
@@ -203,9 +212,9 @@ Things you can say:
 
 ## Claude connector
 
-Claude can see your Ideas and which tasks are set up, and can suggest a Place or First step, but only you can make a task ready or let an idea go. Tasks Claude creates start as faded cards.
+Claude can see your Front of Mind and which tasks are set up, and can suggest a Place or First step, but only you can make a task ready. Tasks Claude creates start as faded cards.
 
-In any chat you can say "add that as an idea" and Claude puts it on your Ideas shelf, with a backup saved first.
+In any chat you can say "add that as an idea" and Claude adds it to Front of Mind, labelled **added by Claude** until you Keep it, with a backup saved first. Claude reads Front of Mind before advising. It can change an item's wording (the earlier wording stays in History) and suggest Let go (dashed), but only you can Keep, Let go, make a task or promote.
 
 Claude can read your Link check. It can suggest a link between a task or project and an Imperative, but the link waits for your **Confirm**. Only you can choose Not yet, make a project Support, or step an Imperative down.
 
@@ -216,7 +225,7 @@ Claude can read and change your Steadier when you ask it to in a chat. For examp
 - **Add a task?** Tap **+** on My life today, or tell the voice assistant. After the title, choose **Task** or **Idea** (Task is the default).
 - **Set up a task / make it ready?** Open it, or use **Sort**, and light the three dots on its card: Action, Place, First step.
 - **Link a project to an Imperative?** Open **Link check**, or open the project and pick under **Serves Imperative**.
-- **Save an idea for later?** Tap **+** and choose **Idea**, or start with "Idea:" and it switches for you. You can also say "Idea: …" to the voice assistant, add it on the Ideas shelf, or tell Claude "add that as an idea".
+- **Save an idea for later?** Tap **+** and choose **Idea**, or start with "Idea:" and it switches for you. You can also say "Idea: …" to the voice assistant, use Paste anything, or tell Claude "add that as an idea".
 - **Find what Area a task had?** Look in its notes for a line like `Area: Home`.
 - **Give a task a time on the calendar?** Open the task and set its day and start time, or say "book X on Friday at 3".
 - **Change a booked time?** Open it from the Calendar and change the day or time, or say "move X to tomorrow at 9".

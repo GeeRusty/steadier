@@ -1,4 +1,5 @@
 import type { CloudRecord } from "../../shared/cloud";
+import { frontOfMindForContext } from "../../client/src/domain/frontOfMind";
 import type { Project, Task, Workspace } from "../../client/src/domain/types";
 import {
   STEADIER_TIME_ZONE,
@@ -40,6 +41,8 @@ export function presentWorkspace(workspace: Workspace): Workspace {
   delete connectorSafeWorkspace.evidence;
   delete connectorSafeWorkspace.siteCards;
   delete connectorSafeWorkspace.lists;
+  // Front of Mind goes out separately (wording and labels; History via its read tool).
+  delete connectorSafeWorkspace.frontOfMind;
   delete connectorSafeWorkspace.assets;
   delete connectorSafeWorkspace.people;
   delete connectorSafeWorkspace.credentialRenewals;
@@ -220,6 +223,8 @@ export function compassContext(record: CloudRecord, now = new Date()) {
   return {
     schemaVersion: "steadier-compass-context-v1",
     workspace: presentWorkspace(record.workspace),
+    /** Check before advising: what's on the owner's mind that isn't a task yet. */
+    frontOfMind: frontOfMindForContext(record.workspace, localDateInTimeZone(STEADIER_TIME_ZONE, now)),
     derived,
     freshness: {
       generatedAt: adelaideTimestamp(now),

@@ -486,7 +486,7 @@ describe("connector tools by approved scope", () => {
       "read_my_life_assets",
       "read_my_life_compass_map",
       "read_my_life_context",
-      "read_my_life_ideas",
+      "read_my_life_front_of_mind",
       "read_my_life_link_check",
       "read_my_life_lists",
       "read_my_life_notes",
@@ -504,12 +504,13 @@ describe("connector tools by approved scope", () => {
     const client = await connect(store, WRITE_TOKEN);
     const tools = (await client.listTools()).tools;
     expect(tools.map(tool => tool.name).sort()).toEqual([
-      "add_my_life_idea",
+      "add_my_life_front_of_mind",
       "add_my_life_note",
       "add_my_life_obligation",
       "add_my_life_subtask",
       "create_my_life_project",
       "create_my_life_task",
+      "edit_my_life_front_of_mind_wording",
       "get_my_life_calendar",
       "list_my_life_backups",
       "list_my_life_imperatives",
@@ -517,7 +518,7 @@ describe("connector tools by approved scope", () => {
       "read_my_life_assets",
       "read_my_life_compass_map",
       "read_my_life_context",
-      "read_my_life_ideas",
+      "read_my_life_front_of_mind",
       "read_my_life_link_check",
       "read_my_life_lists",
       "read_my_life_notes",
@@ -535,6 +536,7 @@ describe("connector tools by approved scope", () => {
       "set_my_life_task_parent",
       "set_my_life_task_time",
       "start_my_life_list_run",
+      "suggest_my_life_front_of_mind_let_go",
       "suggest_my_life_link",
       "suggest_my_life_list_items",
       "tick_my_life_list_items",
@@ -1547,30 +1549,59 @@ describe("Task card and Ideas connector rules", () => {
     expect(rows.find(r => r.taskId === task.id)).toMatchObject({ ready: false, missing: ["Action", "Place"] });
   });
 
-  it("adds an idea to the shelf with a backup first, labelled as Claude", async () => {
+  it("Front of Mind: Claude adds (labelled), changes wording (History kept) and only suggests Let go, each with a backup first", async () => {
     const store = new MemoryStore();
     store.addKey(WRITE_TOKEN, "steadier:read steadier:write");
     const client = await connect(store, WRITE_TOKEN);
     const backupsBefore = store.backups.length;
     const added = await client.callTool({
-      name: "add_my_life_idea",
-      arguments: { title: "Trailer hire side business", note: "Check council rules first" },
+      name: "add_my_life_front_of_mind",
+      arguments: { text: "Trailer hire side business", notes: "Check council rules first" },
     });
     expect(added.isError).toBeFalsy();
     expect(store.backups.length).toBe(backupsBefore + 1);
-    const idea = store.stored!.workspace.tasks.at(-1)!;
-    expect(idea).toMatchObject({
-      title: "Trailer hire side business",
-      notes: "Check council rules first",
-      state: "someday",
-      reviewDate: null,
-      actionConfirmed: false,
+    const item = store.stored!.workspace.frontOfMind!.items.at(-1)!;
+    expect(item).toMatchObject({ text: "Trailer hire side business", notes: "Check council rules first", addedBy: "claude", claudeLabel: true, letGoAt: null });
+    expect(store.stored!.workspace.tasks.some(t => t.title === "Trailer hire side business")).toBe(false);
+
+    const edited = await client.callTool({
+      name: "edit_my_life_front_of_mind_wording",
+      arguments: { itemId: item.id, text: "Trailer hire on weekends", reason: "Owner said weekends only" },
     });
-    expect(idea.history.at(-1)!.text).toMatch(/^Claude: Added to the Ideas shelf/);
-    const shelf = await client.callTool({ name: "read_my_life_ideas", arguments: {} });
-    expect((shelf.structuredContent as { ideas: { title: string }[] }).ideas.map(i => i.title)).toContain("Trailer hire side business");
-    const empty = await client.callTool({ name: "add_my_life_idea", arguments: { title: "  " } });
-    expect(empty.isError).toBe(true);
+    expect(edited.isError).toBeFalsy();
+    const afterEdit = store.stored!.workspace.frontOfMind!.items.find(i => i.id === item.id)!;
+    expect(afterEdit.text).toBe("Trailer hire on weekends");
+    expect(afterEdit.history.at(-1)).toMatchObject({ by: "claude", was: "Trailer hire side business" });
+
+    const suggested = await client.callTool({
+      name: "suggest_my_life_front_of_mind_let_go",
+      arguments: { itemId: item.id, reason: "The trailer was sold." },
+    });
+    expect(suggested.isError).toBeFalsy();
+    const afterSuggest = store.stored!.workspace.frontOfMind!.items.find(i => i.id === item.id)!;
+    expect(afterSuggest.letGoSuggestion?.reason).toBe("The trailer was sold.");
+    expect(afterSuggest.letGoAt).toBeNull();
+    expect(store.backups.length).toBe(backupsBefore + 3);
+
+    const read = await client.callTool({ name: "read_my_life_front_of_mind", arguments: {} });
+    const items = (read.structuredContent as { items: { wording: string; labels: string[]; history: unknown[] }[] }).items;
+    expect(items[0]).toMatchObject({ wording: "Trailer hire on weekends", labels: ["added by Claude", "suggested: Let go"] });
+    expect(items[0].history.length).toBeGreaterThan(1);
+
+    const context = await client.callTool({ name: "read_my_life_context", arguments: {} });
+    const ctx = context.structuredContent as { frontOfMind: { wording: string; labels: string[] }[]; workspace: Record<string, unknown> };
+    expect(ctx.frontOfMind).toEqual([{ itemId: item.id, wording: "Trailer hire on weekends", labels: ["added by Claude", "suggested: Let go"] }]);
+    expect(ctx.workspace.frontOfMind).toBeUndefined();
+    expect(JSON.stringify(ctx)).not.toContain("Trailer hire side business");
+
+    for (const [name, args] of [
+      ["add_my_life_front_of_mind", { text: "  " }],
+      ["edit_my_life_front_of_mind_wording", { itemId: "missing", text: "x" }],
+      ["suggest_my_life_front_of_mind_let_go", { itemId: item.id, reason: " " }],
+    ] as const) {
+      const bad = await client.callTool({ name, arguments: args });
+      expect(bad.isError).toBe(true);
+    }
   });
 
   it("rejects an Area with a clear message (Area was removed)", async () => {
@@ -1638,20 +1669,18 @@ describe("Task card and Ideas connector rules", () => {
     expect(badDate.isError).toBe(true);
   });
 
-  it("reads Ideas but cannot let one go", async () => {
+  it("has no idea tools any more, and a someday task stays a task", async () => {
     const store = new MemoryStore();
     store.addKey(WRITE_TOKEN, "steadier:read steadier:write");
     const client = await connect(store, WRITE_TOKEN);
-    const created = await client.callTool({
-      name: "create_my_life_task",
-      arguments: { title: "Trailer hire side business", state: "someday" },
-    });
-    const id = (created.structuredContent as { task: { id: string } }).task.id;
-    const shelf = await client.callTool({ name: "read_my_life_ideas", arguments: {} });
-    expect((shelf.structuredContent as { ideas: { title: string }[] }).ideas.map(i => i.title)).toContain(
-      "Trailer hire side business"
-    );
-    const letGo = await client.callTool({ name: "update_my_life_task", arguments: { taskId: id, dropped: true } });
-    expect(letGo.isError).toBe(true);
+    const names = (await client.listTools()).tools.map(t => t.name);
+    expect(names).not.toContain("read_my_life_ideas");
+    expect(names).not.toContain("add_my_life_idea");
+    expect(names.filter(n => /front_of_mind/.test(n)).sort()).toEqual([
+      "add_my_life_front_of_mind",
+      "edit_my_life_front_of_mind_wording",
+      "read_my_life_front_of_mind",
+      "suggest_my_life_front_of_mind_let_go",
+    ]);
   });
 });

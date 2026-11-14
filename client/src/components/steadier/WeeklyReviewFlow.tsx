@@ -43,10 +43,11 @@ import { mapGaps } from "../../domain/goals";
 import { groupByStable, monthGroup } from "../../domain/accordionGroups";
 import AccordionSection from "./AccordionSection";
 import TimingShapeMark from "./TimingShapeMark";
-import { IdeasShelf } from "./SetupViews";
+import { Actions as FrontOfMindActions, Chips as FrontOfMindChips, metaLine as frontOfMindMeta } from "./FrontOfMindView";
+import { addImperativeFromItem, applyReviewChoices, imperativeDrafts, openItems, type ReviewChoice } from "../../domain/frontOfMind";
+import type { FrontOfMindItem } from "../../domain/types";
 import LinkCheckView from "./LinkCheckView";
 import { renewHoldsForReview } from "../../domain/linkCheck";
-import { bringBackIdea, ideaToTask, keepIdea, letGoIdea } from "../../domain/taskCard";
 
 interface Props {
   workspace: Workspace;
@@ -60,6 +61,8 @@ interface Props {
   readRef?: React.MutableRefObject<(() => void) | null>;
   /** Upkeep due rows (the same list as Needs attention), shown in the Action step. */
   upkeep?: React.ReactNode;
+  /** Front of Mind "Make it a task": opens the usual unsaved draft. */
+  onMakeFrontOfMindTask?: (item: FrontOfMindItem) => void;
 }
 
 /** Notes moved off the steps; they sit behind the page's info icon, word for word. */
@@ -69,7 +72,7 @@ const ACTION_NOTE =
 const STEPS = [
   "Start",
   "Unplaced",
-  "Ideas",
+  "Front of Mind",
   "Link check",
   "Money",
   "Action",
@@ -89,6 +92,10 @@ interface Draft {
   unplacedBefore: number;
   /** When this review began; Not yet holds renewed after it survive the save. */
   startedAt?: string;
+  /** Front of Mind choices, applied on save. */
+  fom?: Record<string, ReviewChoice>;
+  /** Imperatives step: Add as Imperative or Not now for each Front of Mind draft. */
+  fomImperatives?: Record<string, "add" | "notnow">;
 }
 
 function loadDraft(today: string): Draft | null {
@@ -136,6 +143,7 @@ export default function WeeklyReviewFlow({
   readOnly,
   readRef,
   upkeep,
+  onMakeFrontOfMindTask,
 }: Props) {
   const today = adelaideClock().date;
   const status = useMemo(
@@ -310,13 +318,19 @@ export default function WeeklyReviewFlow({
       unplacedAfter: unplacedTasks(workspace.tasks).length,
       notes: draft.notes.trim(),
     };
-    const ok = onMutate(w =>
-      renewHoldsForReview(
+    const ok = onMutate(w => {
+      let next = renewHoldsForReview(
         applyReview(w, review, (tasks, id) => completeTask(tasks, id)),
         draft.startedAt ?? null,
         review.at
-      )
-    );
+      );
+      // Front of Mind: Keep / Let go / Promote (a draft), then the owner's Add as Imperative.
+      next = applyReviewChoices(next, draft.fom ?? {}, stamp);
+      Object.entries(draft.fomImperatives ?? {}).forEach(([id, answer], index) => {
+        if (answer === "add") next = addImperativeFromItem(next, id, `imp-${Date.now().toString(36)}-${index}-${Math.random().toString(36).slice(2, 6)}`, today, stamp);
+      });
+      return next;
+    });
     if (ok === false) {
       setMessage(
         "The review was not saved. Your answers are kept here; check sync and try again."
@@ -410,7 +424,7 @@ export default function WeeklyReviewFlow({
       <>
         <p className="review-lead">
           Turn this week's reality into what you will faithfully do. Unplaced,
-          Ideas and Link check first, then Floor Check (money, action,
+          Front of Mind and Link check first, then Floor Check (money, action,
           capacity), Imperatives and the map. You decide everything; Steadier
           only writes it down.
         </p>
@@ -645,23 +659,49 @@ export default function WeeklyReviewFlow({
         introInInfo
       />
     );
-  } else if (step === "Ideas") {
-    const ideaChange = (id: string, fn: (t: Task, stamp: string, all: Task[]) => Task) => {
-      if (readOnly) return false;
-      const stamp = adelaideTimestamp();
-      const ok = onMutate(w => ({ ...w, tasks: w.tasks.map(t => (t.id === id ? fn(t, stamp, w.tasks) : t)) }));
-      return ok !== false;
-    };
+  } else if (step === "Front of Mind") {
+    const items = openItems(workspace);
+    const choose = (id: string, choice: ReviewChoice) =>
+      setDraft(d => {
+        const fom = { ...(d.fom ?? {}) };
+        if (fom[id] === choice) delete fom[id];
+        else fom[id] = choice;
+        return { ...d, fom };
+      });
+    spokenStep = items.length
+      ? `Front of Mind. For each: still relevant, more, or less? ${items.map(i => `${i.text}.`).join(" ")}`
+      : "Front of Mind is empty.";
     body = (
-      <IdeasShelf
-        tasks={workspace.tasks}
-        readOnly={readOnly}
-        reviewMode
-        onMakeTask={id => ideaChange(id, (t, stamp, all) => ideaToTask(t, stamp, all))}
-        onKeep={id => ideaChange(id, (t, stamp) => keepIdea(t, stamp))}
-        onLetGo={id => ideaChange(id, (t, stamp) => letGoIdea(t, stamp))}
-        onBringBack={id => ideaChange(id, (t, stamp) => bringBackIdea(t, stamp))}
-      />
+      <>
+        <h2>Front of Mind</h2>
+        <p>For each: still relevant, more, or less? Then choose. Choices apply when you save the review.</p>
+        {items.length === 0 ? (
+          <p className="muted">Nothing on Front of Mind.</p>
+        ) : (
+          <ul className="fm-review">
+            {items.map(item => (
+              <li key={item.id} className="lv-card fm-row">
+                <span className="lv-row-top">
+                  <span className="fm-text">{item.text}</span>
+                  <FrontOfMindChips item={item} today={today} />
+                </span>
+                <span className="lv-meta">{frontOfMindMeta(item, today)}</span>
+                {item.letGoSuggestion?.reason && <span className="lv-meta fm-suggestion">Claude suggests letting this go: “{item.letGoSuggestion.reason}”</span>}
+                {!readOnly && (
+                  <FrontOfMindActions
+                    chosen={draft.fom?.[item.id] ?? null}
+                    onMakeTask={() => onMakeFrontOfMindTask?.(item)}
+                    onPromote={() => choose(item.id, "promote")}
+                    onKeep={() => choose(item.id, "keep")}
+                    onLetGo={() => choose(item.id, "letgo")}
+                  />
+                )}
+                {draft.fom?.[item.id] === "promote" && <span className="lv-meta">→ offered in the Imperatives step to add or not.</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </>
     );
   } else if (step === "Link check") {
     body = <LinkCheckView workspace={workspace} readOnly={readOnly} onMutate={onMutate} reviewMode />;
@@ -727,6 +767,41 @@ export default function WeeklyReviewFlow({
             </li>
           ))}
         </ul>
+        {(() => {
+          const pending = [
+            ...imperativeDrafts(workspace),
+            ...openItems(workspace).filter(i => draft.fom?.[i.id] === "promote" && !i.imperativeDraft),
+          ];
+          if (!pending.length) return null;
+          const answer = (id: string, value: "add" | "notnow") =>
+            setDraft(d => ({ ...d, fomImperatives: { ...(d.fomImperatives ?? {}), [id]: value } }));
+          return (
+            <>
+              <h3>From Front of Mind</h3>
+              <ul className="fm-review">
+                {pending.map(item => {
+                  const a = draft.fomImperatives?.[item.id];
+                  return (
+                    <li key={item.id} className="lv-card fm-row">
+                      <span className="fm-text">{item.imperativeDraft?.title ?? item.text}</span>
+                      {item.imperativeDraft?.reason && <span className="lv-meta">{item.imperativeDraft.reason}</span>}
+                      {!readOnly && (
+                        <span className="fm-actions">
+                          <button type="button" className={`tp-btn${a === "add" ? " fm-on" : ""}`} aria-pressed={a === "add"} onClick={() => answer(item.id, "add")}>
+                            Add as Imperative
+                          </button>
+                          <button type="button" className={`tp-btn${a === "notnow" ? " fm-on" : ""}`} aria-pressed={a === "notnow"} onClick={() => answer(item.id, "notnow")}>
+                            Not now
+                          </button>
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          );
+        })()}
       </>
     );
   } else if (step === "Map") {

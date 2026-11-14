@@ -231,14 +231,12 @@ import InvoicesView from "../components/steadier/InvoicesView";
 import TodayCheckIn from "../components/steadier/TodayCheckIn";
 import PageNavigation from "../components/steadier/PageNavigation";
 import TaskCard, { type CardChange } from "../components/steadier/TaskCard";
-import { DatedTodayCard, IdeasShelf, SortView } from "../components/steadier/SetupViews";
+import { DatedTodayCard, SortView } from "../components/steadier/SetupViews";
+import FrontOfMindView from "../components/steadier/FrontOfMindView";
+import { addFrontOfMind, FRONT_OF_MIND_INFO_MORE, markBecameTask, newFrontOfMindId } from "../domain/frontOfMind";
+import type { FrontOfMindItem } from "../domain/types";
 import {
-  bringBackIdea,
-  ideaToTask,
-  ideas as ideaList,
   isIdea,
-  keepIdea,
-  letGoIdea,
   notReadyTasks,
   settleCardState,
 } from "../domain/taskCard";
@@ -246,7 +244,7 @@ const nav: { id: View; title: string; Icon: typeof CircleDot }[] = [
   { id: "attention", title: "My life today", Icon: CircleDot },
   { id: "all", title: "All work", Icon: ListTodo },
   { id: "sort", title: "Sort", Icon: Shuffle },
-  { id: "ideas", title: "Ideas", Icon: Lightbulb },
+  { id: "ideas", title: "Front of Mind", Icon: Lightbulb },
   { id: "calendar", title: "Calendar", Icon: CalendarDays },
   { id: "review", title: "Review due / unplaced", Icon: RefreshCw },
   { id: "near", title: "Near me", Icon: MapPin },
@@ -451,6 +449,9 @@ export default function Home() {
     templateId: string | null;
   } | null>(null);
   const assetsReadRef = useRef<(() => string) | null>(null);
+  const fomReadRef = useRef<(() => string) | null>(null);
+  /** The Front of Mind item a task draft came from; it leaves the list once the task is saved. */
+  const [captureFomSource, setCaptureFomSource] = useState<string | null>(null);
   const [assetFocus, setAssetFocus] = useState<AssetFocus | null>(null);
   /** A task created from Upkeep due was ticked: ask to log it (owner choice B, 14 Nov). */
   const [upkeepLogTaskId, setUpkeepLogTaskId] = useState<string | null>(null);
@@ -495,8 +496,8 @@ export default function Home() {
     setEditing(null);
     setTaskPanelMode("view");
   };
-  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects" || view === "review" || view === "weekly" || view === "shopping" || view === "assets";
-  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : view === "review" || view === "weekly" || view === "shopping" || view === "assets" ? "plain" : "today";
+  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects" || view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas";
+  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas" ? "plain" : "today";
   const changeAppearance = (next: Appearance) => {
     setAppearance(next);
     persistAppearance(next);
@@ -791,34 +792,30 @@ export default function Home() {
     if (!accepted) toast.error("That was not saved. Check sync and try again.");
     return Boolean(accepted);
   };
-  const changeIdea = (id: string, fn: (task: Task, stamp: string, all: Task[]) => Task, message: string): boolean => {
+  /** Capture's "Idea" saves to Front of Mind (replaces any task this draft had autosaved). */
+  const addToFrontOfMind = (text: string, notes: string, replacesTaskId: string | null): boolean => {
     if (!allowed()) return false;
     const stamp = adelaideTimestamp();
-    const accepted = store.mutate(w => ({
-      ...w,
-      tasks: w.tasks.map(t => (t.id === id ? fn(t, stamp, w.tasks) : t)),
-    }));
-    if (!accepted) {
-      toast.error("That was not saved. Check sync and try again.");
+    const id = newFrontOfMindId();
+    let added = false;
+    const accepted = store.mutate(w => {
+      const base = replacesTaskId ? { ...w, tasks: w.tasks.filter(t => t.id !== replacesTaskId) } : w;
+      const next = addFrontOfMind(base, id, text, stamp, { notes });
+      added = next !== base;
+      return added ? next : w;
+    });
+    if (!accepted || !added) {
+      toast.error("That was not saved to Front of Mind. Check sync and try again.");
       return false;
     }
-    toast.success(message);
+    toast.success("Saved to Front of Mind.");
     return true;
   };
-  const makeIdeaTask = (id: string) => changeIdea(id, (t, stamp, all) => ideaToTask(t, stamp, all), "Made into a task. It's waiting in Sort.");
-  const keepIdeaOnShelf = (id: string) => changeIdea(id, (t, stamp) => keepIdea(t, stamp), "Kept on the Ideas shelf.");
-  const letIdeaGo = (id: string) => changeIdea(id, (t, stamp) => letGoIdea(t, stamp), "Let go. It's archived, not deleted.");
-  const bringIdeaBack = (id: string) => changeIdea(id, (t, stamp) => bringBackIdea(t, stamp), "Back on the Ideas shelf.");
-  const addIdea = (title: string): boolean => {
-    if (!allowed()) return false;
-    const idea: Task = { ...createTask({ title, state: "someday", reviewDate: null }), actionConfirmed: false };
-    const accepted = store.mutate(w => ({ ...w, tasks: [...w.tasks, idea] }));
-    if (!accepted) {
-      toast.error("That idea was not saved. Check sync and try again.");
-      return false;
-    }
-    toast.success("Idea saved.");
-    return true;
+  /** Make it a task: the usual unsaved draft with the wording filled in. */
+  const openFrontOfMindTask = (item: FrontOfMindItem) => {
+    const projectId = item.projectId && store.workspace.projects.some(p => p.id === item.projectId) ? item.projectId : "";
+    openCapture(false, projectId, item.text, [item.notes, `From Front of Mind (added ${item.createdAt.slice(0, 10)}).`].filter(Boolean).join("\n\n"), true, null);
+    setCaptureFomSource(item.id);
   };
   const saveEvidence = (input: EvidenceInput): boolean => {
     if (!allowed()) return false;
@@ -1568,6 +1565,7 @@ export default function Home() {
     setCaptureInitialNotes(initialNotes);
     setCaptureManualReviewOnly(manualReviewOnly);
     setCaptureAssetSource(assetSource);
+    setCaptureFomSource(null);
     voice.clear();
     setCapture(true);
     setFocusOpen(false);
@@ -1731,7 +1729,8 @@ export default function Home() {
       baseline &&
       taskMatchesExpectedSnapshot(currentTask, baseline) &&
       !taskDraftChanged(task, baseline) &&
-      !captureAssetSource
+      !captureAssetSource &&
+      !captureFomSource
     ) {
       if (autosave || returnServerResult) {
         const ticket = pendingAutosavesRef.current.get(task.id) ?? null;
@@ -1778,6 +1777,11 @@ export default function Home() {
         return w;
       }
       let next = applied.workspace;
+      if (captureFomSource) {
+        const marked = markBecameTask(next, captureFomSource, task.id, adelaideTimestamp());
+        // Already a task, or let go meanwhile: save the task, leave the item as it is.
+        if (marked !== next) next = marked;
+      }
       if (captureAssetSource) {
         const source = captureAssetSource;
         const asset = w.assets?.find(a => a.id === source.assetId);
@@ -1836,6 +1840,7 @@ export default function Home() {
           : false;
     }
     if (captureAssetSource) setCaptureAssetSource(null);
+    if (captureFomSource) setCaptureFomSource(null);
     if (announce)
       toast.success(
         task.nextAction
@@ -1950,6 +1955,11 @@ export default function Home() {
     if (view === "weekly") {
       if (voice.speaking) voice.stopSpeaking();
       else weeklyReadRef.current?.();
+      return;
+    }
+    if (view === "ideas") {
+      const text = fomReadRef.current?.();
+      if (text) readOutLoud(text);
       return;
     }
     if (view === "assets") {
@@ -2204,7 +2214,7 @@ export default function Home() {
                     />
                     <div className="v2-topbar-center" aria-live="polite">
                       <strong className="v2-page-title">
-                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : view === "review" ? "Review due / unplaced" : view === "weekly" ? "Weekly Review" : view === "shopping" ? "Lists" : view === "assets" ? "Assets & Upkeep" : todayTab === "overview" ? "Overview" : "Today"}
+                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : view === "review" ? "Review due / unplaced" : view === "weekly" ? "Weekly Review" : view === "shopping" ? "Lists" : view === "assets" ? "Assets & Upkeep" : view === "ideas" ? "Front of Mind" : todayTab === "overview" ? "Overview" : "Today"}
                       </strong>
                       <span className={`v2-sync-status ${topbarConnectionTone}`}>
                         <span>{topbarDate}</span><span aria-hidden="true"> · </span><i aria-hidden="true" />
@@ -2405,7 +2415,9 @@ export default function Home() {
                     extra={
                       view === "review"
                         ? [UNPLACED_INTRO, `${REVIEW_LIST_INFO} ${REVIEW_LIST_INFO_TAIL}`, REVIEW_ACK_LINE]
-                        : view === "shopping"
+                        : view === "ideas"
+                          ? [FRONT_OF_MIND_INFO_MORE]
+                          : view === "shopping"
                           ? [LIST_WORDING_GUIDE]
                           : view === "assets"
                             ? [ASSETS_INFO_MORE]
@@ -2492,7 +2504,7 @@ export default function Home() {
                         onOpen: () => navigate("compass-view"),
                       },
                       { key: "pillars", label: "Pillars", value: `${todayPillarCount} of ${PILLAR_SLOTS} set`, onOpen: () => navigate("map") },
-                      { key: "ideas", label: "Ideas", value: String(ideaList(tasks).length), onOpen: () => navigate("ideas") },
+                      { key: "ideas", label: "Front of Mind", value: "", onOpen: () => navigate("ideas") },
                       { key: "movement", label: "Movement", value: "Open", onOpen: () => navigate("moveEnergy") },
                     ]}
                     onCalendar={() => navigate("calendar")}
@@ -2578,6 +2590,7 @@ export default function Home() {
                     voice={voice}
                     readOnly={store.readOnly}
                     readRef={weeklyReadRef}
+                    onMakeFrontOfMindTask={openFrontOfMindTask}
                     upkeep={
                       <UpkeepDueList
                         workspace={store.workspace}
@@ -2785,14 +2798,17 @@ export default function Home() {
                     onOpenProject={openProjectById}
                   />
                 ) : view === "ideas" ? (
-                  <IdeasShelf
-                    tasks={tasks}
+                  <FrontOfMindView
+                    workspace={store.workspace}
                     readOnly={store.readOnly}
-                    onMakeTask={makeIdeaTask}
-                    onKeep={keepIdeaOnShelf}
-                    onLetGo={letIdeaGo}
-                    onBringBack={bringIdeaBack}
-                    onAddIdea={addIdea}
+                    onMutate={update => {
+                      if (!allowed()) return false;
+                      const accepted = store.mutate(update);
+                      if (!accepted) toast.error("That was not saved. Check sync and try again.");
+                      return accepted;
+                    }}
+                    onMakeTask={openFrontOfMindTask}
+                    readRef={fomReadRef}
                   />
                 ) : view === "weather" ? (
                   <WeatherView />
@@ -3150,7 +3166,9 @@ export default function Home() {
                 onClose={() => {
                   setCapture(false);
                   setCaptureAssetSource(null);
+                  setCaptureFomSource(null);
                 }}
+                onAddFrontOfMind={addToFrontOfMind}
                 onApplyMany={change => {
                   if (!allowed()) return false;
                   return store.mutate(change);

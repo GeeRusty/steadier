@@ -247,23 +247,22 @@ describe("voice: notes", () => {
 });
 
 describe("voice: ideas", () => {
-  it("puts a spoken idea on the Ideas shelf after the read-back", () => {
+  it("puts a spoken idea on Front of Mind after the read-back, as the owner's", () => {
     const outcome = proposalFromIntent(
       intent({ intent: "add_idea", idea_title: "Trailer hire side business", idea_note: "check council rules" }),
       workspace(),
       TODAY
     ) as { proposal: Proposal };
-    expect(confirmationSpeech(outcome.proposal, TODAY)).toBe("Add idea: Trailer hire side business. Save it?");
+    expect(confirmationSpeech(outcome.proposal, TODAY)).toBe("Add to Front of Mind: Trailer hire side business. Save it?");
     const saved = apply(workspace(), outcome.proposal);
-    expect(saved.tasks).toHaveLength(1);
-    expect(saved.tasks[0]).toMatchObject({
-      title: "Trailer hire side business",
+    expect(saved.tasks).toHaveLength(0);
+    expect(saved.frontOfMind!.items[0]).toMatchObject({
+      text: "Trailer hire side business",
       notes: "check council rules",
-      state: "someday",
-      reviewDate: null,
-      actionConfirmed: false,
+      addedBy: "owner",
+      claudeLabel: false,
     });
-    expect(saved.tasks[0].history.at(-1)!.text).toContain("Added by voice.");
+    expect(saved.frontOfMind!.items[0].history.at(-1)!.text).toContain("By voice.");
   });
 
   it("asks when the idea is empty", () => {
