@@ -233,7 +233,7 @@ import PageNavigation from "../components/steadier/PageNavigation";
 import TaskCard, { type CardChange } from "../components/steadier/TaskCard";
 import { DatedTodayCard, SortView } from "../components/steadier/SetupViews";
 import FrontOfMindView from "../components/steadier/FrontOfMindView";
-import { addFrontOfMind, FRONT_OF_MIND_INFO_MORE, markBecameTask, newFrontOfMindId } from "../domain/frontOfMind";
+import { addFrontOfMind, FRONT_OF_MIND_INFO_MORE, FRONT_OF_MIND_PROMISE, markBecameTask, newFrontOfMindId } from "../domain/frontOfMind";
 import type { FrontOfMindItem } from "../domain/types";
 import {
   isIdea,
@@ -2416,7 +2416,7 @@ export default function Home() {
                       view === "review"
                         ? [UNPLACED_INTRO, `${REVIEW_LIST_INFO} ${REVIEW_LIST_INFO_TAIL}`, REVIEW_ACK_LINE]
                         : view === "ideas"
-                          ? [FRONT_OF_MIND_INFO_MORE]
+                          ? [FRONT_OF_MIND_INFO_MORE, ...FRONT_OF_MIND_PROMISE]
                           : view === "shopping"
                           ? [LIST_WORDING_GUIDE]
                           : view === "assets"

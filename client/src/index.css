@@ -12413,3 +12413,8 @@ a.nav-item { text-decoration: none; }
 .fm-was { font-size: 14px; }
 .fm-gone .fm-text { color: var(--muted-foreground); font-weight: 500; }
 .fm-review { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+/* Longer notes behind the i (Front of Mind's promise). */
+.page-purpose-note .page-purpose-h { margin: 14px 0 6px; font-size: 15px; font-weight: 600; }
+.page-purpose-note .page-purpose-quote { margin: 0 0 8px; padding: 2px 0 2px 12px; border-left: 3px solid var(--tp-line); font-style: italic; }
+.page-purpose-note .page-purpose-list { margin: 0 0 8px; padding-left: 20px; }
+.page-purpose-note .page-purpose-list li { margin: 2px 0; }

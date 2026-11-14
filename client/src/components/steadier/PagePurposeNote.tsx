@@ -69,10 +69,38 @@ export default function PagePurposeNote({ view, extra = [] }: Props) {
             <strong>What this page is for:</strong> <span>{purpose}</span>
           </p>
         )}
-        {extra.map(line => (
-          <p key={line}>{line}</p>
+        {extra.map((line, i) => (
+          <NoteLine key={i} line={line} />
         ))}
       </aside>
     </details>
   );
+}
+
+/**
+ * A tiny, safe subset for longer notes (plain text only, no HTML):
+ * "## " heading, "> " quote, "- " list lines, and **bold** spans.
+ */
+function NoteLine({ line }: { line: string }) {
+  if (line.startsWith("## ")) return <h3 className="page-purpose-h">{line.slice(3)}</h3>;
+  if (line.startsWith("> ")) return <blockquote className="page-purpose-quote">{inline(line.slice(2))}</blockquote>;
+  const rows = line.split("\n");
+  if (rows.length > 1 && rows.slice(1).every(r => r.startsWith("- "))) {
+    return (
+      <>
+        {rows[0] && <p>{inline(rows[0])}</p>}
+        <ul className="page-purpose-list">
+          {rows.slice(1).map((r, i) => (
+            <li key={i}>{inline(r.slice(2))}</li>
+          ))}
+        </ul>
+      </>
+    );
+  }
+  return <p>{inline(line)}</p>;
+}
+
+function inline(text: string): React.ReactNode {
+  const parts = text.split(/\*\*(.+?)\*\*/);
+  return parts.map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : <React.Fragment key={i}>{part}</React.Fragment>));
 }

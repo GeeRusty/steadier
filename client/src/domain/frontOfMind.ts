@@ -18,10 +18,52 @@ export const MAX_FRONT_OF_MIND_HISTORY = 200;
 /** "quiet Nd" after this many days without being looked at. */
 export const QUIET_DAYS = 30;
 
-/** Behind the ⓘ. (The "promise" text from Notion is added once the owner approves its wording.) */
+/** Behind the ⓘ. */
 export const FRONT_OF_MIND_INFO = "What's on your mind that isn't a task yet: ideas, concerns, things you're weighing.";
 export const FRONT_OF_MIND_INFO_MORE =
   "Add with the + button and choose Idea. Tap an item for Make it a task, Promote to Imperative (decided in the Weekly Review), Keep or Let go. Let go keeps it under Let go, so you can bring it back. Claude can add items, change wording (kept in History) and suggest Let go; only you decide.";
+
+/**
+ * "Front of Mind — The Promise Behind the List", copied from the owner's
+ * Notion page (retired) on 2026-11-14 with the four changes the owner approved:
+ * the "What Compass Does" section dropped, "in Notion" → "in Steadier" in the
+ * fetch sentence, the two "Check Front of Mind" sections under one heading,
+ * and Todoist / Notion Projects → your tasks and Projects in Steadier.
+ */
+export const FRONT_OF_MIND_PROMISE: string[] = [
+  "## Front of Mind — The Promise Behind the List",
+  "Companion note to “Compass as Front Door.” Front of Mind is not another organisational layer — it's an attention layer, a promise rather than a list.",
+  "## The Promise",
+  "> “I won't let this disappear, and I won't force you to decide what it is yet.”",
+  "## How You Use Compass",
+  "You don't think about Notion, Todoist, projects, or databases. You simply talk. For example:\n- “I'd like to visit Toronto one day.”\n- “Paul Weller is touring next year.”\n- “Maybe I should buy some land.”\n- “Remember that suspension idea.”\n- “I'd like Mum's inheritance invested, not spent.”",
+  "You don't classify it. You don't decide whether it's a task, a project, or a goal. You simply tell Compass.",
+  "## What Front of Mind Is",
+  "Front of Mind is simply a list of things that matter enough not to forget but not enough to organise. For example:\n- Toronto\n- Mum's inheritance\n- AI workshop\n- Buy land\n- Ride New Zealand\n- Paul Weller UK",
+  "Nothing more. No dates. No tasks. No projects. Just things worth remembering.",
+  "## What Compass Does With Front of Mind",
+  "Compass treats Front of Mind as part of living context. Whenever a conversation is happening, it quietly asks:\n- Does anything here relate to today's conversation?\n- Has reality changed?\n- Is one of these becoming more important?\n- Should I mention one because it's relevant?",
+  "For example, if the conversation is “I'm going to the UK next year,” Compass might notice Toronto is also on Front of Mind and ask whether it's worth combining the two trips. If an inheritance has just been finalised, Compass might notice “invest Mum's inheritance” has been sitting on Front of Mind and ask whether it's time to promote it to an active project. If Paul Weller announces Canadian tour dates, Compass might connect that back to the Toronto idea.",
+  "The person doesn't have to remember. Compass does — but only if Compass actually reads the list before answering, not just maintains it. A list only has this value if it's genuinely consulted, the same discipline problem as any other part of this system that could be built but not exercised.",
+  "## During Reality Review",
+  "Compass reviews every Front of Mind item and asks, for each:\n- Still relevant?\n- More relevant?\n- Less relevant?",
+  "Then decides: leave it on Front of Mind, promote it to a Project or Active Imperative, or retire it because it no longer matters.",
+  "## Why This Matters",
+  "This isn't another list to manage. It's permission for Compass to hold the meaningful but non-urgent parts of a life and surface them when reality makes them timely — without demanding continual review or maintenance of yet another system.",
+  "## Constitutional Rule — Living Context",
+  "Information stored within Compass only has value if it is actively consulted. Storage alone is not stewardship.",
+  "Before Compass advises, plans, prioritises or helps make decisions, it should actively consult the relevant parts of the system, including: Current Model, Active Imperatives, Front of Mind, relevant Projects, and constitutional guidance. Only after considering this living context should Compass provide advice.",
+  "Therefore, Front of Mind is not merely stored, it is consulted. There are two distinct behaviours:\n- **Consulted** during every relevant conversation.\n- **Reviewed** during the Weekly Reality Review.",
+  "This distinction is fundamental. Review keeps the list accurate. Consultation makes the list useful. A beautifully organised Current Model, Front of Mind list, or Constitution has little value if it isn't part of the reasoning process — this principle is what keeps Compass an active thinking partner rather than an archive. It's the difference between a knowledge base, which stores information, and an operating system, which consults that information before acting.",
+  "## Trigger Phrase — “Check Front of Mind”",
+  "Saying “check Front of Mind” is the spoken cue for entering planning or blue-sky thinking mode. It means: before going any further, actively fetch and read the live Front of Mind list in Steadier, then look for genuine overlap with whatever is being planned — same trip, same location, same job, same window of time — and surface anything that lines up.",
+  "This exists because consultation doesn't happen by default in ordinary conversation; it has to be invoked. The phrase is the bridge between a private thought and it becoming something Compass actually acts on, rather than just a hard copy sitting unread in Notion.",
+  "A lightweight contextual scan, not an obligation check. Given where you are or what you're doing, Compass asks: is anything on Front of Mind relevant, is there an opportunity worth mentioning, has reality changed for one of these items? It looks for connections, not requirements — nothing surfaced here is due or owed, it's simply helping you remember.",
+  "## Trigger Phrase — “Check Commitments”",
+  "Check Commitments = Commitments + Opportunities. Saying “check commitments”, typically alongside naming where you're headed or what you're about to do, consults three live sources together — your tasks (due, overdue, scheduled actions), Projects in Steadier (whether actual work is tied to that place or topic, and its own status, timing, and requirements), and Front of Mind (opportunities that aren't commitments but are relevant).",
+  "The governing question is not “what must I do” — it's: **given where I am and what I'm doing, what would be a shame to miss?**",
+  "Individually the items surfaced may not justify special attention; collectively they might. This is the river principle in practice: being physically present somewhere is a limited window. Once you've left, some opportunities disappear and can't be recovered. The purpose of Check Commitments isn't only to stop you forgetting tasks — it's to reduce the regret of missed opportunities by consulting the whole Compass system while you're still in the right place and time to act.",
+];
 
 function idToken(): string {
   return typeof globalThis.crypto?.randomUUID === "function"
