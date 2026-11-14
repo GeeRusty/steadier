@@ -24,6 +24,8 @@ interface Props {
   onSpeak: () => void;
   onRead: () => void;
   onUndo: () => void;
+  /** Page-specific rows (e.g. Export costs on Assets & Upkeep). */
+  extraRows?: { label: string; onClick: () => void }[];
 }
 
 const ALL_GUIDE =
@@ -50,6 +52,7 @@ export default function TodayCalendarMenuSheet({
   onSpeak,
   onRead,
   onUndo,
+  extraRows = [],
 }: Props) {
   const titleId = useId();
   const [guideOpen, setGuideOpen] = useState(page === "calendar");
@@ -143,6 +146,11 @@ export default function TodayCalendarMenuSheet({
             >
               <span>Undo</span><RotateCcw size={16} aria-hidden="true" />
             </button>
+            {extraRows.map(row => (
+              <button key={row.label} type="button" className="v2-menu-row" onClick={() => runAndClose(row.onClick)}>
+                <span>{row.label}</span>
+              </button>
+            ))}
             {page !== "plain" && <button
               type="button"
               className="v2-menu-row"

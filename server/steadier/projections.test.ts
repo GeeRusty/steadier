@@ -1,3 +1,4 @@
+import { newAsset } from "../../client/src/domain/assets";
 import { describe, expect, it } from "vitest";
 import type { Workspace } from "../../client/src/domain/types";
 import { presentWorkspace, workspaceSheetCsv } from "./projections";
@@ -47,25 +48,23 @@ const lists = {
   links: [],
 };
 const asset = {
-  id: "asset-1",
-  name: "Private vacuum",
-  category: "Appliance",
-  condition: "fair" as const,
-  status: "active" as const,
-  projectId: null,
-  wearLogs: [
+  ...newAsset("asset-1", "Private vacuum", "appliance", "2026-10-30T11:00:00+10:30"),
+  logs: [
     {
-      id: "wear-1",
+      id: "log-1",
+      kind: "note" as const,
       date: "2026-10-30",
-      condition: "fair" as const,
-      text: "Private condition note.",
+      reading: null,
+      cost: null,
+      by: "",
+      notes: "Private condition note.",
+      conditionAfter: "fair" as const,
+      planId: null,
       taskId: null,
       createdAt: "2026-10-30T11:00:00+10:30",
       updatedAt: "2026-10-30T11:00:00+10:30",
     },
   ],
-  createdAt: "2026-10-30T11:00:00+10:30",
-  updatedAt: "2026-10-30T11:00:00+10:30",
 };
 const person = {
   id: "person-1",

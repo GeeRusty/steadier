@@ -106,6 +106,8 @@ export interface Obligation {
   updatedAt: string;
   /** Added by Claude and not yet confirmed by the owner; absent otherwise. */
   suggestedBy?: "claude";
+  /** The asset this is for (registration, insurance); absent otherwise. */
+  assetId?: string;
 }
 export type CredentialRenewalCategory =
   | "licence"
@@ -492,7 +494,8 @@ export interface ShoppingList {
   createdAt: string;
   updatedAt: string;
 }
-export type AssetCondition =
+/** Pre-2026-11-14 shape, kept only so old backups convert (see assets.ts). */
+export type LegacyAssetCondition =
   | "unknown"
   | "good"
   | "fair"
@@ -501,9 +504,74 @@ export type AssetCondition =
 export interface AssetWearLog {
   id: string;
   date: string;
-  condition: AssetCondition;
+  condition: LegacyAssetCondition;
   text: string;
-  /** One explicitly confirmed follow-up task; null means not linked. */
+  taskId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface LegacyAsset {
+  id: string;
+  name: string;
+  category: string;
+  condition: LegacyAssetCondition;
+  status: "active" | "retired";
+  projectId: string | null;
+  wearLogs: AssetWearLog[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AssetType = "vehicle" | "place" | "equipment" | "appliance";
+/** "unchecked" = not yet checked; shown without a chip. */
+export type AssetCondition = "unchecked" | "good" | "fair" | "poor" | "needs-attention";
+export type AssetMeterUnit = "km" | "h";
+export type AssetLogKind = "service" | "repair" | "inspection" | "note";
+export interface AssetDocument {
+  label: string;
+  url: string;
+}
+export interface AssetReading {
+  id: string;
+  date: string;
+  value: number;
+  createdAt: string;
+}
+export interface AssetServicePlan {
+  id: string;
+  name: string;
+  everyMonths: number | null;
+  everyMeter: number | null;
+  /** Starting point when it has never been logged here. */
+  startDate: string | null;
+  startReading: number | null;
+  /** Lists template offered when the service is due. */
+  listTemplateId: string | null;
+  /** The task created from Upkeep due for the current occurrence. */
+  taskId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface AssetRevisit {
+  id: string;
+  what: string;
+  by: string;
+  taskId: string | null;
+  createdAt: string;
+}
+export interface AssetLogEntry {
+  id: string;
+  kind: AssetLogKind;
+  date: string;
+  /** Meter reading at the time (km or h), optional. */
+  reading: number | null;
+  /** Cost in cents, optional. */
+  cost: number | null;
+  by: string;
+  notes: string;
+  conditionAfter: AssetCondition | null;
+  /** Service entries: which plan this was. */
+  planId: string | null;
   taskId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -511,11 +579,26 @@ export interface AssetWearLog {
 export interface Asset {
   id: string;
   name: string;
-  category: string;
+  type: AssetType;
   condition: AssetCondition;
   status: "active" | "retired";
+  make: string;
+  model: string;
+  serial: string;
+  purchaseDate: string | null;
+  /** Cents. */
+  purchasePrice: number | null;
+  warrantyEnd: string | null;
+  documents: AssetDocument[];
+  pillarId: string | null;
   projectId: string | null;
-  wearLogs: AssetWearLog[];
+  /** The Place asset this one is at (one level). */
+  placeId: string | null;
+  meter: AssetMeterUnit | null;
+  readings: AssetReading[];
+  plans: AssetServicePlan[];
+  revisits: AssetRevisit[];
+  logs: AssetLogEntry[];
   createdAt: string;
   updatedAt: string;
 }

@@ -547,6 +547,27 @@ export default function ObligationsView({
                 ))}
               </select>
             </label>
+            {(workspace.assets ?? []).some(a => a.status === "active" || a.id === form.assetId) && (
+              <label className="field">
+                For an asset (optional)
+                <select
+                  value={form.assetId ?? ""}
+                  onChange={event =>
+                    change("assetId", event.target.value || undefined)
+                  }
+                  disabled={readOnly}
+                >
+                  <option value="">Not for an asset</option>
+                  {(workspace.assets ?? [])
+                    .filter(a => a.status === "active" || a.id === form.assetId)
+                    .map(a => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            )}
             <label className="field">
               Amount due (optional note)
               <input

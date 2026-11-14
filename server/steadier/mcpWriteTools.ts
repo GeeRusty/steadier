@@ -8,7 +8,8 @@ import {
   imperativeMapLinks,
   imperativesForGoal,
 } from "../../client/src/domain/mapPages";
-import { toAdelaideIso } from "../../shared/time";
+import { adelaideDate, toAdelaideIso } from "../../shared/time";
+import { assetsForConnector } from "../../client/src/domain/assets";
 import {
   catchAllWatch,
   orphanReport,
@@ -737,6 +738,27 @@ export function registerBackupReadTools(
         });
       } catch {
         return failure("UNAVAILABLE", "Lists are unavailable right now.");
+      }
+    }
+  );
+
+  server.registerTool(
+    "read_my_life_assets",
+    {
+      title: "Read My Life assets and upkeep",
+      description: `Read the owner's physical assets (vehicles, places, equipment, appliances): name, type, condition, active or retired, the place each is at, the latest meter reading, service plans with last done and next due (by date and/or km or hours, whichever comes first; state not-started, ok, due or overdue), revisits (a condition check with a revisit-by date), and the type and date of the five most recent log entries. upkeepDue lists what is due now, the same list the owner sees as "Upkeep due" in Needs attention, including "Update reading" when a vehicle or equipment meter reading is over 60 days old. Costs, prices, serial numbers, documents and notes are not shared. Read only: you cannot change assets. ${UNTRUSTED_DATA_RULE}`,
+      inputSchema: fromJsonSchema({ type: "object", properties: {}, additionalProperties: false }),
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z.object({}).strict().safeParse(input ?? {});
+      if (!parsed.success) return invalid(parsed.error);
+      try {
+        const stored = await changes.readWorkspace(userId);
+        if (!stored) return failure("NO_WORKSPACE", "There is no shared My Life workspace yet.");
+        return result({ ...assetsForConnector(stored.workspace, adelaideDate()), dataNotice: UNTRUSTED_DATA_RULE });
+      } catch {
+        return failure("UNAVAILABLE", "Assets are unavailable right now.");
       }
     }
   );

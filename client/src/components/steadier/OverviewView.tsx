@@ -15,6 +15,8 @@ export interface AttentionItem {
   label: string;
   count: number;
   onOpen: () => void;
+  /** When present, the row opens in place to show this (Upkeep due). */
+  detail?: ReactNode;
 }
 
 export interface CountRow {
@@ -58,6 +60,7 @@ function Rows({ rows }: { rows: { key: string; label: string; value: string; onO
 
 export default function OverviewView(p: Props) {
   const [info, setInfo] = useState(false);
+  const [openRow, setOpenRow] = useState<string | null>(null);
   const clock = adelaideClock();
   const total = p.attention.reduce((sum, item) => sum + item.count, 0);
 
@@ -116,11 +119,33 @@ export default function OverviewView(p: Props) {
         </p>
       )}
       {total > 0 ? (
-        <Rows
-          rows={p.attention
+        <div className="ov-rows">
+          {p.attention
             .filter(item => item.count > 0)
-            .map(item => ({ key: item.key, label: item.label, value: String(item.count), onOpen: item.onOpen }))}
-        />
+            .map(item =>
+              item.detail ? (
+                <React.Fragment key={item.key}>
+                  <button
+                    type="button"
+                    className="ov-row"
+                    aria-expanded={openRow === item.key}
+                    onClick={() => setOpenRow(openRow === item.key ? null : item.key)}
+                  >
+                    <span className="ov-row-label">{item.label}</span>
+                    <span className="ov-row-value">{item.count}</span>
+                    <ChevronRight size={16} aria-hidden="true" className={openRow === item.key ? "ov-row-open" : undefined} />
+                  </button>
+                  {openRow === item.key && <div className="ov-row-detail">{item.detail}</div>}
+                </React.Fragment>
+              ) : (
+                <button key={item.key} type="button" className="ov-row" onClick={item.onOpen}>
+                  <span className="ov-row-label">{item.label}</span>
+                  <span className="ov-row-value">{item.count}</span>
+                  <ChevronRight size={16} aria-hidden="true" />
+                </button>
+              )
+            )}
+        </div>
       ) : (
         <p className="tp-meta ov-quiet">Nothing needs attention.</p>
       )}

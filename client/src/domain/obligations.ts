@@ -173,8 +173,10 @@ export function obligationsField(
     if (hasSuggested && raw.suggestedBy !== "claude") {
       fail(`${label} suggestion source must be claude.`);
     }
+    const hasAsset = Object.prototype.hasOwnProperty.call(raw, "assetId");
     const shape = { ...raw };
     delete shape.suggestedBy;
+    delete shape.assetId;
     exactKeys(shape, OBLIGATION_KEYS, label);
     if (
       typeof raw.kind !== "string" ||
@@ -269,6 +271,7 @@ export function obligationsField(
       createdAt,
       updatedAt,
       ...(hasSuggested ? { suggestedBy: "claude" as const } : {}),
+      ...(hasAsset ? { assetId: validId(raw.assetId, `${label} asset ID`) } : {}),
     };
   });
   const ids = new Set<string>();
@@ -584,6 +587,7 @@ export function saveObligation(
   };
   // Saving it yourself is the confirmation of a Claude suggestion.
   delete candidate.suggestedBy;
+  if (!candidate.assetId || !(workspace.assets ?? []).some(a => a.id === candidate.assetId)) delete candidate.assetId;
   if (status === "active") {
     if (!candidate.link)
       throw new Error("Choose a Pillar or Imperative before activation.");

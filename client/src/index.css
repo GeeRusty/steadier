@@ -12363,3 +12363,25 @@ a.nav-item { text-decoration: none; }
 .pl-title { flex: 1 1 auto; }
 .pl-add { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .pl-add select { min-height: 44px; border: 1px solid var(--tp-btn-line); border-radius: 10px; padding: 0 10px; font: inherit; background: var(--card); color: var(--tp-strong); max-width: 100%; }
+
+/* Assets & Upkeep: same language as Lists (cards, grey chips, ⋯ menus). */
+.av-chips { align-items: baseline; }
+.av-strong { font-weight: 600; flex: 1 1 auto; }
+.av-plan { display: flex; flex-direction: column; gap: 4px; }
+.av-meter { align-items: baseline; }
+.av-details { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; font-size: 14px; }
+.av-details dt { color: var(--muted-foreground); }
+.av-details dd { margin: 0; overflow-wrap: anywhere; }
+.av-inline-link { border: 0; background: none; padding: 0; font: inherit; color: var(--primary); cursor: pointer; text-align: left; min-height: 32px; align-self: flex-start; }
+.av-obligation { min-height: 44px; }
+.av-timeline { list-style: none; margin: 0 0 0 6px; padding: 0 0 0 12px; border-left: 2px solid var(--tp-line); display: flex; flex-direction: column; gap: 10px; }
+.av-timeline li { display: flex; flex-direction: column; gap: 2px; }
+.av-timeline .lv-row-top { justify-content: space-between; align-items: center; }
+.av-notes { font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.av-problem { color: var(--tp-red); }
+.av-retire { min-height: 44px; margin-top: 12px; border: 1px dashed var(--tp-btn-line); border-radius: 10px; background: transparent; color: var(--muted-foreground); font: inherit; cursor: pointer; }
+.av-log-form .lv-inline-form .lv-field, .lv-form .lv-inline-form .lv-field { flex: 1 1 140px; }
+.uk-list { list-style: none; margin: 0; padding: 0 0 8px 12px; border-left: 2px solid var(--tp-line); display: flex; flex-direction: column; gap: 10px; }
+.uk-item { display: flex; flex-direction: column; gap: 4px; }
+.ov-row-detail { padding: 4px 14px 10px; border-bottom: 1px solid var(--tp-line); }
+.ov-row-open { transform: rotate(90deg); }

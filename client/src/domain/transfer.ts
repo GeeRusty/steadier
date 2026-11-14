@@ -13,16 +13,7 @@ import { MAX_PLACES, MAX_RADIUS, MIN_RADIUS, prunePlaceLinks } from "./places";
 import { obligationsField, taskObligationField } from "./obligations";
 import { MAX_EVIDENCE_ENTRIES, MAX_EVIDENCE_TEXT_LENGTH } from "./evidence";
 import { MAX_SITE_CARDS, isCanonicalPublicHttpsUrl } from "./siteCards";
-import {
-  isAssetCondition,
-  MAX_ASSETS,
-  MAX_ASSET_CATEGORY_LENGTH,
-  MAX_ASSET_LOG_TEXT_LENGTH,
-  MAX_ASSET_LOGS_PER_ASSET,
-  MAX_ASSET_LOGS_TOTAL,
-  MAX_ASSET_NAME_LENGTH,
-  pruneAssetLinks,
-} from "./assets";
+import { pruneAssetLinks, validateAssets } from "./assets";
 import {
   MAX_SHOPPING_ITEMS_PER_LIST,
   MAX_SHOPPING_ITEMS_TOTAL,
@@ -60,8 +51,6 @@ import type {
   SiteCard,
   ShoppingList,
   ListsStore,
-  Asset,
-  AssetWearLog,
   WorkspaceContact,
   Workspace,
   WorkspaceEvidence,
@@ -1169,126 +1158,6 @@ function shoppingListsField(value: unknown): ShoppingList[] {
   });
 }
 
-function assetsField(value: unknown): Asset[] {
-  if (!Array.isArray(value) || value.length > MAX_ASSETS) {
-    fail(`assets must be an array of at most ${MAX_ASSETS} entries.`);
-  }
-  const assetIds = new Set<string>();
-  const logIds = new Set<string>();
-  let totalLogs = 0;
-  return value.map((rawAsset, assetIndex) => {
-    const label = `asset ${assetIndex + 1}`;
-    if (!isRecord(rawAsset)) fail(`${label} is not an object.`);
-    hasExactKeys(
-      rawAsset,
-      [
-        "id",
-        "name",
-        "category",
-        "condition",
-        "status",
-        "projectId",
-        "wearLogs",
-        "createdAt",
-        "updatedAt",
-      ],
-      label
-    );
-    const id = stringField(rawAsset, "id", 128, { nonEmpty: true, id: true });
-    if (assetIds.has(id)) fail("asset IDs must be unique.");
-    assetIds.add(id);
-    const name = stringField(rawAsset, "name", MAX_ASSET_NAME_LENGTH, {
-      nonEmpty: true,
-    });
-    const category = stringField(
-      rawAsset,
-      "category",
-      MAX_ASSET_CATEGORY_LENGTH
-    );
-    const condition = rawAsset.condition;
-    if (!isAssetCondition(condition)) fail(`${label} condition is invalid.`);
-    const projectId =
-      rawAsset.projectId === null
-        ? null
-        : stringField(rawAsset, "projectId", 128, {
-            nonEmpty: true,
-            id: true,
-          });
-    if (
-      !Array.isArray(rawAsset.wearLogs) ||
-      rawAsset.wearLogs.length > MAX_ASSET_LOGS_PER_ASSET
-    ) {
-      fail(
-        `${label} wearLogs must contain at most ${MAX_ASSET_LOGS_PER_ASSET} entries.`
-      );
-    }
-    totalLogs += rawAsset.wearLogs.length;
-    if (totalLogs > MAX_ASSET_LOGS_TOTAL) {
-      fail(`assets may contain at most ${MAX_ASSET_LOGS_TOTAL} wear logs.`);
-    }
-    const wearLogs: AssetWearLog[] = rawAsset.wearLogs.map(
-      (rawLog, logIndex) => {
-        const logLabel = `${label} wear log ${logIndex + 1}`;
-        if (!isRecord(rawLog)) fail(`${logLabel} is not an object.`);
-        hasExactKeys(
-          rawLog,
-          [
-            "id",
-            "date",
-            "condition",
-            "text",
-            "taskId",
-            "createdAt",
-            "updatedAt",
-          ],
-          logLabel
-        );
-        const logId = stringField(rawLog, "id", 128, {
-          nonEmpty: true,
-          id: true,
-        });
-        if (logIds.has(logId)) fail("asset wear-log IDs must be unique.");
-        logIds.add(logId);
-        const logCondition = rawLog.condition;
-        if (!isAssetCondition(logCondition)) {
-          fail(`${logLabel} condition is invalid.`);
-        }
-        const taskId =
-          rawLog.taskId === null
-            ? null
-            : stringField(rawLog, "taskId", 128, {
-                nonEmpty: true,
-                id: true,
-              });
-        const date = stringField(rawLog, "date", 10, { nonEmpty: true });
-        if (!isDate(date)) fail(`${logLabel} date is invalid.`);
-        return {
-          id: logId,
-          date,
-          condition: logCondition,
-          text: stringField(rawLog, "text", MAX_ASSET_LOG_TEXT_LENGTH, {
-            nonEmpty: true,
-          }),
-          taskId,
-          createdAt: instantField(rawLog, "createdAt"),
-          updatedAt: instantField(rawLog, "updatedAt"),
-        };
-      }
-    );
-    return {
-      id,
-      name,
-      category,
-      condition,
-      status: enumField(rawAsset, "status", ["active", "retired"] as const),
-      projectId,
-      wearLogs,
-      createdAt: instantField(rawAsset, "createdAt"),
-      updatedAt: instantField(rawAsset, "updatedAt"),
-    };
-  });
-}
-
 function peopleField(value: unknown): WorkspaceContact[] {
   if (!Array.isArray(value) || value.length > MAX_PEOPLE) {
     fail(`people must be an array of at most ${MAX_PEOPLE} entries.`);
@@ -1788,7 +1657,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
   const linkCheckHolds = hasLinkCheckHolds
     ? linkCheckHoldsField(value.linkCheckHolds)
     : undefined;
-  const assets = hasAssets ? assetsField(value.assets) : undefined;
+  const assets = hasAssets ? validateAssets(value.assets) : undefined;
   const people = hasPeople ? peopleField(value.people) : undefined;
   const nextThing = hasNextThing
     ? nextThingField(value.nextThing, tasks)

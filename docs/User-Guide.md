@@ -42,7 +42,7 @@ The **Today** tab is for doing. It uses three words only: **Now · Next · Later
 
 ### Overview
 Overview is for seeing, top to bottom:
-- **Needs attention (n):** one row per kind (Review due, Link check, Weekly review, Sort, Unplaced, Past due, Claude requests). Only rows above zero show, and the total matches Today's.
+- **Needs attention (n):** one row per kind (Review due, Link check, Weekly review, Sort, Unplaced, Upkeep due, Past due, Claude requests). Upkeep due opens in place to list each item. Only rows above zero show, and the total matches Today's.
 - **Next thing:** your chosen one, and the Pool to choose from (Not now, Still on and Drop work as before).
 - **Today:** booked count and free time, with a thin strip of your day and the red now mark. Tap it for Calendar.
 - **Moving:** up to three active projects with their signals, then **All projects**.
@@ -126,6 +126,7 @@ Bills, licences, renewals, insurance and tax dates, with lead time to prepare. I
 - **From Claude:** Claude can suggest an obligation (`add_my_life_obligation`). It arrives as a draft marked **Suggested by Claude · confirm**, with no reminder until you save it yourself.
 - **Hide amounts from AI** (on by default): Claude can't see or add amounts. Scanned amounts still come from the cleaned text, so check them.
 - There's no fortnightly option; a fortnightly bill is set to Does not repeat.
+- **For an asset:** registration, insurance and the like can be linked to an asset (Freelander 2, the shack). They stay here and show on the asset's page; nothing is copied.
 
 ### Lists
 Reusable checklists: packing, leaving the shack, the weekly shop. (Shopping Lists became Lists on 14 Nov 2026; every list, item and tick came across.)
@@ -138,6 +139,20 @@ Reusable checklists: packing, leaving the shack, the weekly shop. (Shopping List
 - **Attach a list to a task or project** from its sheet or page (**+ Attach or link a list**). An attached list offers **Start the list too?** on the Now card, and its progress shows on the card as a grey chip ("Kingston packing 4/9"). If the card already has two chips, the progress shows as a quiet line inside the card instead, so "review due" and "moved" always stay. **Link only** just points at the list. Notes can link a list (the list icon on a note).
 - Voice ("add eggs to the shopping list") and Paste anything add to the list's run after you confirm. Claude can only **suggest** items: they show dashed with **Confirm** or **Remove** until you decide.
 - Wording tips are behind the **i**: state the result ("Gas – off"), not the action ("Check gas"). Read aloud, Undo and the theme are in the ⋮ menu.
+
+### Assets & Upkeep
+Physical things you look after: vehicles, places, equipment and appliances. (Assets & Wear Logs became Assets & Upkeep on 14 Nov 2026; the Freelander 2 record came across as a Vehicle with everything kept.)
+- **The list** is grouped by type. Each card shows the name, a condition chip (Good, Fair, Poor, Needs attention; none until it's checked), one due chip when something is due, what's next and the last service. Retired assets are folded at the bottom.
+- **Tap a card** for its page: meter, service plans, revisit, what a place holds, linked Obligations, and a history of log entries and readings with this year's cost.
+- **Meter:** odometer (km) or engine hours, with dated readings. Any log entry can carry a reading.
+- **Service plan:** a name and every so many months and/or km (or hours), whichever comes first. It shows last done and next due. Attach a list (say, "Car service drop-off") and a task made for that service gets the list attached, so starting it offers a run.
+- **Revisit:** something to check by a date (roof and gutters by 30 Nov). **Record check** logs an Inspection with the condition you found, and can set the next revisit.
+- **Log entry:** Service, Repair, Inspection or Note, with date, reading, cost, who did it, notes and condition after.
+- **Places hold assets** (the shack holds the hot water system). A place's history includes what it holds.
+- **Edit** is on the page; **Delete** is behind **⋯**. **Retire** is the quiet dashed button at the bottom and keeps the history. Retiring a place asks whether to retire what it holds too (default: keep them active).
+- **Upkeep due:** a service due within 14 days or 500 km (10 h), a revisit due within 14 days, or a vehicle or equipment reading over 60 days old shows once in Needs attention and in the Weekly Review's Action step. Nothing else reminds you. **Create task** opens an editable draft linked to the asset; nothing is saved until you confirm. When the task is done, **Log it done** so the next one counts from then.
+- **Costs:** the ⋮ menu has **Export costs (CSV)**: total per asset per year.
+- Fuel, photos and warranty alerts aren't tracked; the warranty end date just shows under Details.
 
 ### Notes / Daily Log
 Notes to yourself, one or more per day. A note never becomes a task unless you choose **convert to task**. Notes sync with the rest of Steadier and are included in backups.
@@ -194,7 +209,7 @@ In any chat you can say "add that as an idea" and Claude puts it on your Ideas s
 
 Claude can read your Link check. It can suggest a link between a task or project and an Imperative, but the link waits for your **Confirm**. Only you can choose Not yet, make a project Support, or step an Imperative down.
 
-Claude can read and change your Steadier when you ask it to in a chat. For example: "What's on my calendar this week?", "Find duplicate tasks", "Add milk to the shopping list" (it shows dashed on the list until you confirm it), or "What did I note about the car?" Claude always asks before changing anything, and Steadier saves a full backup before every change. Connect it in Claude under **Settings → Connectors**.
+Claude can read and change your Steadier when you ask it to in a chat. For example: "What's on my calendar this week?", "Find duplicate tasks", "Add milk to the shopping list" (it shows dashed on the list until you confirm it), or "What did I note about the car?" Claude can also read your assets (names, condition, next due, last done, and the type and date of recent entries, never costs, prices, serial numbers, documents or notes) so a voice review can mention upkeep; it can't change them. Claude always asks before changing anything, and Steadier saves a full backup before every change. Connect it in Claude under **Settings → Connectors**.
 
 ## How do I…
 

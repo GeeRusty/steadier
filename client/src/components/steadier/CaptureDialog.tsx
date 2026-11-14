@@ -892,7 +892,7 @@ export default function CaptureDialog({
               ? "Voice starts only when you ask. Your browser may send speech to its recognition service. The editable transcript remains a draft until you choose Create task."
               : manualReviewOnly
                 ? sourceAlreadyShared
-                  ? "Voice starts only when you ask. Your browser may send speech to its recognition service. The source Wear Log stays in the shared workspace; if you choose Create task, its editable copy is saved as ordinary task content and follows the usual connector visibility."
+                  ? "Voice starts only when you ask. Your browser may send speech to its recognition service. The asset record stays in the shared workspace; if you choose Create task, its editable copy is saved as ordinary task content and follows the usual connector visibility."
                   : "Voice starts only when you ask. Your browser may send speech to its recognition service. The source note stays in this browser unless you choose Create task; then its editable copy is saved as ordinary task content and follows the usual connector visibility."
                 : "Voice starts only when you ask. Your browser may send speech to its recognition service and may need internet access. Typed titles may autosave as drafts; browser and native voice transcripts stay editable and unsaved until you choose Create task. Nothing files automatically. Check the sync notice if typed draft saving is unavailable."}
           </p>

@@ -1,3 +1,4 @@
+import { ASSETS_INFO } from "../../domain/assets";
 import React from "react";
 import { Info } from "lucide-react";
 import type { View } from "../../domain/types";
@@ -33,7 +34,7 @@ export const SPECIALIST_PAGE_PURPOSES: Partial<Record<View, string>> = {
   evidence: "Add dated evidence to a task or project; evidence alone never marks it Done.",
   sites: "Keep reference cards and links for useful places; links open only when you choose.",
   shopping: "Reusable lists. Each use is a run with its own ticks and date; the list itself is never ticked. Attach one to a task or project.",
-  assets: "Track assets and dated wear or maintenance logs when care happens.",
+  assets: ASSETS_INFO,
   pipeline: "Review projects and linked tasks together to follow work through stages.",
   routine: "Run an existing repeating task checklist; it does not create a parallel task system.",
   yearWheel: "Orient around seasonal reviews, tasks, projects and obligations—not daily scheduling.",

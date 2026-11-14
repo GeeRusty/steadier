@@ -74,6 +74,12 @@ No other colours carry meaning.
 - **Progress on a parent card** is a grey chip when the card has room; with two chips already, a quiet line inside the card. It never replaces "review due" or "moved".
 - **Claude's items are dashed** (suggested) until the owner confirms them.
 
+## Assets & Upkeep
+- **Grouped by type**, counts singular or plural ("Vehicle (1)").
+- **Two chips at most:** condition (none until checked), plus one due chip (service due/overdue, revisit due/overdue, reading due). Everything else is plain text.
+- **Edit is a button, Delete is behind ⋯, Retire is a dashed quiet button at the bottom.**
+- **No second reminder system:** due upkeep is one "Upkeep due" row in Needs attention (counted once per item) and the Weekly Review's Action step. Create task only opens a draft.
+
 ## Standing rules for anyone (or any AI) working on Steadier
 - **Never sign in as the owner or create access passes** (session tokens, keys, login links) without asking the owner first, even temporarily and even for a screenshot.
 - **Never deploy with a failing test.** Fix first, run the full test suite green, then deploy.

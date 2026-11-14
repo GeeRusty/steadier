@@ -1,4 +1,5 @@
 import { slippedAgainUntouched } from "../../domain/todayPlan";
+import { upkeepDue } from "../../domain/assets";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
@@ -57,6 +58,8 @@ interface Props {
   readOnly: boolean;
   /** The page's one Read aloud (in the ⋮ menu) calls this to read the current step. */
   readRef?: React.MutableRefObject<(() => void) | null>;
+  /** Upkeep due rows (the same list as Needs attention), shown in the Action step. */
+  upkeep?: React.ReactNode;
 }
 
 /** Notes moved off the steps; they sit behind the page's info icon, word for word. */
@@ -132,6 +135,7 @@ export default function WeeklyReviewFlow({
   voice,
   readOnly,
   readRef,
+  upkeep,
 }: Props) {
   const today = adelaideClock().date;
   const status = useMemo(
@@ -487,9 +491,11 @@ export default function WeeklyReviewFlow({
       </>
     );
   } else if (step === "Action") {
+    const upkeepItems = upkeepDue(workspace, today);
     spokenStep = [
       "Action. Is each commitment done?",
       ...commitments.map(t => `${t.title}.`),
+      ...(upkeepItems.length ? [`Upkeep due: ${upkeepItems.map(u => `${u.assetName}, ${u.what}`).join("; ")}.`] : []),
     ].join(" ");
     body = (
       <>
@@ -549,6 +555,12 @@ export default function WeeklyReviewFlow({
                 );
               })}
             </ul>
+          </>
+        )}
+        {upkeep && upkeepItems.length > 0 && (
+          <>
+            <h3>Upkeep due ({upkeepItems.length})</h3>
+            {upkeep}
           </>
         )}
       </>

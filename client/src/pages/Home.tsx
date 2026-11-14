@@ -64,7 +64,7 @@ import {
   type TaskAutosaveCloudState,
   type TaskAutosaveSaveResult,
 } from "../domain/taskAutosave";
-import { linkAssetWearLogTask } from "../domain/assets";
+import { ASSETS_INFO_MORE, linkUpkeepTask, shortDate, upkeepDue, type UpkeepItem } from "../domain/assets";
 import { setRoutineChecklistItem } from "../domain/routineRunner";
 import {
   appendEvidenceEntry,
@@ -214,8 +214,9 @@ import EvidenceFeedView from "../components/steadier/EvidenceFeedView";
 import SiteCardsView from "../components/steadier/SiteCardsView";
 import ListsView from "../components/steadier/ListsView";
 import ParentLists from "../components/steadier/ParentLists";
-import { LIST_WORDING_GUIDE } from "../domain/lists";
-import AssetsView from "../components/steadier/AssetsView";
+import { addLink, LIST_WORDING_GUIDE, linksFor, newListLinkId } from "../domain/lists";
+import AssetsView, { downloadAssetCosts, type AssetFocus } from "../components/steadier/AssetsView";
+import UpkeepDueList, { type UpkeepAction } from "../components/steadier/UpkeepDueList";
 import WorkPipelineView from "../components/steadier/WorkPipelineView";
 import RoutineRunnerView from "../components/steadier/RoutineRunnerView";
 import YearWheelView from "../components/steadier/YearWheelView";
@@ -268,7 +269,7 @@ const nav: { id: View; title: string; Icon: typeof CircleDot }[] = [
   { id: "evidence", title: "Evidence Feed", Icon: Activity },
   { id: "sites", title: "Site Cards", Icon: Globe },
   { id: "shopping", title: "Lists", Icon: ListChecks },
-  { id: "assets", title: "Assets & Wear Logs", Icon: Package },
+  { id: "assets", title: "Assets & Upkeep", Icon: Package },
   { id: "pipeline", title: "Work Pipeline", Icon: Layers3 },
   { id: "routine", title: "Routine Runner", Icon: RefreshCw },
   { id: "yearWheel", title: "Year Wheel", Icon: CalendarDays },
@@ -444,8 +445,12 @@ export default function Home() {
   const [captureManualReviewOnly, setCaptureManualReviewOnly] = useState(false);
   const [captureAssetSource, setCaptureAssetSource] = useState<{
     assetId: string;
-    logId: string;
+    kind: "service" | "revisit";
+    refId: string;
+    templateId: string | null;
   } | null>(null);
+  const assetsReadRef = useRef<(() => string) | null>(null);
+  const [assetFocus, setAssetFocus] = useState<AssetFocus | null>(null);
   const [focusOpen, setFocusOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [screenMenu, setScreenMenu] = useState<"app" | "page" | null>(null);
@@ -487,8 +492,8 @@ export default function Home() {
     setEditing(null);
     setTaskPanelMode("view");
   };
-  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects" || view === "review" || view === "weekly" || view === "shopping";
-  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : view === "review" || view === "weekly" || view === "shopping" ? "plain" : "today";
+  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects" || view === "review" || view === "weekly" || view === "shopping" || view === "assets";
+  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : view === "review" || view === "weekly" || view === "shopping" || view === "assets" ? "plain" : "today";
   const changeAppearance = (next: Appearance) => {
     setAppearance(next);
     persistAppearance(next);
@@ -1548,7 +1553,7 @@ export default function Home() {
     initialText = "",
     initialNotes = "",
     manualReviewOnly = false,
-    assetSource: { assetId: string; logId: string } | null = null
+    assetSource: typeof captureAssetSource = null
   ) => {
     setCaptureProjectId(projectId);
     setCaptureInitialText(initialText);
@@ -1568,44 +1573,36 @@ export default function Home() {
         : firstLine;
     openCapture(false, "", suggestion || "Task from note", sourceNote, true);
   };
-  const openAssetLogAsTask = (
-    assetId: string,
-    logId: string,
-    sourceText: string
-  ) => {
-    const asset = store.workspace.assets?.find(item => item.id === assetId);
-    const log = asset?.wearLogs.find(item => item.id === logId);
-    if (!asset || !log) {
-      toast.error(
-        "That Asset log changed. Refresh the view before proposing a Task."
-      );
+  /** Upkeep due → an editable task draft linked to the asset; nothing saved until confirmed. */
+  const openUpkeepTask = (item: UpkeepItem) => {
+    if (item.kind === "reading" || !item.refId) return;
+    const asset = store.workspace.assets?.find(a => a.id === item.assetId);
+    if (!asset) {
+      toast.error("That asset changed. Refresh the view before proposing a task.");
       return;
     }
-    const linkedTask = log.taskId
-      ? store.workspace.tasks.find(task => task.id === log.taskId)
-      : undefined;
-    if (linkedTask) {
-      openTaskView(linkedTask);
+    const linked = item.taskId ? store.workspace.tasks.find(t => t.id === item.taskId) : undefined;
+    if (linked) {
+      openTaskView(linked);
       return;
     }
-    const firstLine = sourceText.trim().split(/\r?\n/)[0]?.trim() || "";
-    const suggestion =
-      firstLine.length > 160
-        ? `${firstLine.slice(0, 157).trimEnd()}…`
-        : firstLine;
-    const linkedProjectId =
-      asset.projectId &&
-      store.workspace.projects.some(project => project.id === asset.projectId)
-        ? asset.projectId
-        : "";
+    const projectId =
+      asset.projectId && store.workspace.projects.some(p => p.id === asset.projectId) ? asset.projectId : "";
     openCapture(
       false,
-      linkedProjectId,
-      suggestion || `Follow up on ${asset.name}`,
-      sourceText,
+      projectId,
+      // "by 25 Nov" becomes the draft's deadline (the capture parser reads it); a passed date isn't added.
+      `${asset.name}: ${item.what}${item.dueDate && item.dueDate >= adelaideClock().date ? ` by ${shortDate(item.dueDate, adelaideClock().date)}` : ""}`,
+      `Upkeep due: ${item.detail}.`,
       true,
-      { assetId, logId }
+      { assetId: asset.id, kind: item.kind, refId: item.refId, templateId: item.listTemplateId }
     );
+  };
+  /** Open an asset on Assets & Upkeep, optionally with a form ready. */
+  const openAsset = (item: UpkeepItem, action?: UpkeepAction) => {
+    closeTaskPanel();
+    setAssetFocus({ assetId: item.assetId, action, refId: item.refId });
+    navigate("assets");
   };
   const saveTaskDraft = (
     draft: Task,
@@ -1774,46 +1771,30 @@ export default function Home() {
       }
       let next = applied.workspace;
       if (captureAssetSource) {
-        const log = w.assets
-          ?.find(asset => asset.id === captureAssetSource.assetId)
-          ?.wearLogs.find(item => item.id === captureAssetSource.logId);
-        if (
-          !log ||
-          (log.taskId &&
-            log.taskId !== task.id &&
-            w.tasks.some(item => item.id === log.taskId))
-        ) {
+        const source = captureAssetSource;
+        const asset = w.assets?.find(a => a.id === source.assetId);
+        const ref =
+          source.kind === "service"
+            ? asset?.plans.find(p => p.id === source.refId)
+            : asset?.revisits.find(r => r.id === source.refId);
+        if (!ref || (ref.taskId && ref.taskId !== task.id && w.tasks.some(t => t.id === ref.taskId))) {
           assetLinkFailure = true;
           failureRef.current = {
             accepted: false,
             reason: "stale",
             message:
-              "The Asset log changed while the draft was open. No task was saved; review the current log and try again.",
+              "The asset changed while the draft was open. No task was saved; check Upkeep due and try again.",
           };
           return w;
         }
-        next = linkAssetWearLogTask(
-          next,
-          captureAssetSource.assetId,
-          captureAssetSource.logId,
-          task.id,
-          adelaideTimestamp()
-        );
-        const linked = next.assets
-          ?.find(asset => asset.id === captureAssetSource.assetId)
-          ?.wearLogs.some(
-            item =>
-              item.id === captureAssetSource.logId && item.taskId === task.id
-          );
-        if (!linked) {
-          assetLinkFailure = true;
-          failureRef.current = {
-            accepted: false,
-            reason: "stale",
-            message:
-              "The Asset log could not be linked safely. No task was saved; review the current log and try again.",
-          };
-          return w;
+        next = linkUpkeepTask(next, source.assetId, source.kind, source.refId, task.id, adelaideTimestamp());
+        // The plan's list is attached to the task, so starting it offers a run.
+        if (
+          source.templateId &&
+          next.lists?.templates.some(t => t.id === source.templateId) &&
+          !linksFor(next, "task", task.id).some(l => l.templateId === source.templateId)
+        ) {
+          next = addLink(next, newListLinkId(), source.templateId, { kind: "task", id: task.id }, "attached", adelaideTimestamp());
         }
       }
       return next;
@@ -1823,7 +1804,7 @@ export default function Home() {
     if (!accepted || assetLinkFailure) {
       const failure = failureRef.current;
       const message = failure?.message ?? (assetLinkFailure
-        ? "The Asset log changed while the draft was open. No task was saved; review the current log and try again."
+        ? "The asset changed while the draft was open. No task was saved; check Upkeep due and try again."
         : storeRef.current.cloud.status === "conflict"
           ? "Not saved. Resolve the shared-workspace conflict before trying again; your draft is preserved."
           : storeRef.current.cloud.error ||
@@ -1963,6 +1944,11 @@ export default function Home() {
       else weeklyReadRef.current?.();
       return;
     }
+    if (view === "assets") {
+      const text = assetsReadRef.current?.();
+      if (text) readOutLoud(text);
+      return;
+    }
     if (view === "shopping") {
       const text = listsReadRef.current?.();
       if (text) readOutLoud(text);
@@ -2056,6 +2042,25 @@ export default function Home() {
       { key: "weekly", label: "Weekly review", count: reviewStatus(store.workspace, clock.date).due ? 1 : 0, onOpen: () => navigate("weekly") },
       { key: "sort", label: "Sort (not set up)", count: notReadyTasks(tasks).length, onOpen: () => navigate("sort") },
       { key: "unplaced", label: "Unplaced", count: orphanReport(tasks).count, onOpen: () => setOrphanOpen(true) },
+      {
+        key: "upkeep",
+        label: "Upkeep due",
+        count: upkeepDue(store.workspace, clock.date).length,
+        onOpen: () => navigate("assets"),
+        detail: (
+          <UpkeepDueList
+            workspace={store.workspace}
+            today={clock.date}
+            readOnly={store.readOnly}
+            onCreateTask={openUpkeepTask}
+            onOpenTask={id => {
+              const t = store.workspace.tasks.find(x => x.id === id);
+              if (t) openTaskView(t);
+            }}
+            onAct={openAsset}
+          />
+        ),
+      },
       { key: "pastdue", label: "Past due", count: pastDueOffToday(tasks, clock.date, onToday).length, onOpen: () => openAll("pastdue") },
       {
         key: "claude",
@@ -2191,7 +2196,7 @@ export default function Home() {
                     />
                     <div className="v2-topbar-center" aria-live="polite">
                       <strong className="v2-page-title">
-                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : view === "review" ? "Review due / unplaced" : view === "weekly" ? "Weekly Review" : view === "shopping" ? "Lists" : todayTab === "overview" ? "Overview" : "Today"}
+                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : view === "review" ? "Review due / unplaced" : view === "weekly" ? "Weekly Review" : view === "shopping" ? "Lists" : view === "assets" ? "Assets & Upkeep" : todayTab === "overview" ? "Overview" : "Today"}
                       </strong>
                       <span className={`v2-sync-status ${topbarConnectionTone}`}>
                         <span>{topbarDate}</span><span aria-hidden="true"> · </span><i aria-hidden="true" />
@@ -2394,7 +2399,9 @@ export default function Home() {
                         ? [UNPLACED_INTRO, `${REVIEW_LIST_INFO} ${REVIEW_LIST_INFO_TAIL}`, REVIEW_ACK_LINE]
                         : view === "shopping"
                           ? [LIST_WORDING_GUIDE]
-                          : undefined
+                          : view === "assets"
+                            ? [ASSETS_INFO_MORE]
+                            : undefined
                     }
                   />
                 )}
@@ -2563,6 +2570,19 @@ export default function Home() {
                     voice={voice}
                     readOnly={store.readOnly}
                     readRef={weeklyReadRef}
+                    upkeep={
+                      <UpkeepDueList
+                        workspace={store.workspace}
+                        today={adelaideClock().date}
+                        readOnly={store.readOnly}
+                        onCreateTask={openUpkeepTask}
+                        onOpenTask={id => {
+                          const t = store.workspace.tasks.find(x => x.id === id);
+                          if (t) openTaskView(t);
+                        }}
+                        onAct={openAsset}
+                      />
+                    }
                   />
                 ) : view === "near" ? (
                   <NearMeView
@@ -2685,7 +2705,6 @@ export default function Home() {
                   <AssetsView
                     workspace={store.workspace}
                     readOnly={store.readOnly}
-                    voice={voice}
                     onMutate={update => {
                       if (!allowed()) return false;
                       const accepted = store.mutate(update);
@@ -2696,8 +2715,16 @@ export default function Home() {
                       }
                       return accepted;
                     }}
-                    onTaskDraft={openAssetLogAsTask}
-                    onOpenTask={openTaskView}
+                    readRef={assetsReadRef}
+                    focus={assetFocus}
+                    onFocusHandled={() => setAssetFocus(null)}
+                    onCreateTask={openUpkeepTask}
+                    onOpenTask={id => {
+                      const t = store.workspace.tasks.find(x => x.id === id);
+                      if (t) openTaskView(t);
+                    }}
+                    onOpenList={openList}
+                    onOpenObligations={() => navigate("obligations")}
                   />
                 ) : view === "pipeline" ? (
                   <WorkPipelineView
@@ -2953,6 +2980,11 @@ export default function Home() {
                   store.undo();
                   toast("Last change undone.");
                 }}
+                extraRows={
+                  view === "assets" && (store.workspace.assets ?? []).some(a => a.logs.some(l => l.cost !== null))
+                    ? [{ label: "Export costs (CSV)", onClick: () => downloadAssetCosts(store.workspace) }]
+                    : []
+                }
               />
             )}
             {v2Screen && (
