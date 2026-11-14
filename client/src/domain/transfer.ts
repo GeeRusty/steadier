@@ -29,6 +29,7 @@ import {
   MAX_SHOPPING_LISTS,
 } from "./shoppingLists";
 import { validateDailyLogEntries } from "./dailyLog";
+import { listsFromShoppingLists, pruneListLinks, validateLists } from "./lists";
 import {
   MAX_PEOPLE,
   MAX_PERSON_CONTEXT_LENGTH,
@@ -58,6 +59,7 @@ import type {
   TaskState,
   SiteCard,
   ShoppingList,
+  ListsStore,
   Asset,
   AssetWearLog,
   WorkspaceContact,
@@ -1684,6 +1686,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
     "evidence",
     "siteCards",
     "shoppingLists",
+    "lists",
     "dailyLog",
     "linkCheckHolds",
     "hideAmountsFromAI",
@@ -1712,6 +1715,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
   const hasEvidence = hasKey("evidence");
   const hasSiteCards = hasKey("siteCards");
   const hasShoppingLists = hasKey("shoppingLists");
+  const hasLists = hasKey("lists");
   const hasDailyLog = hasKey("dailyLog");
   const hasLinkCheckHolds = hasKey("linkCheckHolds");
   if (hasKey("hideAmountsFromAI") && typeof value.hideAmountsFromAI !== "boolean") {
@@ -1732,6 +1736,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
       hasEvidence ||
       hasSiteCards ||
       hasShoppingLists ||
+      hasLists ||
       hasAssets) &&
       !hasGoals)
   ) {
@@ -1767,9 +1772,18 @@ function validateV2Workspace(value: JsonRecord): Workspace {
   const places = hasPlaces ? placesField(value.places) : undefined;
   const evidence = hasEvidence ? evidenceField(value.evidence) : undefined;
   const siteCards = hasSiteCards ? siteCardsField(value.siteCards) : undefined;
-  const shoppingLists = hasShoppingLists
-    ? shoppingListsField(value.shoppingLists)
-    : undefined;
+  // Lists replaced Shopping Lists (2026-11-14). Older saves still load: each
+  // shopping list becomes a template, and any ticks become a run in progress.
+  let lists: ListsStore | undefined;
+  if (hasLists) {
+    try {
+      lists = validateLists(value.lists);
+    } catch (error) {
+      fail(error instanceof Error ? error.message : "lists is not valid.");
+    }
+  } else if (hasShoppingLists) {
+    lists = listsFromShoppingLists(shoppingListsField(value.shoppingLists));
+  }
   const dailyLog = hasDailyLog ? dailyLogField(value.dailyLog) : undefined;
   const linkCheckHolds = hasLinkCheckHolds
     ? linkCheckHoldsField(value.linkCheckHolds)
@@ -1802,7 +1816,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
     }
   }
 
-  return pruneAssetLinks(
+  return pruneListLinks(pruneAssetLinks(
     prunePlaceLinks(
       pruneGoalLinks(
         pruneImperativeLinks({
@@ -1824,7 +1838,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
           ...(hasObligations ? { obligations } : {}),
           ...(evidence ? { evidence } : {}),
           ...(hasSiteCards ? { siteCards } : {}),
-          ...(hasShoppingLists ? { shoppingLists } : {}),
+          ...(lists ? { lists } : {}),
           ...(dailyLog ? { dailyLog } : {}),
           ...(linkCheckHolds ? { linkCheckHolds } : {}),
           ...(typeof value.hideAmountsFromAI === "boolean"
@@ -1838,7 +1852,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
         })
       )
     )
-  );
+  ));
 }
 
 /**

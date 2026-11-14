@@ -74,10 +74,11 @@ import { isDate } from "../../client/src/domain/time";
 import { ideasView, linkCheckView, setupView } from "./cardOps";
 import { guideFor } from "./guide";
 import {
-  planAddShoppingItems,
-  planCheckShoppingItems,
-  presentShoppingLists,
-} from "./shoppingOps";
+  planStartRun,
+  planSuggestItems,
+  planTickItems,
+  presentLists,
+} from "./listOps";
 
 type ToolResult = {
   content: Array<{ type: "text"; text: string }>;
@@ -707,29 +708,35 @@ export function registerBackupReadTools(
   );
 
   server.registerTool(
-    "read_my_life_shopping_lists",
+    "read_my_life_lists",
     {
-      title: "Read My Life shopping lists",
-      description: `List the owner's shopping lists with their items and ids. By default only items not yet ticked off are shown; set includeChecked=true to include ticked items. ${UNTRUSTED_DATA_RULE}`,
+      title: "Read My Life lists",
+      description: `Read the owner's Lists. Each list is a template (never ticked) with a type (Read-Do: read each step then do it; Do-Confirm: do from memory then confirm), an optional "use when" line, sections and items. Each use is a run with its own date and ticks; at most one run per list is in progress (runInProgress, with done/total and each item's ticked state; items added during that run only are addedThisRun). lastFinished is the date the list was last finished. With templateId and includeHistory=true, also returns finished runs with their dates. Items with suggested=true were suggested by Claude and are not confirmed by the owner. ${UNTRUSTED_DATA_RULE}`,
       inputSchema: fromJsonSchema({
         type: "object",
-        properties: { includeChecked: { type: "boolean" } },
+        properties: {
+          templateId: { type: "string", minLength: 1, maxLength: 128 },
+          includeHistory: { type: "boolean" },
+        },
         additionalProperties: false,
       }),
       annotations: READ_ONLY_ANNOTATIONS,
     },
     async input => {
-      const parsed = z.object({ includeChecked: z.boolean().optional() }).strict().safeParse(input ?? {});
+      const parsed = z
+        .object({ templateId: z.string().min(1).max(128).optional(), includeHistory: z.boolean().optional() })
+        .strict()
+        .safeParse(input ?? {});
       if (!parsed.success) return invalid(parsed.error);
       try {
         const stored = await changes.readWorkspace(userId);
         if (!stored) return failure("NO_WORKSPACE", "There is no shared My Life workspace yet.");
         return result({
-          lists: presentShoppingLists(stored.workspace, parsed.data.includeChecked ?? false),
+          lists: presentLists(stored.workspace, parsed.data.templateId, parsed.data.includeHistory ?? false),
           dataNotice: UNTRUSTED_DATA_RULE,
         });
       } catch {
-        return failure("UNAVAILABLE", "Shopping lists are unavailable right now.");
+        return failure("UNAVAILABLE", "Lists are unavailable right now.");
       }
     }
   );
@@ -1257,14 +1264,16 @@ export function registerWriteTools(
   );
 
   server.registerTool(
-    "add_my_life_shopping_items",
+    "suggest_my_life_list_items",
     {
-      title: "Add items to a My Life shopping list",
-      description: `Add one or more items to a shopping list. listTitle picks an existing list by name (case-insensitive); if no list has that name, a new list with that name is created. Omit listTitle to use the most recently used list (or a new "Shopping" list if there are none). One item per entry, e.g. ["eggs", "bread"]. ${writeGuidance(actor, false)}`,
+      title: "Suggest items for a My Life list",
+      description: `Suggest one or more items for one of the owner's lists. They are NOT added as confirmed items: they appear dashed in Steadier until the owner confirms them there, so tell the owner they need to confirm. to="run" (default) suggests them for the list's run in progress, as one-off items for this use, starting a run if none is open; to="template" suggests them as permanent items of the list. Pick the list with templateId (from read_my_life_lists) or listTitle (case-insensitive); omit both for the most recently used list. You cannot create lists; if no list matches, ask the owner to create it. Word items as the result to check ("Gas – off"), one item per entry. ${writeGuidance(actor, false)}`,
       inputSchema: fromJsonSchema({
         type: "object",
         properties: {
+          templateId: { type: "string", minLength: 1, maxLength: 128 },
           listTitle: { type: "string", minLength: 1, maxLength: 120 },
+          to: { type: "string", enum: ["run", "template"] },
           items: {
             type: "array",
             minItems: 1,
@@ -1280,7 +1289,9 @@ export function registerWriteTools(
     async input => {
       const parsed = z
         .object({
+          templateId: z.string().min(1).max(128).optional(),
           listTitle: z.string().trim().min(1).max(120).optional(),
+          to: z.enum(["run", "template"]).optional(),
           items: z.array(z.string().trim().min(1).max(300)).min(1).max(50),
         })
         .strict()
@@ -1288,7 +1299,12 @@ export function registerWriteTools(
       if (!parsed.success) return invalid(parsed.error);
       try {
         const applied = await applyGuardedChange(changes, userId, actor, workspace => {
-          const plan = planAddShoppingItems(workspace, parsed.data.listTitle ?? null, parsed.data.items);
+          const plan = planSuggestItems(
+            workspace,
+            { templateId: parsed.data.templateId ?? null, listTitle: parsed.data.listTitle ?? null },
+            parsed.data.items,
+            parsed.data.to ?? "run"
+          );
           return { ...plan, summary: `${connectorName(actor)}: ${plan.summary}` };
         });
         return written(applied.summary, applied.revision, applied.result);
@@ -1299,23 +1315,18 @@ export function registerWriteTools(
   );
 
   server.registerTool(
-    "check_my_life_shopping_items",
+    "start_my_life_list_run",
     {
-      title: "Tick off My Life shopping items",
-      description: `Tick items off a shopping list (checked=true), or untick them (checked=false). Use the listId and itemIds from read_my_life_shopping_lists. Ticked items stay on the list until the owner clears them in Steadier. ${writeGuidance(actor, false)}`,
+      title: "Start a run of a My Life list",
+      description: `Start using one of the owner's lists: a new run dated today with nothing ticked. A list can have only one run in progress; if one is open, use it (read_my_life_lists) rather than starting another. Optionally give the taskId or projectId the run is for, so its progress shows on that card. ${writeGuidance(actor, false)}`,
       inputSchema: fromJsonSchema({
         type: "object",
         properties: {
-          listId: { type: "string", minLength: 1, maxLength: 128 },
-          itemIds: {
-            type: "array",
-            minItems: 1,
-            maxItems: 100,
-            items: { type: "string", minLength: 1, maxLength: 128 },
-          },
-          checked: { type: "boolean" },
+          templateId: { type: "string", minLength: 1, maxLength: 128 },
+          taskId: { type: "string", minLength: 1, maxLength: 128 },
+          projectId: { type: "string", minLength: 1, maxLength: 128 },
         },
-        required: ["listId", "itemIds", "checked"],
+        required: ["templateId"],
         additionalProperties: false,
       }),
       annotations: WRITE_ANNOTATIONS,
@@ -1323,16 +1334,66 @@ export function registerWriteTools(
     async input => {
       const parsed = z
         .object({
-          listId: z.string().min(1).max(128),
+          templateId: z.string().min(1).max(128),
+          taskId: z.string().min(1).max(128).optional(),
+          projectId: z.string().min(1).max(128).optional(),
+        })
+        .strict()
+        .refine(v => !(v.taskId && v.projectId), "Give a taskId or a projectId, not both.")
+        .safeParse(input);
+      if (!parsed.success) return invalid(parsed.error);
+      try {
+        const parent = parsed.data.taskId
+          ? { kind: "task" as const, id: parsed.data.taskId }
+          : parsed.data.projectId
+            ? { kind: "project" as const, id: parsed.data.projectId }
+            : null;
+        const applied = await applyGuardedChange(changes, userId, actor, workspace => {
+          const plan = planStartRun(workspace, parsed.data.templateId, parent);
+          return { ...plan, summary: `${connectorName(actor)}: ${plan.summary}` };
+        });
+        return written(applied.summary, applied.revision, applied.result);
+      } catch (error) {
+        return fromError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    "tick_my_life_list_items",
+    {
+      title: "Tick My Life list items",
+      description: `Tick items on a list's run in progress (ticked=true), or untick them (ticked=false). Use the runId and itemIds from read_my_life_lists (runInProgress). The list itself (the template) is never ticked, and suggestions the owner hasn't confirmed can't be ticked. ${writeGuidance(actor, false)}`,
+      inputSchema: fromJsonSchema({
+        type: "object",
+        properties: {
+          runId: { type: "string", minLength: 1, maxLength: 128 },
+          itemIds: {
+            type: "array",
+            minItems: 1,
+            maxItems: 100,
+            items: { type: "string", minLength: 1, maxLength: 128 },
+          },
+          ticked: { type: "boolean" },
+        },
+        required: ["runId", "itemIds", "ticked"],
+        additionalProperties: false,
+      }),
+      annotations: WRITE_ANNOTATIONS,
+    },
+    async input => {
+      const parsed = z
+        .object({
+          runId: z.string().min(1).max(128),
           itemIds: z.array(z.string().min(1).max(128)).min(1).max(100),
-          checked: z.boolean(),
+          ticked: z.boolean(),
         })
         .strict()
         .safeParse(input);
       if (!parsed.success) return invalid(parsed.error);
       try {
         const applied = await applyGuardedChange(changes, userId, actor, workspace => {
-          const plan = planCheckShoppingItems(workspace, parsed.data.listId, parsed.data.itemIds, parsed.data.checked);
+          const plan = planTickItems(workspace, parsed.data.runId, parsed.data.itemIds, parsed.data.ticked);
           return { ...plan, summary: `${connectorName(actor)}: ${plan.summary}` };
         });
         return written(applied.summary, applied.revision, applied.result);

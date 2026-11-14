@@ -14,6 +14,8 @@ import {
 } from "../../domain/todayPlan";
 import type { Task, Workspace } from "../../domain/types";
 import CardDotsMark from "./CardDotsMark";
+import ListProgressMark, { hasListProgress } from "./ListProgressMark";
+import { attachedWithoutRun, newListRunId, startRun } from "../../domain/lists";
 
 interface Props {
   workspace: Workspace;
@@ -64,15 +66,17 @@ function rowClass(row: TodayRow, extra = ""): string {
     .join(" ");
 }
 
-function RowMain({ row, tasks, time, onOpen }: { row: TodayRow; tasks: Task[]; time: string; onOpen: () => void }) {
+function RowMain({ row, tasks, time, onOpen, workspace }: { row: TodayRow; tasks: Task[]; time: string; onOpen: () => void; workspace?: Workspace }) {
+  const list = hasListProgress(workspace, row.task.id);
   return (
     <button type="button" className="tp-row-main" onClick={onOpen}>
       <span className="tp-time">{time}</span>
       <span className="tp-title-wrap">
         <span className="tp-title">{row.task.title}</span>
-        {(row.label || row.suggested || row.chips.length > 0 || row.brokenLink || row.faded) && (
+        {(row.label || row.suggested || row.chips.length > 0 || row.brokenLink || row.faded || list) && (
           <span className="tp-signals">
             <Chips chips={row.chips} />
+            <ListProgressMark workspace={workspace} id={row.task.id} chipCount={row.chips.length} />
             {row.brokenLink && <Unlink size={16} className="tp-broken" role="img" aria-label="Missing its Goal Outcome or Imperative link" />}
             {row.faded && <CardDotsMark task={row.task} tasks={tasks} />}
             {(row.label || row.suggested) && (
@@ -85,6 +89,67 @@ function RowMain({ row, tasks, time, onOpen }: { row: TodayRow; tasks: Task[]; t
       </span>
       <ChevronRight size={16} className="tp-open" aria-hidden="true" />
     </button>
+  );
+}
+
+const OFFER_KEY = "steadier.listOffer.notNow.v1";
+
+/**
+ * On the Now card: a task with a list attached offers to start a run of it.
+ * "Not now" folds it away for that task today.
+ */
+function ListOffer({
+  workspace,
+  taskId,
+  readOnly,
+  onMutate,
+}: {
+  workspace: Workspace;
+  taskId: string;
+  readOnly: boolean;
+  onMutate: Props["onMutate"];
+}) {
+  const day = adelaideClock().date;
+  const key = `${OFFER_KEY}:${day}:${taskId}`;
+  const [notNow, setNotNow] = useState(() => {
+    try {
+      return globalThis.localStorage?.getItem(key) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const template = attachedWithoutRun(workspace, "task", taskId)[0];
+  if (!template || notNow || readOnly) return null;
+  return (
+    <div className="tp-list-offer">
+      <span>Start the {template.title} list too?</span>
+      <span className="tp-list-offer-actions">
+        <button
+          type="button"
+          className="tp-btn tp-btn-primary"
+          onClick={() => {
+            const ok = onMutate(w => startRun(w, newListRunId(), template.id, adelaideTimestamp(), { kind: "task", id: taskId }));
+            if (ok !== false) toast(`${template.title} started.`);
+          }}
+        >
+          Start list
+        </button>
+        <button
+          type="button"
+          className="lv-link"
+          onClick={() => {
+            try {
+              globalThis.localStorage?.setItem(key, "1");
+            } catch {
+              /* without storage it simply stays */
+            }
+            setNotNow(true);
+          }}
+        >
+          Not now
+        </button>
+      </span>
+    </div>
   );
 }
 
@@ -263,7 +328,13 @@ export default function TodayPlanView(p: Props) {
                 ? "Focus running"
                 : [plan.next === null && p.workspace.nextThing?.when ? p.workspace.nextThing.when : null, now.label].filter(Boolean).join(" · ") || "Your Next thing"}
           </p>
-          <Chips chips={now.chips} />
+          {(now.chips.length > 0 || hasListProgress(p.workspace, now.task.id)) && (
+            <span className="tp-signals">
+              <Chips chips={now.chips} />
+              <ListProgressMark workspace={p.workspace} id={now.task.id} chipCount={now.chips.length} />
+            </span>
+          )}
+          <ListOffer workspace={p.workspace} taskId={now.task.id} readOnly={p.readOnly} onMutate={p.onMutate} />
           {progress && (
             <div className="tp-progress" role="img" aria-label={`Now ${clockText(minute)}; block ends ${clockText(now.end!)}`}>
               <div className="tp-track" />
@@ -323,7 +394,7 @@ export default function TodayPlanView(p: Props) {
 
       {plan.slipped.map(row => (
         <section key={row.task.id} className={rowClass(row)} aria-label={`Slipped: ${row.task.title}`}>
-          <RowMain row={row} tasks={p.tasks} time={row.timeText} onOpen={() => p.onOpen(row.task)} />
+          <RowMain row={row} tasks={p.tasks} workspace={p.workspace} time={row.timeText} onOpen={() => p.onOpen(row.task)} />
           <div className="tp-extra">
             {row.again && <p className="tp-meta">Slipped again. It'll be in your Weekly Review if you leave it.</p>}
             <div className={`tp-actions${row.again ? "" : " tp-actions--three"}`}>
@@ -364,7 +435,7 @@ export default function TodayPlanView(p: Props) {
           <div className="tp-list">
             {plan.later.map(row => (
               <section key={row.task.id} className={rowClass(row)} aria-label={row.task.title}>
-                <RowMain row={row} tasks={p.tasks} time={row.timeText} onOpen={() => p.onOpen(row.task)} />
+                <RowMain row={row} tasks={p.tasks} workspace={p.workspace} time={row.timeText} onOpen={() => p.onOpen(row.task)} />
                 {blocked(row)}
               </section>
             ))}

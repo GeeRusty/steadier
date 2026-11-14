@@ -9,7 +9,7 @@ describe("user guide", () => {
     const text = guideText();
     expect(text.length).toBeGreaterThan(2000);
     const headings = guideSections(text).map(s => s.heading);
-    for (const area of ["My life today", "Calendar", "All work", "Shopping Lists", "Notes / Daily Log", "Backups & trial", "Server & Compass"]) {
+    for (const area of ["My life today", "Calendar", "All work", "Lists", "Notes / Daily Log", "Backups & trial", "Server & Compass"]) {
       expect(headings).toContain(area);
     }
   });

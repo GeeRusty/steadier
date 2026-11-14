@@ -171,20 +171,24 @@ describe("voice: done and move", () => {
   });
 });
 
-describe("voice: shopping lists", () => {
-  it("adds items to a new Shopping list, then to the same list next time", () => {
+describe("voice: lists", () => {
+  it("adds items to a new Shopping list's run, then to the same run next time", () => {
     const first = proposalFromIntent(intent({ intent: "shopping_add", shopping_items: ["eggs", "bread", "milk"] }), workspace(), TODAY) as {
       proposal: Proposal;
     };
     expect(confirmationSpeech(first.proposal, TODAY)).toBe("Add eggs, bread and milk to the Shopping list?");
     const saved = apply(workspace(), first.proposal);
-    expect(saved.shoppingLists).toHaveLength(1);
-    expect(saved.shoppingLists![0].items.map(i => i.text)).toEqual(["eggs", "bread", "milk"]);
+    expect(saved.lists!.templates).toHaveLength(1);
+    expect(saved.lists!.runs).toHaveLength(1);
+    expect(saved.lists!.runs[0].extras.map(i => i.text)).toEqual(["eggs", "bread", "milk"]);
+    // The owner said yes, so these are confirmed, not suggestions.
+    expect(saved.lists!.runs[0].extras.every(i => !i.suggested)).toBe(true);
 
     const second = proposalFromIntent(intent({ intent: "shopping_add", shopping_items: ["cheese"] }), saved, TODAY) as { proposal: Proposal };
     const again = apply(saved, second.proposal);
-    expect(again.shoppingLists).toHaveLength(1);
-    expect(again.shoppingLists![0].items.map(i => i.text)).toEqual(["eggs", "bread", "milk", "cheese"]);
+    expect(again.lists!.templates).toHaveLength(1);
+    expect(again.lists!.runs).toHaveLength(1);
+    expect(again.lists!.runs[0].extras.map(i => i.text)).toEqual(["eggs", "bread", "milk", "cheese"]);
   });
 
   it("uses a named list, matching its saved name", () => {
@@ -215,7 +219,7 @@ describe("voice: wording and context", () => {
     );
     expect(msg).toContain("Wednesday 2026-11-11, 13:00");
     expect(msg).toContain(`${w.tasks[0].id} | Pick up kids`);
-    expect(msg).toContain("Shopping lists: Groceries");
+    expect(msg).toContain("Lists: Groceries");
     expect(msg).toContain('"time":"15:00"');
     expect(msg).toContain('They said: "make it 5"');
   });

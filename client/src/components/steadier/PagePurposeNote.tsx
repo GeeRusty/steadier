@@ -32,7 +32,7 @@ export const SPECIALIST_PAGE_PURPOSES: Partial<Record<View, string>> = {
   decisions: "Revisit read-only decisions saved during Weekly Reality Reviews.",
   evidence: "Add dated evidence to a task or project; evidence alone never marks it Done.",
   sites: "Keep reference cards and links for useful places; links open only when you choose.",
-  shopping: "Group shopping items into lists; use tasks for work that needs follow-up.",
+  shopping: "Reusable lists. Each use is a run with its own ticks and date; the list itself is never ticked. Attach one to a task or project.",
   assets: "Track assets and dated wear or maintenance logs when care happens.",
   pipeline: "Review projects and linked tasks together to follow work through stages.",
   routine: "Run an existing repeating task checklist; it does not create a parallel task system.",

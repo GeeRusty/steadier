@@ -12294,3 +12294,72 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 /* Menu: Compass Library links open in a new tab. */
 a.nav-item { text-decoration: none; }
 .nav-item .nav-external { margin-left: auto; opacity: 0.6; }
+
+/* Lists: list of lists first; one list open at a time. Same language as Today. */
+.lv { display: flex; flex-direction: column; gap: 10px; max-width: 640px; padding-bottom: 24px; font-size: 15px; color: var(--tp-strong); }
+.lv-toolbar { display: flex; align-items: center; gap: 8px; }
+.lv-card { background: var(--card); border: 1px solid var(--tp-line); border-radius: 12px; padding: 12px 14px; }
+.lv-list-row { display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.lv-row-top { display: flex; align-items: baseline; gap: 8px; }
+.lv-title { font-size: 18px; font-weight: 600; flex: 1 1 auto; }
+.lv-meta { font-size: 13px; color: var(--muted-foreground); }
+.lv-quiet { color: var(--muted-foreground); margin: 0; }
+.lv-form { display: flex; flex-direction: column; gap: 10px; }
+.lv-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted-foreground); }
+.lv input, .lv select { min-height: 44px; border: 1px solid var(--tp-btn-line); border-radius: 10px; padding: 0 12px; font: inherit; font-size: 15px; background: var(--card); color: var(--tp-strong); }
+.lv-kind { display: flex; gap: 6px; border: 0; padding: 0; margin: 0; align-items: center; flex-wrap: wrap; }
+.lv-kind legend { font-size: 13px; color: var(--muted-foreground); margin-bottom: 6px; }
+.lv-tabs { display: inline-flex; align-self: flex-start; background: var(--tp-chip-bg); border-radius: 10px; padding: 3px; gap: 2px; }
+.lv-seg { min-height: 38px; padding: 0 14px; border: 0; border-radius: 8px; background: none; font: inherit; font-size: 13px; color: var(--tp-strong); cursor: pointer; }
+.lv-seg.on { background: var(--card); font-weight: 600; }
+.lv-kind .lv-seg { border: 1px solid var(--tp-btn-line); }
+.lv-kind .lv-seg.on { border-color: var(--tp-strong); }
+.lv-row-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lv-link { min-height: 44px; border: 0; background: none; padding: 0 4px; font: inherit; color: var(--primary); cursor: pointer; align-self: flex-start; }
+.lv-back { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; border: 0; background: none; padding: 0; font: inherit; color: var(--primary); cursor: pointer; align-self: flex-start; }
+.lv-title-row { display: flex; align-items: center; gap: 8px; }
+.lv-heading { margin: 0; font-size: 20px; font-weight: 600; flex: 1 1 auto; }
+.lv-subheading { margin: 0; font-size: 17px; font-weight: 600; }
+.lv-wide { width: 100%; }
+.lv-section { display: flex; flex-direction: column; }
+.lv-section-head { display: flex; align-items: center; justify-content: space-between; }
+.lv-section-head .tp-label { margin: 8px 0 4px; }
+.lv-suggest { margin: 4px 0; border: 1.5px dashed var(--tp-btn-line); border-radius: 8px; padding: 6px 10px; font-size: 13px; color: var(--muted-foreground); }
+.lv-item { display: flex; align-items: center; gap: 8px; min-height: 44px; border-bottom: 1px solid var(--tp-line); }
+.lv-item-text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.lv-suggested { border: 1.5px dashed var(--tp-btn-line); border-radius: 8px; padding: 4px 8px; margin: 4px 0; flex-wrap: wrap; }
+.lv-dots { position: relative; flex: none; }
+.lv-dots-button { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: var(--muted-foreground); border-radius: 8px; cursor: pointer; }
+.lv-menu { position: absolute; right: 0; top: 44px; z-index: 5; display: flex; flex-direction: column; min-width: 200px; background: var(--card); border: 1px solid var(--tp-line); border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.12); padding: 4px; }
+.lv-menu > button { min-height: 44px; border: 0; background: none; text-align: left; padding: 0 12px; font: inherit; color: var(--tp-strong); border-radius: 8px; cursor: pointer; }
+.lv-menu > button:hover { background: var(--tp-chip-bg); }
+.lv-menu-select { display: flex; align-items: center; gap: 8px; padding: 4px 12px; font-size: 13px; color: var(--muted-foreground); }
+.lv-danger { color: var(--tp-red) !important; }
+.lv-danger-btn { color: var(--tp-red); border-color: var(--tp-red); }
+.lv-confirm { display: flex; flex-direction: column; gap: 8px; }
+.lv-inline-form, .lv-add { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 4px 0; }
+.lv-inline-form input, .lv-add input { flex: 1 1 180px; min-width: 0; }
+.lv-run-head { display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: wrap; }
+.lv-next { display: flex; flex-direction: column; gap: 10px; }
+.lv-next-text { font-size: 20px; font-weight: 600; }
+.lv-next .tp-big { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.lv-tick-row { display: flex; align-items: center; border-bottom: 1px solid var(--tp-line); }
+.lv-tick { display: flex; align-items: center; gap: 10px; flex: 1 1 auto; min-height: 48px; border: 0; background: none; padding: 0; text-align: left; font: inherit; color: var(--tp-strong); cursor: pointer; }
+.lv-circle { width: 24px; height: 24px; border-radius: 12px; border: 2px solid var(--tp-btn-line); box-sizing: border-box; display: grid; place-items: center; flex: none; }
+.lv-tick.done { color: var(--muted-foreground); }
+.lv-tick.done .lv-item-text { text-decoration: line-through; }
+.lv-tick.done .lv-circle { background: var(--muted-foreground); border-color: var(--muted-foreground); color: var(--card); }
+.lv-history-row { display: flex; justify-content: space-between; align-items: center; min-height: 44px; border: 0; border-bottom: 1px solid var(--tp-line); background: none; font: inherit; color: var(--tp-strong); padding: 0; cursor: pointer; text-align: left; }
+.lv-snapshot { list-style: none; margin: 6px 0; padding: 0 0 0 4px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.lv-snapshot li.done { color: var(--muted-foreground); }
+.lv-inside { flex-basis: 100%; }
+.tp-list-offer { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--tp-line); padding-top: 10px; }
+.tp-list-offer-actions { display: flex; gap: 8px; align-items: center; }
+/* Lists section on a task sheet, project page or note. */
+.pl { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+.pl-heading { margin: 0; font-size: 13px; font-weight: 600; color: var(--muted-foreground); }
+.pl-row { display: flex; align-items: center; gap: 8px; min-height: 44px; border-bottom: 1px solid var(--tp-line); }
+.pl-open { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-height: 44px; border: 0; background: none; padding: 0; font: inherit; color: var(--tp-strong); text-align: left; cursor: pointer; }
+.pl-title { flex: 1 1 auto; }
+.pl-add { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.pl-add select { min-height: 44px; border: 1px solid var(--tp-btn-line); border-radius: 10px; padding: 0 10px; font: inherit; background: var(--card); color: var(--tp-strong); max-width: 100%; }

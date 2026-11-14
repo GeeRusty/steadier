@@ -23,7 +23,7 @@ On a phone, five tabs sit at the bottom: **Today · Overview · All work · Cale
 
 The **+** button at the right of the tab bar is the one capture button: **tap** to type a task, **hold** to talk to the voice assistant. It never covers a card.
 
-**Paste anything:** paste an email, message or messy list into the **+** box. When it looks like several things, tap **Split into items**. Steadier removes account numbers, logins and passwords (addresses are kept), sends only the cleaned text to Claude, and shows each item dashed with a tick box: Task, Idea, Bill, Cancel by, Note or Shopping, with its date. Tap one to change its words, type or date. A quiet grey line says when one looks like a task you already have. Nothing saves until you tap **Save N ticked**; long pastes are never auto-saved as one task.
+**Paste anything:** paste an email, message or messy list into the **+** box. When it looks like several things, tap **Split into items**. Steadier removes account numbers, logins and passwords (addresses are kept), sends only the cleaned text to Claude, and shows each item dashed with a tick box: Task, Idea, Bill, Cancel by, Note or List, with its date. Tap one to change its words, type or date. A quiet grey line says when one looks like a task you already have. Nothing saves until you tap **Save N ticked**; long pastes are never auto-saved as one task.
 
 ## Areas of the app
 
@@ -127,8 +127,17 @@ Bills, licences, renewals, insurance and tax dates, with lead time to prepare. I
 - **Hide amounts from AI** (on by default): Claude can't see or add amounts. Scanned amounts still come from the cleaned text, so check them.
 - There's no fortnightly option; a fortnightly bill is set to Does not repeat.
 
-### Shopping Lists
-Group shopping items into lists and tick them off. Use tasks for anything that needs follow-up.
+### Lists
+Reusable checklists: packing, leaving the shack, the weekly shop. (Shopping Lists became Lists on 14 Nov 2026; every list, item and tick came across.)
+- **A list is a template, and each use is a run.** The template is never ticked. **Start a run** to use it: the run has its own date and ticks. Editing the template updates a run in progress without losing ticks already made.
+- **Reset** unticks everything on the current run (same run, same date). **New run** puts the current run into **Runs** with its date and starts a fresh one. Finished runs keep what they looked like, so you can see when you last packed for Kingston.
+- **Type:** **Read-Do** (read each step, then do it; the run shows the next step large with **Done**) or **Do-Confirm** (do it from memory, then go down the list and confirm). **Use when** is the moment to use the list, e.g. "before leaving for Kingston".
+- **Sections** group items. A section over 9 items gets a quiet dashed suggestion to split it; nothing is blocked.
+- **One tick per item.** Edit, move and delete are behind each item's **⋯**. Add something **for this run only** at the bottom of a run.
+- **Finish** closes the run. **Anything missing?** then offers this run's one-off items for the template in one tap, or type a new one.
+- **Attach a list to a task or project** from its sheet or page (**+ Attach or link a list**). An attached list offers **Start the list too?** on the Now card, and its progress shows on the card as a grey chip ("Kingston packing 4/9"). If the card already has two chips, the progress shows as a quiet line inside the card instead, so "review due" and "moved" always stay. **Link only** just points at the list. Notes can link a list (the list icon on a note).
+- Voice ("add eggs to the shopping list") and Paste anything add to the list's run after you confirm. Claude can only **suggest** items: they show dashed with **Confirm** or **Remove** until you decide.
+- Wording tips are behind the **i**: state the result ("Gas – off"), not the action ("Check gas"). Read aloud, Undo and the theme are in the ⋮ menu.
 
 ### Notes / Daily Log
 Notes to yourself, one or more per day. A note never becomes a task unless you choose **convert to task**. Notes sync with the rest of Steadier and are included in backups.
@@ -169,7 +178,7 @@ Things you can say:
 - **Several at once:** "I need to ring mum, pick up dog food tomorrow, and book the dentist for Friday at 10."
 - **Mark done:** "Done with the mechanic call."
 - **Move:** "Push the coffee to tomorrow morning." Repeating tasks have to be moved in the app.
-- **Shopping:** "Add eggs and bread to the shopping list."
+- **Lists:** "Add eggs and bread to the shopping list." It goes on that list's run (one is started if needed).
 - **Idea:** "Idea: trailer hire side business", or "add build a shed as an idea". It goes on the Ideas shelf, not into your tasks. Starting with "Idea" always makes it an idea.
 - **Notes:** "Note: the car's making a rattle."
 - **Check your day:** "What's next?" or "What's on today?"
@@ -185,7 +194,7 @@ In any chat you can say "add that as an idea" and Claude puts it on your Ideas s
 
 Claude can read your Link check. It can suggest a link between a task or project and an Imperative, but the link waits for your **Confirm**. Only you can choose Not yet, make a project Support, or step an Imperative down.
 
-Claude can read and change your Steadier when you ask it to in a chat. For example: "What's on my calendar this week?", "Find duplicate tasks", "Add milk to the shopping list", or "What did I note about the car?" Claude always asks before changing anything, and Steadier saves a full backup before every change. Connect it in Claude under **Settings → Connectors**.
+Claude can read and change your Steadier when you ask it to in a chat. For example: "What's on my calendar this week?", "Find duplicate tasks", "Add milk to the shopping list" (it shows dashed on the list until you confirm it), or "What did I note about the car?" Claude always asks before changing anything, and Steadier saves a full backup before every change. Connect it in Claude under **Settings → Connectors**.
 
 ## How do I…
 

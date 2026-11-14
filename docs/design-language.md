@@ -67,6 +67,13 @@ No other colours carry meaning.
 - **The weekday check-in** is one line above Now showing the first question, never a number. Answered or Later, it folds until the next check-in (08:00 / 17:00). It never pushes Now off the first screen.
 - **Compass Library** links live in the menu, not on a page.
 
+## Lists
+- **List of lists first**; tap one to open it. Forms appear only when asked for.
+- **Template / Run / Runs.** The template is never ticked. One round tick per item on a run; edit and delete behind **⋯**.
+- **No counters or dates on items.** The only date is the run's.
+- **Progress on a parent card** is a grey chip when the card has room; with two chips already, a quiet line inside the card. It never replaces "review due" or "moved".
+- **Claude's items are dashed** (suggested) until the owner confirms them.
+
 ## Standing rules for anyone (or any AI) working on Steadier
 - **Never sign in as the owner or create access passes** (session tokens, keys, login links) without asking the owner first, even temporarily and even for a screenshot.
 - **Never deploy with a failing test.** Fix first, run the full test suite green, then deploy.

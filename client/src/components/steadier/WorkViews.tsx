@@ -39,7 +39,8 @@ import { nestRows } from "../../domain/subtasks";
 import { isFaded, notReadyTasks } from "../../domain/taskCard";
 import CardDotsMark from "./CardDotsMark";
 import { isTaskAnchor, pastDueTasks } from "../../domain/anchorPlanning";
-import type { Task, View, Project } from "../../domain/types";
+import type { Task, View, Project, Workspace } from "../../domain/types";
+import ListProgressMark, { hasListProgress } from "./ListProgressMark";
 import type { Imperative } from "../../domain/compass";
 import { effectiveTaskRole, rowLabel } from "../../domain/linkCheck";
 import {
@@ -58,6 +59,8 @@ import {
 import AccordionSection from "./AccordionSection";
 import { groupByStable, monthGroup } from "../../domain/accordionGroups";
 interface Props {
+  /** For list progress on cards ("Packing 4/9"). */
+  workspace?: Workspace;
   view: View;
   tasks: Task[];
   projects: Project[];
@@ -225,7 +228,8 @@ export default function WorkViews(p: Props) {
         ]
           .filter((c): c is string => !!c)
           .slice(0, 2);
-    const signals = when || chips.length || broken || faded || suggested || task.droppedAt;
+    const list = !done && hasListProgress(p.workspace, task.id);
+    const signals = when || chips.length || broken || faded || suggested || task.droppedAt || list;
     return (
       <article
         key={task.id}
@@ -252,6 +256,7 @@ export default function WorkViews(p: Props) {
                   {text}
                 </span>
               ))}
+              {list && <ListProgressMark workspace={p.workspace} id={task.id} chipCount={chips.length + (when ? 1 : 0)} />}
               {broken && <Unlink size={16} className="tp-broken" role="img" aria-label="Missing its Goal Outcome or Imperative link" />}
               {faded && <CardDotsMark task={task} tasks={p.tasks} />}
               {suggested && <span className="tp-meta">suggested · tap to confirm</span>}

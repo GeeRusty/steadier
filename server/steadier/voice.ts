@@ -21,7 +21,7 @@ import { sdk } from "../_core/sdk";
 import { applyGuardedChange, ChangeError, type ChangePlan, type WorkspaceChangeRepository } from "./changes";
 import { planAddIdea, planCreateTask, planSetTaskTime, planUpdateTask } from "./connectorOps";
 import { createProductionRepository } from "./repository";
-import { DEFAULT_SHOPPING_LIST, findShoppingList, planAddShoppingItems } from "./shoppingOps";
+import { DEFAULT_LIST_TITLE, listForRequest, planAddItemsToRun } from "./listOps";
 import { planAddNote } from "./notesOps";
 
 import { VOICE_MODEL } from "./voiceModel";
@@ -162,8 +162,8 @@ export function interpretMessage(text: string, now: Date, draft: Proposal | null
         return `${task.id} | ${task.title.slice(0, 80)}${when ? ` | ${when}` : ""}`;
       });
     lines.push(`Open tasks (id | title | when):\n${tasks.join("\n") || "(none)"}`);
-    const lists = (workspace.shoppingLists ?? []).map(list => list.title);
-    lines.push(`Shopping lists: ${lists.length ? lists.join(", ") : "(none yet)"}`);
+    const lists = (workspace.lists?.templates ?? []).map(list => list.title);
+    lines.push(`Lists: ${lists.length ? lists.join(", ") : "(none yet)"}`);
   }
   if (draft) lines.push(`Current draft: ${JSON.stringify(draft)}`);
   lines.push(`They said: ${JSON.stringify(text)}`);
@@ -234,8 +234,8 @@ export function proposalFromIntent(intent: VoiceIntent, workspace: Workspace | n
     case "shopping_add": {
       const items = intent.shopping_items.map(item => item.trim()).filter(Boolean).slice(0, 30);
       if (!items.length) return { problem: "What should I add to the list?" };
-      const existing = workspace ? findShoppingList(workspace, intent.shopping_list) : null;
-      const listTitle = (existing?.title ?? intent.shopping_list?.trim()) || DEFAULT_SHOPPING_LIST;
+      const existing = workspace ? listForRequest(workspace, intent.shopping_list) : null;
+      const listTitle = (existing?.title ?? intent.shopping_list?.trim()) || DEFAULT_LIST_TITLE;
       const parsed = Proposal.safeParse({ kind: "shopping_add", listTitle, items });
       return parsed.success ? { proposal: parsed.data } : { problem: "What should I add to the list?" };
     }
@@ -422,7 +422,7 @@ export function planVoiceProposal(workspace: Workspace, p: Proposal, now: Date):
       return { ...planned, summary: `Claude: ${planned.summary} by voice`, result: { speech: "Noted." } };
     }
     case "shopping_add": {
-      const planned = planAddShoppingItems(workspace, p.listTitle, p.items, now);
+      const planned = planAddItemsToRun(workspace, p.listTitle, p.items, now);
       return { ...planned, summary: `Claude: ${planned.summary} by voice`, result: { speech: `Added to the ${planned.result.listTitle} list.` } };
     }
   }

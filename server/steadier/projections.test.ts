@@ -21,20 +21,30 @@ const siteCard = {
   createdAt: "2026-10-30T11:00:00+10:30",
   updatedAt: "2026-10-30T11:00:00+10:30",
 };
-const shoppingList = {
-  id: "shopping-list-1",
-  title: "Private groceries",
-  items: [
+const lists = {
+  templates: [
     {
-      id: "shopping-item-1",
-      text: "Owner-only item",
-      checked: false,
+      id: "list-1",
+      title: "Private groceries",
+      kind: "do-confirm" as const,
+      useWhen: "",
+      sections: [],
+      items: [
+        {
+          id: "list-item-1",
+          text: "Owner-only item",
+          sectionId: null,
+          suggested: false,
+          createdAt: "2026-10-30T11:00:00+10:30",
+          updatedAt: "2026-10-30T11:00:00+10:30",
+        },
+      ],
       createdAt: "2026-10-30T11:00:00+10:30",
       updatedAt: "2026-10-30T11:00:00+10:30",
     },
   ],
-  createdAt: "2026-10-30T11:00:00+10:30",
-  updatedAt: "2026-10-30T11:00:00+10:30",
+  runs: [],
+  links: [],
 };
 const asset = {
   id: "asset-1",
@@ -162,7 +172,7 @@ function workspace(): Workspace {
     goals: [],
     evidence: [evidence],
     siteCards: [siteCard],
-    shoppingLists: [shoppingList],
+    lists,
     assets: [asset],
     people: [person],
     credentialRenewals: [credentialRenewal],
@@ -176,7 +186,7 @@ describe("connector-safe workspace projection", () => {
     const source = workspace();
     const originalEvidence = structuredClone(source.evidence);
     const originalSiteCards = structuredClone(source.siteCards);
-    const originalShoppingLists = structuredClone(source.shoppingLists);
+    const originalShoppingLists = structuredClone(source.lists);
     const originalAssets = structuredClone(source.assets);
     const originalPeople = structuredClone(source.people);
     const originalCredentialRenewals = structuredClone(
@@ -187,7 +197,7 @@ describe("connector-safe workspace projection", () => {
     const presented = presentWorkspace(source);
     expect(presented.evidence).toBeUndefined();
     expect(presented.siteCards).toBeUndefined();
-    expect(presented.shoppingLists).toBeUndefined();
+    expect(presented.lists).toBeUndefined();
     expect(presented.assets).toBeUndefined();
     expect(presented.people).toBeUndefined();
     expect(presented.credentialRenewals).toBeUndefined();
@@ -195,7 +205,7 @@ describe("connector-safe workspace projection", () => {
     expect(presented.invoices).toBeUndefined();
     expect(source.evidence).toEqual(originalEvidence);
     expect(source.siteCards).toEqual(originalSiteCards);
-    expect(source.shoppingLists).toEqual(originalShoppingLists);
+    expect(source.lists).toEqual(originalShoppingLists);
     expect(source.assets).toEqual(originalAssets);
     expect(source.people).toEqual(originalPeople);
     expect(source.credentialRenewals).toEqual(originalCredentialRenewals);

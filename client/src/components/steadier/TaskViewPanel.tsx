@@ -34,6 +34,8 @@ export interface TaskViewPanelProps {
   onRead?: (text: string) => void;
   /** The task card; the rest of this view goes inside its "More" section. */
   card?: (more: React.ReactNode) => React.ReactNode;
+  /** The Lists section (attached and link-only lists). */
+  lists?: React.ReactNode;
 }
 
 function taskWhen(task: Task, today: string): string {
@@ -99,6 +101,7 @@ export default function TaskViewPanel({
   onConfirmAll,
   onRead,
   card,
+  lists,
 }: TaskViewPanelProps) {
   const currentTask = tasks.find(candidate => candidate.id === selectedTask.id);
   const task = currentTask ?? selectedTask;
@@ -334,6 +337,7 @@ export default function TaskViewPanel({
           );
           return card ? card(details) : details;
         })()}
+        {lists}
         <div className="task-view-actions task-view-sticky-actions" role="group" aria-label="Task actions">
           {onRead && (
             <button

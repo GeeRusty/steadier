@@ -7,7 +7,7 @@ import { parseCapture } from "./capture";
 import { createTask } from "./engine";
 import { defaultLeadTimeDays, newObligationDraft, saveObligation } from "./obligations";
 import { parseQuickAdd, scheduleFromQuickParse, friendlyDate } from "./quickParse";
-import { addShoppingItem, addShoppingList, createShoppingItemId, createShoppingListId } from "./shoppingLists";
+import { addItemsToRun } from "./lists";
 import type { DailyLogEntry, Task, Workspace } from "./types";
 
 export type PasteKind = "task" | "idea" | "bill" | "cancel-by" | "note" | "shopping";
@@ -26,7 +26,7 @@ export const PASTE_KIND_LABEL: Record<PasteKind, string> = {
   bill: "Bill",
   "cancel-by": "Cancel by",
   note: "Note",
-  shopping: "Shopping",
+  shopping: "List",
 };
 
 /** The Split button appears for several lines or long text. */
@@ -143,16 +143,8 @@ export function applyPasteDrafts(
       const note: DailyLogEntry = { id: noteId(), date: today, text, createdAt: stamp, updatedAt: stamp };
       next = { ...next, dailyLog: [note, ...(next.dailyLog ?? [])] };
     } else if (draft.kind === "shopping" && draft.shoppingItems.length) {
-      const lists = next.shoppingLists ?? [];
-      let list = [...lists].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
-      if (!list) {
-        const id = createShoppingListId();
-        next = addShoppingList(next, id, "Shopping", stamp);
-        list = (next.shoppingLists ?? []).find(l => l.id === id)!;
-      }
-      for (const item of draft.shoppingItems) {
-        next = addShoppingItem(next, list.id, createShoppingItemId(), item, stamp);
-      }
+      // Owner-checked drafts: onto the most recently used list's run.
+      next = addItemsToRun(next, null, draft.shoppingItems, stamp).workspace;
     }
   }
   return next;

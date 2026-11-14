@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ListChecks,
   BookOpen,
   ArrowRight,
   Mic,
@@ -44,6 +45,8 @@ interface Props {
   readOnly: boolean;
   /** Replace the saved notes. Returns false if the change was not accepted. */
   onSave: (entries: DailyLogEntry[]) => boolean;
+  /** The Lists linked to a note (link only), and linking one. */
+  listsFor?: (entryId: string, linking: boolean, onDone: () => void) => React.ReactNode;
 }
 
 function localStorageOrNull(): DailyLogStorage | null {
@@ -72,7 +75,8 @@ function timeLabel(value: string): string {
   }).format(new Date(value));
 }
 
-export default function DailyLogView({ voice, onConvertToTask, entries, readOnly, onSave }: Props) {
+export default function DailyLogView({ voice, onConvertToTask, entries, readOnly, onSave, listsFor }: Props) {
+  const [linkingId, setLinkingId] = useState<string | null>(null);
   const [storage] = useState(localStorageOrNull);
   const [loadError, setLoadError] = useState<string | null>(null);
   const storageReady = !readOnly;
@@ -481,6 +485,17 @@ export default function DailyLogView({ voice, onConvertToTask, entries, readOnly
                           <Volume2 size={16} />
                         )}
                       </button>
+                      {listsFor && !readOnly && (
+                        <button
+                          className="icon-button"
+                          type="button"
+                          aria-label="Link a list"
+                          aria-pressed={linkingId === entry.id}
+                          onClick={() => setLinkingId(linkingId === entry.id ? null : entry.id)}
+                        >
+                          <ListChecks size={16} />
+                        </button>
+                      )}
                       <button
                         className="icon-button"
                         type="button"
@@ -502,6 +517,7 @@ export default function DailyLogView({ voice, onConvertToTask, entries, readOnly
                     </div>
                   </div>
                   <p className="daily-log-entry-text">{entry.text}</p>
+                  {listsFor?.(entry.id, linkingId === entry.id, () => setLinkingId(null))}
                 </article>
               ))}
             </div>

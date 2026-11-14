@@ -39,7 +39,7 @@ export function presentWorkspace(workspace: Workspace): Workspace {
   const connectorSafeWorkspace = { ...workspace };
   delete connectorSafeWorkspace.evidence;
   delete connectorSafeWorkspace.siteCards;
-  delete connectorSafeWorkspace.shoppingLists;
+  delete connectorSafeWorkspace.lists;
   delete connectorSafeWorkspace.assets;
   delete connectorSafeWorkspace.people;
   delete connectorSafeWorkspace.credentialRenewals;

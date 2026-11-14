@@ -357,8 +357,12 @@ export interface Workspace {
   evidence?: WorkspaceEvidence[];
   /** Non-sensitive owner-managed public site references; absent until used. */
   siteCards?: SiteCard[];
-  /** Owner-managed plain-text shopping lists; absent until used. */
-  shoppingLists?: ShoppingList[];
+  /**
+   * Lists: reusable templates, their runs (each use, with its own ticks and
+   * date) and links to tasks, projects and notes. Absent until used. Older
+   * saves with `shoppingLists` are converted into this on load.
+   */
+  lists?: ListsStore;
   /** Notes to self (Daily Log); absent until the first note. */
   dailyLog?: DailyLogEntry[];
   /**
@@ -401,6 +405,79 @@ export interface DailyLogEntry {
   createdAt: string;
   updatedAt: string;
 }
+/** Read-Do: read each step, then do it. Do-Confirm: do from memory, then confirm. */
+export type ListKind = "read-do" | "do-confirm";
+export interface ListSection {
+  id: string;
+  title: string;
+}
+export interface ListItem {
+  id: string;
+  text: string;
+  /** null = the list's first, unnamed section. */
+  sectionId: string | null;
+  /** Added by Claude; shown dashed until the owner confirms it. */
+  suggested: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+/** The master list. It is never ticked; runs are. */
+export interface ListTemplate {
+  id: string;
+  title: string;
+  kind: ListKind;
+  /** The pause point, e.g. "before leaving for Kingston". Empty if none. */
+  useWhen: string;
+  sections: ListSection[];
+  items: ListItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+/** An item added during one run only (offered to the template afterwards). */
+export interface ListRunExtra {
+  id: string;
+  text: string;
+  suggested: boolean;
+  createdAt: string;
+}
+/** What a finished run looked like, kept even if the template changes later. */
+export interface ListRunSnapshotItem {
+  id: string;
+  text: string;
+  section: string;
+  ticked: boolean;
+  extra: boolean;
+}
+export interface ListRun {
+  id: string;
+  templateId: string;
+  /** Adelaide-local day the run started, YYYY-MM-DD. */
+  date: string;
+  startedAt: string;
+  finishedAt: string | null;
+  /** Ticked item ids (template items or extras) and when they were ticked. */
+  ticks: Record<string, string>;
+  extras: ListRunExtra[];
+  /** The task or project this run was started for, if any. */
+  parent: { kind: "task" | "project"; id: string } | null;
+  /** Filled when the run finishes. */
+  snapshot: ListRunSnapshotItem[] | null;
+  updatedAt: string;
+}
+/** A task, project or note pointing at a template. "attached" offers a run when the parent starts; "link" is a pointer only. */
+export interface ListLink {
+  id: string;
+  templateId: string;
+  target: { kind: "task" | "project" | "note"; id: string };
+  mode: "attached" | "link";
+  createdAt: string;
+}
+export interface ListsStore {
+  templates: ListTemplate[];
+  runs: ListRun[];
+  links: ListLink[];
+}
+/** Legacy (before 2026-11-14): converted into `lists` on load. */
 export interface ShoppingListItem {
   id: string;
   text: string;

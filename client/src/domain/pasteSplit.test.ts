@@ -47,7 +47,8 @@ describe("Paste anything", () => {
       ["cancel-by", "2026-12-01", "draft", null],
     ]);
     expect(next.dailyLog![0].text).toBe("Andy prefers mornings");
-    expect(next.shoppingLists![0].items.map(i => i.text)).toEqual(["milk", "bread"]);
+    expect(next.lists!.templates[0].title).toBe("Shopping");
+    expect(next.lists!.runs[0].extras.map(i => i.text)).toEqual(["milk", "bread"]);
     expect(() => parseStrictV2Workspace(JSON.parse(JSON.stringify(next)))).not.toThrow();
   });
 

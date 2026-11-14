@@ -1,4 +1,5 @@
 import WhyLine from "./WhyLine";
+import ParentLists from "./ParentLists";
 import { chainsForProject, describeWhy } from "../../domain/goals";
 import { groupByStable } from "../../domain/accordionGroups";
 import React from "react";
@@ -70,6 +71,8 @@ interface Props {
   readOnly: boolean;
   /** Complete a task from its round Done circle. */
   onDoneTask?: (id: string) => boolean | void;
+  /** Open a list on the Lists page. */
+  onOpenList?: (templateId: string) => void;
 }
 
 /** Cells have no names: the plain description is all that is shown. */
@@ -192,6 +195,7 @@ function ProjectsView({
   onFocusDone,
   readOnly,
   onDoneTask,
+  onOpenList,
 }: Omit<Props, "view">) {
   const [editing, setEditing] = useState<Project | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -387,6 +391,7 @@ function ProjectsView({
           onOpenTask={onOpenTask}
           onAddTask={onAddTask}
           onDoneTask={onDoneTask}
+          onOpenList={onOpenList}
           onOpenGoal={onOpenGoal}
           onMutate={onMutate}
           updateProject={updateProject}
@@ -556,6 +561,8 @@ export function ProjectPage(p: {
   onOpenTask: (t: Task) => void;
   onAddTask: (projectId: string) => void;
   onDoneTask?: (id: string) => boolean | void;
+  /** Open a list on the Lists page. */
+  onOpenList?: (templateId: string) => void;
   onOpenGoal?: (id: string) => void;
   onMutate: (change: (w: Workspace) => Workspace) => boolean | void;
   updateProject: (projectId: string, change: (project: Project) => Project) => void;
@@ -638,6 +645,16 @@ export function ProjectPage(p: {
           </details>
         )}
       </div>
+
+      {p.onOpenList && (
+        <ParentLists
+          workspace={workspace}
+          target={{ kind: "project", id: project.id }}
+          readOnly={p.readOnly}
+          onMutate={p.onMutate}
+          onOpenList={p.onOpenList}
+        />
+      )}
 
       <details className="pj-fold">
         <summary>

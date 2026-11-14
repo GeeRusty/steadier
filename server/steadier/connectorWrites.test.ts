@@ -487,10 +487,10 @@ describe("connector tools by approved scope", () => {
       "read_my_life_context",
       "read_my_life_ideas",
       "read_my_life_link_check",
+      "read_my_life_lists",
       "read_my_life_notes",
       "read_my_life_project",
       "read_my_life_sheet",
-      "read_my_life_shopping_lists",
       "read_my_life_task",
       "read_my_life_task_setup",
       "read_steadier_guide",
@@ -506,9 +506,7 @@ describe("connector tools by approved scope", () => {
       "add_my_life_idea",
       "add_my_life_note",
       "add_my_life_obligation",
-      "add_my_life_shopping_items",
       "add_my_life_subtask",
-      "check_my_life_shopping_items",
       "create_my_life_project",
       "create_my_life_task",
       "get_my_life_calendar",
@@ -519,10 +517,10 @@ describe("connector tools by approved scope", () => {
       "read_my_life_context",
       "read_my_life_ideas",
       "read_my_life_link_check",
+      "read_my_life_lists",
       "read_my_life_notes",
       "read_my_life_project",
       "read_my_life_sheet",
-      "read_my_life_shopping_lists",
       "read_my_life_task",
       "read_my_life_task_setup",
       "read_steadier_guide",
@@ -534,7 +532,10 @@ describe("connector tools by approved scope", () => {
       "set_my_life_project_time",
       "set_my_life_task_parent",
       "set_my_life_task_time",
+      "start_my_life_list_run",
       "suggest_my_life_link",
+      "suggest_my_life_list_items",
+      "tick_my_life_list_items",
       "update_my_life_project",
       "update_my_life_task",
     ]);
@@ -1361,34 +1362,75 @@ describe("anchor and Today planning connector fields", () => {
   });
 });
 
-describe("shopping list connector tools", () => {
-  it("adds items to a new list, reads them back, and ticks one off with a backup each time", async () => {
+describe("list connector tools", () => {
+  function withList(store: MemoryStore) {
+    const at = "2026-11-14T09:00:00+10:30";
+    store.stored = {
+      ...store.stored!,
+      workspace: {
+        ...store.stored!.workspace,
+        lists: {
+          templates: [
+            {
+              id: "list-packing",
+              title: "Kingston packing",
+              kind: "do-confirm",
+              useWhen: "before leaving for Kingston",
+              sections: [],
+              items: [
+                { id: "item-torch", text: "Torch – charged", sectionId: null, suggested: false, createdAt: at, updatedAt: at },
+                { id: "item-gas", text: "Gas bottle – full", sectionId: null, suggested: false, createdAt: at, updatedAt: at },
+              ],
+              createdAt: at,
+              updatedAt: at,
+            },
+          ],
+          runs: [],
+          links: [],
+        },
+      },
+    };
+  }
+
+  it("reads templates, starts a run, ticks an item, with a backup each time", async () => {
     const store = new MemoryStore();
     store.addKey(WRITE_TOKEN, "steadier:read steadier:write");
+    withList(store);
     const client = await connect(store, WRITE_TOKEN);
-    const added = await client.callTool({
-      name: "add_my_life_shopping_items",
-      arguments: { listTitle: "Groceries", items: ["eggs", "bread"] },
-    });
-    expect(added.isError).toBeFalsy();
+    const read = await client.callTool({ name: "read_my_life_lists", arguments: {} });
+    const lists = (read.structuredContent as { lists: { templateId: string; title: string; type: string; runInProgress: unknown }[] }).lists;
+    expect(lists[0]).toMatchObject({ title: "Kingston packing", type: "Do-Confirm", runInProgress: null });
+    const started = await client.callTool({ name: "start_my_life_list_run", arguments: { templateId: "list-packing" } });
+    expect(started.isError).toBeFalsy();
     expect(store.backups).toHaveLength(1);
-    const read = await client.callTool({ name: "read_my_life_shopping_lists", arguments: {} });
-    const lists = (read.structuredContent as { lists: { listId: string; title: string; items: { itemId: string; text: string }[] }[] }).lists;
-    expect(lists).toHaveLength(1);
-    expect(lists[0].title).toBe("Groceries");
-    expect(lists[0].items.map(item => item.text)).toEqual(["eggs", "bread"]);
-    const ticked = await client.callTool({
-      name: "check_my_life_shopping_items",
-      arguments: { listId: lists[0].listId, itemIds: [lists[0].items[0].itemId], checked: true },
-    });
+    const runId = (started.structuredContent as { runId: string }).runId;
+    const ticked = await client.callTool({ name: "tick_my_life_list_items", arguments: { runId, itemIds: ["item-torch"], ticked: true } });
     expect(ticked.isError).toBeFalsy();
     expect(store.backups).toHaveLength(2);
-    const after = await client.callTool({ name: "read_my_life_shopping_lists", arguments: {} });
-    const remaining = (after.structuredContent as { lists: { items: { text: string }[] }[] }).lists[0].items;
-    expect(remaining.map(item => item.text)).toEqual(["bread"]);
-    // Adding again by the same name (any case) uses the same list.
-    await client.callTool({ name: "add_my_life_shopping_items", arguments: { listTitle: "groceries", items: ["milk"] } });
-    expect(store.stored!.workspace.shoppingLists).toHaveLength(1);
+    const after = await client.callTool({ name: "read_my_life_lists", arguments: { templateId: "list-packing" } });
+    const run = (after.structuredContent as { lists: { runInProgress: { done: number; total: number } }[] }).lists[0].runInProgress;
+    expect(run).toMatchObject({ done: 1, total: 2 });
+    // The template itself is never ticked.
+    expect(JSON.stringify(store.stored!.workspace.lists!.templates[0])).not.toContain("ticked");
+  });
+
+  it("only suggests items: dashed until the owner confirms, never ticked, never a new list", async () => {
+    const store = new MemoryStore();
+    store.addKey(WRITE_TOKEN, "steadier:read steadier:write");
+    withList(store);
+    const client = await connect(store, WRITE_TOKEN);
+    const toRun = await client.callTool({ name: "suggest_my_life_list_items", arguments: { listTitle: "kingston packing", items: ["Esky – ice in"] } });
+    expect(toRun.isError).toBeFalsy();
+    const run = store.stored!.workspace.lists!.runs[0];
+    expect(run.extras).toEqual([expect.objectContaining({ text: "Esky – ice in", suggested: true })]);
+    const tick = await client.callTool({ name: "tick_my_life_list_items", arguments: { runId: run.id, itemIds: [run.extras[0].id], ticked: true } });
+    expect(tick.isError).toBe(true);
+    const toTemplate = await client.callTool({ name: "suggest_my_life_list_items", arguments: { templateId: "list-packing", to: "template", items: ["Keys – in pocket"] } });
+    expect(toTemplate.isError).toBeFalsy();
+    expect(store.stored!.workspace.lists!.templates[0].items.at(-1)).toMatchObject({ text: "Keys – in pocket", suggested: true });
+    const noList = await client.callTool({ name: "suggest_my_life_list_items", arguments: { listTitle: "Hardware", items: ["glue"] } });
+    expect(noList.isError).toBe(true);
+    expect(store.stored!.workspace.lists!.templates).toHaveLength(1);
   });
 
   it("is not offered to a read-only connector", async () => {
@@ -1396,7 +1438,7 @@ describe("shopping list connector tools", () => {
     store.addKey(READ_TOKEN, "steadier:read");
     const client = await connect(store, READ_TOKEN);
     await expect(
-      client.callTool({ name: "add_my_life_shopping_items", arguments: { items: ["eggs"] } })
+      client.callTool({ name: "suggest_my_life_list_items", arguments: { items: ["eggs"] } })
     ).rejects.toThrow(/not found/);
     expect(store.backups).toHaveLength(0);
   });

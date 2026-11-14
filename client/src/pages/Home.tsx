@@ -140,7 +140,6 @@ import {
   History,
   Activity,
   Globe,
-  ShoppingCart,
   Package,
   Users,
   Sun,
@@ -213,7 +212,9 @@ import DailyLogView from "../components/steadier/DailyLogView";
 import DecisionLogView from "../components/steadier/DecisionLogView";
 import EvidenceFeedView from "../components/steadier/EvidenceFeedView";
 import SiteCardsView from "../components/steadier/SiteCardsView";
-import ShoppingListsView from "../components/steadier/ShoppingListsView";
+import ListsView from "../components/steadier/ListsView";
+import ParentLists from "../components/steadier/ParentLists";
+import { LIST_WORDING_GUIDE } from "../domain/lists";
 import AssetsView from "../components/steadier/AssetsView";
 import WorkPipelineView from "../components/steadier/WorkPipelineView";
 import RoutineRunnerView from "../components/steadier/RoutineRunnerView";
@@ -266,7 +267,7 @@ const nav: { id: View; title: string; Icon: typeof CircleDot }[] = [
   { id: "decisions", title: "Decision Log", Icon: History },
   { id: "evidence", title: "Evidence Feed", Icon: Activity },
   { id: "sites", title: "Site Cards", Icon: Globe },
-  { id: "shopping", title: "Shopping Lists", Icon: ShoppingCart },
+  { id: "shopping", title: "Lists", Icon: ListChecks },
   { id: "assets", title: "Assets & Wear Logs", Icon: Package },
   { id: "pipeline", title: "Work Pipeline", Icon: Layers3 },
   { id: "routine", title: "Routine Runner", Icon: RefreshCw },
@@ -452,6 +453,9 @@ export default function Home() {
   const [online, setOnline] = useState(navigator.onLine);
   const calendarReadRef = useRef<(() => void) | null>(null);
   const weeklyReadRef = useRef<(() => void) | null>(null);
+  const listsReadRef = useRef<(() => string) | null>(null);
+  /** A list to open on the Lists page (from a "Packing 4/9" chip or a task sheet). */
+  const [listFocus, setListFocus] = useState<string | null>(null);
   const lastScreenVoiceError = useRef("");
   // Compass map pages have their own address (#map/<id>) so the phone back
   // button moves between them and an item can be referred to by link.
@@ -483,8 +487,8 @@ export default function Home() {
     setEditing(null);
     setTaskPanelMode("view");
   };
-  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects" || view === "review" || view === "weekly";
-  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : view === "review" || view === "weekly" ? "plain" : "today";
+  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects" || view === "review" || view === "weekly" || view === "shopping";
+  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : view === "review" || view === "weekly" || view === "shopping" ? "plain" : "today";
   const changeAppearance = (next: Appearance) => {
     setAppearance(next);
     persistAppearance(next);
@@ -1927,6 +1931,18 @@ export default function Home() {
     if (voice.speaking) voice.stopSpeaking();
     else voice.read(todaySummaryText());
   };
+  /** Open one list on the Lists page (from a task sheet, project page or note). */
+  const openList = (templateId: string) => {
+    closeTaskPanel();
+    setListFocus(templateId);
+    navigate("shopping");
+  };
+  const listMutate = (update: (w: Workspace) => Workspace) => {
+    if (!allowed()) return false;
+    const accepted = store.mutate(update);
+    if (!accepted) toast.error("List change was not saved. Check sync and try again.");
+    return accepted;
+  };
   const readCurrentScreen = () => {
     if (v2Page === "calendar") {
       if (voice.speaking) voice.stopSpeaking();
@@ -1945,6 +1961,11 @@ export default function Home() {
     if (view === "weekly") {
       if (voice.speaking) voice.stopSpeaking();
       else weeklyReadRef.current?.();
+      return;
+    }
+    if (view === "shopping") {
+      const text = listsReadRef.current?.();
+      if (text) readOutLoud(text);
       return;
     }
     readOutLoud(todayTab === "overview" ? todaySummaryText() : v2TodaySummaryText());
@@ -2170,7 +2191,7 @@ export default function Home() {
                     />
                     <div className="v2-topbar-center" aria-live="polite">
                       <strong className="v2-page-title">
-                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : view === "review" ? "Review due / unplaced" : view === "weekly" ? "Weekly Review" : todayTab === "overview" ? "Overview" : "Today"}
+                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : view === "review" ? "Review due / unplaced" : view === "weekly" ? "Weekly Review" : view === "shopping" ? "Lists" : todayTab === "overview" ? "Overview" : "Today"}
                       </strong>
                       <span className={`v2-sync-status ${topbarConnectionTone}`}>
                         <span>{topbarDate}</span><span aria-hidden="true"> · </span><i aria-hidden="true" />
@@ -2371,7 +2392,9 @@ export default function Home() {
                     extra={
                       view === "review"
                         ? [UNPLACED_INTRO, `${REVIEW_LIST_INFO} ${REVIEW_LIST_INFO_TAIL}`, REVIEW_ACK_LINE]
-                        : undefined
+                        : view === "shopping"
+                          ? [LIST_WORDING_GUIDE]
+                          : undefined
                     }
                   />
                 )}
@@ -2609,6 +2632,18 @@ export default function Home() {
                     entries={store.workspace.dailyLog ?? []}
                     readOnly={!!store.readOnly}
                     onSave={saveDailyLog}
+                    listsFor={(entryId, linking, onDone) => (
+                      <ParentLists
+                        workspace={store.workspace}
+                        target={{ kind: "note", id: entryId }}
+                        readOnly={store.readOnly}
+                        onMutate={listMutate}
+                        onOpenList={openList}
+                        quiet
+                        startAdding={linking}
+                        onAddingDone={onDone}
+                      />
+                    )}
                   />
                 ) : view === "decisions" ? (
                   <DecisionLogView workspace={store.workspace} voice={voice} />
@@ -2631,17 +2666,17 @@ export default function Home() {
                     onStatusChange={changeSiteCardStatus}
                   />
                 ) : view === "shopping" ? (
-                  <ShoppingListsView
+                  <ListsView
                     workspace={store.workspace}
                     readOnly={store.readOnly}
-                    voice={voice}
+                    readRef={listsReadRef}
+                    focusTemplateId={listFocus}
+                    onFocusHandled={() => setListFocus(null)}
                     onMutate={update => {
                       if (!allowed()) return false;
                       const accepted = store.mutate(update);
                       if (!accepted) {
-                        toast.error(
-                          "Shopping list change was not saved. Check sync and try again."
-                        );
+                        toast.error("List change was not saved. Check sync and try again.");
                       }
                       return accepted;
                     }}
@@ -2762,6 +2797,7 @@ export default function Home() {
                     onFocusDone={() => setFocusProjectId(null)}
                     readOnly={store.readOnly}
                     onDoneTask={id => done(id)}
+                    onOpenList={openList}
                   />
                 ) : view === "cloud" ? (
                   <SharedDataPanel
@@ -2833,6 +2869,7 @@ export default function Home() {
                 ) : (
                   <WorkViews
                     view={view}
+                    workspace={store.workspace}
                     tasks={tasks}
                     projects={store.workspace.projects}
                     imperatives={store.workspace.imperatives}
@@ -2959,6 +2996,15 @@ export default function Home() {
                 }
                 onConfirmAll={confirmAllSuggestedSubtasks}
                 onRead={voice.read}
+                lists={
+                  <ParentLists
+                    workspace={store.workspace}
+                    target={{ kind: "task", id: selectedTask.id }}
+                    readOnly={store.readOnly}
+                    onMutate={listMutate}
+                    onOpenList={openList}
+                  />
+                }
                 card={
                   selectedTask.state !== "done" && !isIdea(selectedTask) && !selectedTask.droppedAt
                     ? (more: ReactNode) => (
