@@ -345,6 +345,18 @@ export function upkeepDraftTitle(assetName: string, item: Pick<UpkeepItem, "what
   return `${base} by ${d} ${MONTHS[m - 1]} ${y}`;
 }
 
+/** The upkeep item a task was created for (service plan or revisit), if any. */
+export function upkeepForTask(workspace: Workspace, taskId: string) {
+  for (const asset of assetsOf(workspace)) {
+    if (asset.status !== "active") continue;
+    const plan = asset.plans.find(p => p.taskId === taskId);
+    if (plan) return { asset, kind: "service" as const, refId: plan.id, what: plan.name };
+    const revisit = asset.revisits.find(r => r.taskId === taskId);
+    if (revisit) return { asset, kind: "revisit" as const, refId: revisit.id, what: revisit.what };
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Changes (each returns the same workspace when nothing valid changed)
 

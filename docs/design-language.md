@@ -78,6 +78,7 @@ No other colours carry meaning.
 - **Grouped by type**, counts singular or plural ("Vehicle (1)").
 - **Two chips at most:** condition (none until checked), plus one due chip (service due/overdue, revisit due/overdue, reading due). Everything else is plain text.
 - **Edit is a button, Delete is behind ⋯, Retire is a solid, quiet button at the bottom** (it's a decision; dashed means suggested).
+- **Ticking a task made from Upkeep due asks once** ("Log the service now?", Yes / Not now). Not now changes nothing.
 - **No second reminder system:** due upkeep is one "Upkeep due" row in Needs attention (counted once per item) and the Weekly Review's Action step. Create task only opens a draft.
 
 ## Standing rules for anyone (or any AI) working on Steadier

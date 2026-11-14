@@ -6,6 +6,9 @@ import { addAsset, addPlan, addReading, newAsset } from "../../domain/assets";
 import { adelaideClock, addDaysToDate } from "./assetsTestClock";
 import AssetsView from "./AssetsView";
 import UpkeepDueList from "./UpkeepDueList";
+import UpkeepLogPrompt from "./UpkeepLogPrompt";
+import { linkUpkeepTask, upkeepForTask } from "../../domain/assets";
+import { createTask } from "../../domain/engine";
 
 const AT = "2026-11-14T09:00:00+10:30";
 
@@ -74,5 +77,19 @@ describe("Assets & Upkeep page", () => {
     expect(rows).toContain("Freelander 2 · Major service");
     expect(rows).toContain("Create task");
     expect(rows).toContain("Log it done");
+  });
+
+  it("ticking a task made from Upkeep due asks to log it, with today's date and the latest reading", () => {
+    const task = { ...createTask({ title: "Freelander 2: Major service" }), id: "task-svc" };
+    const w = linkUpkeepTask({ ...workspace(), tasks: [task] }, "car", "service", "p", "task-svc", AT);
+    expect(upkeepForTask(w, "task-svc")?.what).toBe("Major service");
+    expect(upkeepForTask(w, "task-other")).toBeNull();
+    const html = renderToStaticMarkup(<UpkeepLogPrompt workspace={w} taskId="task-svc" today={adelaideClock()} onMutate={() => true} onClose={noop} />);
+    expect(html).toContain("Log the service now?");
+    expect(html).toContain(`value="${adelaideClock()}"`);
+    expect(html).toContain('value="61240"');
+    expect(html).toContain("Yes, log it");
+    expect(html).toContain("Not now");
+    expect(renderToStaticMarkup(<UpkeepLogPrompt workspace={w} taskId="task-other" today={adelaideClock()} onMutate={() => true} onClose={noop} />)).toBe("");
   });
 });

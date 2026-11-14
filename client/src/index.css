@@ -12385,3 +12385,13 @@ a.nav-item { text-decoration: none; }
 .uk-item { display: flex; flex-direction: column; gap: 4px; }
 .ov-row-detail { padding: 4px 14px 10px; border-bottom: 1px solid var(--tp-line); }
 .ov-row-open { transform: rotate(90deg); }
+/* Upkeep: "Log the service now?" after ticking a task made from Upkeep due. */
+.uk-overlay { position: fixed; inset: 0; z-index: 130; }
+.uk-scrim { position: absolute; inset: 0; border: 0; background: rgba(0,0,0,0.3); cursor: default; }
+/* Sits above the tab bar and the toast line, so Yes / Not now are never covered. */
+.uk-prompt { position: absolute; left: 8px; right: 8px; bottom: 104px; max-width: 560px; margin: 0 auto; box-sizing: border-box; background: var(--card); color: var(--tp-strong); border: 1px solid var(--tp-line); border-radius: 16px; padding: 16px; box-shadow: 0 14px 34px rgba(0,0,0,0.28); }
+.uk-prompt .lv-inline-form { flex-wrap: nowrap; align-items: flex-start; }
+.uk-prompt .lv-field { flex: 1 1 0; min-width: 0; }
+.uk-prompt input, .uk-prompt select { box-sizing: border-box; width: 100%; height: 44px; min-height: 44px; padding: 0 10px; border: 1px solid var(--tp-btn-line); border-radius: 10px; background: var(--card); color: var(--tp-strong); font: inherit; }
+/* Inputs inside a labelled field (a column) keep their own height; the 180px basis is for bare inputs in a row. */
+.lv-inline-form .lv-field input, .lv-inline-form .lv-field select, .lv-add .lv-field input { flex: 0 0 auto; }

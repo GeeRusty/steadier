@@ -64,7 +64,7 @@ import {
   type TaskAutosaveCloudState,
   type TaskAutosaveSaveResult,
 } from "../domain/taskAutosave";
-import { ASSETS_INFO_MORE, linkUpkeepTask, upkeepDraftTitle, upkeepDue, type UpkeepItem } from "../domain/assets";
+import { ASSETS_INFO_MORE, linkUpkeepTask, upkeepDraftTitle, upkeepForTask, upkeepDue, type UpkeepItem } from "../domain/assets";
 import { setRoutineChecklistItem } from "../domain/routineRunner";
 import {
   appendEvidenceEntry,
@@ -217,6 +217,7 @@ import ParentLists from "../components/steadier/ParentLists";
 import { addLink, LIST_WORDING_GUIDE, linksFor, newListLinkId } from "../domain/lists";
 import AssetsView, { downloadAssetCosts, type AssetFocus } from "../components/steadier/AssetsView";
 import UpkeepDueList, { type UpkeepAction } from "../components/steadier/UpkeepDueList";
+import UpkeepLogPrompt from "../components/steadier/UpkeepLogPrompt";
 import WorkPipelineView from "../components/steadier/WorkPipelineView";
 import RoutineRunnerView from "../components/steadier/RoutineRunnerView";
 import YearWheelView from "../components/steadier/YearWheelView";
@@ -451,6 +452,8 @@ export default function Home() {
   } | null>(null);
   const assetsReadRef = useRef<(() => string) | null>(null);
   const [assetFocus, setAssetFocus] = useState<AssetFocus | null>(null);
+  /** A task created from Upkeep due was ticked: ask to log it (owner choice B, 14 Nov). */
+  const [upkeepLogTaskId, setUpkeepLogTaskId] = useState<string | null>(null);
   const [focusOpen, setFocusOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [screenMenu, setScreenMenu] = useState<"app" | "page" | null>(null);
@@ -1070,6 +1073,11 @@ export default function Home() {
     }
     if (store.workspace.focus?.taskId === id) {
       setFocusOpen(!!store.workspace.focus.continueAfterDone);
+    }
+    if (upkeepForTask(store.workspace, id)) {
+      // The task sheet is modal; close it so the question can be answered.
+      closeTaskPanel();
+      setTimeout(() => setUpkeepLogTaskId(id), 0);
     }
     if (!stayOpen) setEditing(null);
     // Finished the last open subtask: gently offer to finish the parent.
@@ -2958,6 +2966,19 @@ export default function Home() {
                 onHold={() => window.location.assign("/voice?listen=1")}
               />
             </nav>
+            {upkeepLogTaskId && (
+              <UpkeepLogPrompt
+                key={upkeepLogTaskId}
+                workspace={store.workspace}
+                taskId={upkeepLogTaskId}
+                today={adelaideClock().date}
+                onMutate={update => {
+                  if (!allowed()) return false;
+                  return store.mutate(update);
+                }}
+                onClose={() => setUpkeepLogTaskId(null)}
+              />
+            )}
             {v2Screen && screenMenu && (
               <TodayCalendarMenuSheet
                 kind={screenMenu}
