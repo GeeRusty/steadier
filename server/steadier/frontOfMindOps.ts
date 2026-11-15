@@ -31,7 +31,7 @@ export function planAddFrontOfMind(
   text: string,
   notes: string | undefined,
   now: Date,
-  by: "owner" | "claude",
+  by: "owner" | ConnectorActor,
   note?: string
 ): ChangePlan<{ itemId: string; wording: string }> {
   const wording = text.replace(/\s+/g, " ").trim();
@@ -39,10 +39,10 @@ export function planAddFrontOfMind(
   if (wording.length > FRONT_OF_MIND_TEXT_LIMIT) throw new ChangeError("INVALID_CHANGE", `Keep it under ${FRONT_OF_MIND_TEXT_LIMIT} characters.`);
   if (frontOfMindOf(workspace).items.length >= MAX_FRONT_OF_MIND) throw new ChangeError("INVALID_CHANGE", "Front of Mind is full.");
   const id = newFrontOfMindId();
-  const next = addFrontOfMind(workspace, id, wording, adelaideTimestamp(now), { by, notes, note });
+  const next = addFrontOfMind(workspace, id, wording, adelaideTimestamp(now), { by: by === "owner" ? "owner" : "claude", notes, note });
   return {
     workspace: next,
-    summary: `${by === "claude" ? "Claude" : "Owner"}: added ${short(wording)} to Front of Mind`,
+    summary: `${by === "owner" ? "Owner" : connectorName(by)}: added ${short(wording)} to Front of Mind`,
     result: { itemId: id, wording },
   };
 }

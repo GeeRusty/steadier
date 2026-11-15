@@ -434,7 +434,7 @@ async function approve(
   baseUrl: string,
   ticket: string,
   access: "read" | "write" = "read",
-  connectorActor: "claude" | "chatgpt" | "connector" = "connector"
+  connectorActor: "claude" | "chatgpt" | "grok" | "connector" = "connector"
 ): Promise<{ code: string; state: string | null }> {
   const response = await fetch(
     `${baseUrl}/api/compass/oauth/requests/${ticket}/decision`,
@@ -457,7 +457,7 @@ async function issueCode(
   baseUrl: string,
   client: { clientId: string; redirectUri: string },
   verifier = "v".repeat(64),
-  connectorActor: "claude" | "chatgpt" | "connector" = "claude"
+  connectorActor: "claude" | "chatgpt" | "grok" | "connector" = "claude"
 ): Promise<{ code: string; verifier: string }> {
   const authorization = await startAuthorization(baseUrl, client, { verifier });
   const approved = await approve(
@@ -578,6 +578,32 @@ describe("Compass OAuth", () => {
       "authorization_code",
       "refresh_token",
     ]);
+  });
+
+  it("lets the owner label a Grok connection Grok, with read and changes", async () => {
+    const { baseUrl, repository } = await setup();
+    const grok = await registerClient(baseUrl, {
+      clientName: "Grok",
+      redirectUri: "https://grok.com/connectors/oauth/callback",
+      scope: COMPASS_READ_WRITE_SCOPE,
+    });
+    const authorization = await startAuthorization(baseUrl, grok, {
+      scope: COMPASS_READ_WRITE_SCOPE,
+    });
+    const approved = await approve(baseUrl, authorization.ticket, "write", "grok");
+    const response = await redeem(baseUrl, {
+      grant_type: "authorization_code",
+      client_id: grok.clientId,
+      code: approved.code,
+      redirect_uri: grok.redirectUri,
+      code_verifier: authorization.verifier,
+      resource: COMPASS_MCP_URL,
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ scope: COMPASS_READ_WRITE_SCOPE });
+    const key = [...repository.keys.values()][0]!;
+    expect(key.connectorActor).toBe("grok");
+    expect(key.scope).toBe(COMPASS_READ_WRITE_SCOPE);
   });
 
   it("issues ChatGPT offline access only after consent and rotates refresh credentials once, bound to client and revocation", async () => {

@@ -33,7 +33,7 @@ export interface CompassConsentView {
   requestedScope: CompassGrantedScope;
   offlineAccess: boolean;
   /** Generic safe default; the owner chooses any branded audit label at approval. */
-  connectorActor: "claude" | "chatgpt" | "connector";
+  connectorActor: "claude" | "chatgpt" | "grok" | "connector";
   expiresAt: string;
   taskCount: number;
   projectCount: number;

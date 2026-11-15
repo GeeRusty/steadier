@@ -491,6 +491,7 @@ function parseDecision(body: unknown): {
   if (
     connectorActor !== "claude" &&
     connectorActor !== "chatgpt" &&
+    connectorActor !== "grok" &&
     connectorActor !== "connector"
   ) {
     throw new HttpError(400, { code: "INVALID_REQUEST" });
@@ -532,6 +533,8 @@ function consentView(
 function connectorDisplayName(actor: ConnectorActor): string {
   return actor === "chatgpt"
     ? "ChatGPT"
+    : actor === "grok"
+    ? "Grok"
     : actor === "claude"
       ? "Claude"
       : "MCP connector";

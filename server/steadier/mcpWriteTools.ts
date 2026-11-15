@@ -1157,7 +1157,7 @@ export function registerWriteTools(
       if (!parsed.success) return invalid(parsed.error);
       try {
         const applied = await applyGuardedChange(changes, userId, actor, workspace =>
-          planAddFrontOfMind(workspace, parsed.data.text, parsed.data.notes, new Date(), "claude")
+          planAddFrontOfMind(workspace, parsed.data.text, parsed.data.notes, new Date(), actor)
         );
         return written(applied.summary, applied.revision, { item: applied.result });
       } catch (error) {
@@ -1285,7 +1285,8 @@ export function registerWriteTools(
               amount: data.amount,
               nextAction: data.next_action,
             },
-            new Date()
+            new Date(),
+            actor
           )
         );
         const { obligation, removed, amountNotSaved } = applied.result;

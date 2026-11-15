@@ -55,6 +55,8 @@ import {
 export function connectorName(actor: ConnectorActor): string {
   return actor === "chatgpt"
     ? "ChatGPT"
+    : actor === "grok"
+    ? "Grok"
     : actor === "claude"
       ? "Claude"
       : "MCP connector";

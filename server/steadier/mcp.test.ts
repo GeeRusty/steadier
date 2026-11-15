@@ -494,6 +494,19 @@ describe("native Compass MCP route", () => {
     expect(
       (await post(endpoint, TOKEN_ONE, "https://attacker.example")).status
     ).toBe(403);
+    expect(
+      (await post(endpoint, TOKEN_ONE, "https://grok.com.attacker.example"))
+        .status
+    ).toBe(403);
+    expect(
+      (await post(endpoint, TOKEN_ONE, "http://grok.com")).status
+    ).toBe(403);
+    expect(
+      (await post(endpoint, TOKEN_ONE, "http://app.grok.com")).status
+    ).toBe(403);
+    for (const origin of ["https://grok.com", "https://app.grok.com", "https://x.ai"]) {
+      expect((await post(endpoint, TOKEN_ONE, origin)).status).not.toBe(403);
+    }
 
     // Every MCP endpoint method is authenticated before the SDK answers its
     // stateless unsupported-method response. No unauthenticated discovery path exists.

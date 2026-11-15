@@ -65,7 +65,7 @@ export interface SteadierRepository {
     refreshTokenHash?: string;
     refreshExpiresAt?: Date;
     oauthClientId?: string;
-    connectorActor?: "claude" | "chatgpt" | "connector";
+    connectorActor?: "claude" | "chatgpt" | "grok" | "connector";
   }): Promise<CompassKeyInfo>;
   revokeCompassKey(
     userId: number,
@@ -228,7 +228,7 @@ export async function createCompassKey(
     refreshTokenHash?: string;
     refreshExpiresAt?: Date;
     oauthClientId?: string;
-    connectorActor?: "claude" | "chatgpt" | "connector";
+    connectorActor?: "claude" | "chatgpt" | "grok" | "connector";
   } = {}
 ): Promise<{ token: string; info: CompassKeyInfo }> {
   const existing = await repository.listCompassKeys(userId);

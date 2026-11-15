@@ -57,6 +57,8 @@ export function DecisionField({
               ? "Suggested by Claude"
               : decision.by === "chatgpt"
                 ? "Suggested by ChatGPT"
+                : decision.by === "grok"
+                ? "Suggested by Grok"
                 : decision.by === "connector"
                   ? "Suggested by connector"
                   : "Suggested"}

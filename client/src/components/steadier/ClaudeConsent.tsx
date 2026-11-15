@@ -117,6 +117,8 @@ export default function ClaudeConsent({
   const connector =
     connectorActor === "chatgpt"
       ? "ChatGPT"
+      : connectorActor === "grok"
+      ? "Grok"
       : connectorActor === "claude"
         ? "Claude"
         : "MCP connector";
@@ -207,7 +209,7 @@ export default function ClaudeConsent({
               <p className="small">
                 Client names are supplied by the requesting application. Return
                 destination: <code>{request.redirectOrigin}</code>. Steadier
-                cannot verify the provider's brand. Use a ChatGPT or Claude
+                cannot verify the provider's brand. Use a ChatGPT, Grok or Claude
                 audit label only if you initiated and recognize this exact
                 connection; otherwise leave it as the generic MCP connector.
               </p>
@@ -233,6 +235,16 @@ export default function ClaudeConsent({
                   onChange={() => setConnectorActor("chatgpt")}
                 />
                 ChatGPT (I started and recognize this connection)
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="compass-audit-label"
+                  value="grok"
+                  checked={connectorActor === "grok"}
+                  onChange={() => setConnectorActor("grok")}
+                />
+                Grok (I started and recognize this connection)
               </label>
               <label>
                 <input

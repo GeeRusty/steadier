@@ -234,7 +234,7 @@ class MemoryStore implements SteadierRepository, WorkspaceChangeRepository {
   addKey(
     token: string,
     scope: string,
-    connectorActor?: "claude" | "chatgpt" | "connector"
+    connectorActor?: "claude" | "chatgpt" | "grok" | "connector"
   ) {
     this.keys.push({
       id: this.keys.length + 1,
@@ -1169,7 +1169,7 @@ describe("connector Compass tools", () => {
 describe("ChatGPT and Claude connector parity", () => {
   for (const scope of ["steadier:read", "steadier:read steadier:write"]) {
     it(`exposes identical tools and input schemas for "${scope}"`, async () => {
-      const shape = async (actor: "claude" | "chatgpt") => {
+      const shape = async (actor: "claude" | "chatgpt" | "grok") => {
         const store = new MemoryStore();
         store.addKey(WRITE_TOKEN, scope, actor);
         const client = await connect(store, WRITE_TOKEN);
@@ -1186,8 +1186,49 @@ describe("ChatGPT and Claude connector parity", () => {
       const chatgpt = await shape("chatgpt");
       expect(chatgpt.length).toBeGreaterThan(0);
       expect(chatgpt).toEqual(claude);
+      // Grok gets exactly what Claude gets: every area, every tool.
+      expect(await shape("grok")).toEqual(claude);
     });
   }
+});
+
+describe("Grok connector provenance", () => {
+  it("labels Grok's tasks, Front of Mind, bills and delete requests as Grok", async () => {
+    const store = new MemoryStore();
+    store.addKey(WRITE_TOKEN, "steadier:read steadier:write", "grok");
+    const client = await connect(store, WRITE_TOKEN);
+
+    const created = await client.callTool({
+      name: "create_my_life_task",
+      arguments: { title: "Grok-created task" },
+    });
+    expect(created.isError).toBeFalsy();
+    expect(store.backups.every(b => b.actor === "grok")).toBe(true);
+    const newTask = store.stored!.workspace.tasks.at(-1)!;
+    expect(newTask.history.at(-1)?.text).toMatch(/^Grok: Created this task\./);
+
+    const fom = await client.callTool({
+      name: "add_my_life_front_of_mind",
+      arguments: { text: "Ring the plumber" },
+    });
+    expect(fom.isError).toBeFalsy();
+    expect(store.backups.map(b => b.reason)).toContainEqual(expect.stringMatching(/^Grok: added/));
+
+    const bill = await client.callTool({
+      name: "add_my_life_obligation",
+      arguments: { provider: "Water", kind: "bill", due_date: "2026-12-01" },
+    });
+    expect(bill.isError).toBeFalsy();
+    expect(store.backups.map(b => b.reason)).toContainEqual(expect.stringMatching(/^Grok: suggested obligation/));
+
+    const deletion = await client.callTool({
+      name: "request_my_life_delete",
+      arguments: { kind: "task", id: newTask.id, reason: "Owner asked to remove it" },
+    });
+    expect(deletion.isError).toBeFalsy();
+    expect(store.pending[0]).toMatchObject({ requestedBy: "grok", status: "pending" });
+    expect(store.stored!.workspace.tasks.some(t => t.id === newTask.id)).toBe(true);
+  });
 });
 
 

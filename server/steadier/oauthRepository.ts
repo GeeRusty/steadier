@@ -192,7 +192,7 @@ function authorizationCodeFromRow(
   if (!isGrantedScope(row.scope)) {
     throw new Error("Stored OAuth authorization code scope is invalid.");
   }
-  if (!["claude", "chatgpt", "connector"].includes(row.connectorActor)) {
+  if (!["claude", "chatgpt", "grok", "connector"].includes(row.connectorActor)) {
     throw new Error("Stored OAuth connector label is invalid.");
   }
   return {

@@ -284,7 +284,7 @@ export class DrizzleSteadierRepository
     refreshTokenHash?: string;
     refreshExpiresAt?: Date;
     oauthClientId?: string;
-    connectorActor?: "claude" | "chatgpt" | "connector";
+    connectorActor?: "claude" | "chatgpt" | "grok" | "connector";
   }): Promise<CompassKeyInfo> {
     const database = await requireDatabase();
     await database.insert(steadierCompassKeys).values({

@@ -3,6 +3,8 @@ import { safeAmount, safeShortText } from "../../shared/safeFields";
 import { amountsHiddenFromAI, defaultLeadTimeDays, newObligationDraft } from "../../client/src/domain/obligations";
 import type { Obligation, ObligationCadence, ObligationKind, Workspace } from "../../client/src/domain/types";
 import { ChangeError, type ChangePlan } from "./changes";
+import type { ConnectorActor } from "../../shared/cloud";
+import { connectorName } from "./connectorOps";
 
 export interface SuggestedObligationInput {
   provider?: string;
@@ -31,7 +33,8 @@ export interface SuggestedObligationResult {
 export function planSuggestObligation(
   workspace: Workspace,
   input: SuggestedObligationInput,
-  now: Date
+  now: Date,
+  actor: ConnectorActor = "claude"
 ): ChangePlan<SuggestedObligationResult> {
   const provider = safeShortText(input.provider ?? "", 80);
   const forWhat = safeShortText(input.forWhat ?? "", 80);
@@ -64,7 +67,7 @@ export function planSuggestObligation(
   };
   return {
     workspace: { ...workspace, obligations: [...(workspace.obligations ?? []), obligation] },
-    summary: `Claude: suggested obligation “${title}”`,
+    summary: `${connectorName(actor)}: suggested obligation “${title}”`,
     result: { obligation, removed, amountNotSaved: hidden && !!input.amount },
   };
 }

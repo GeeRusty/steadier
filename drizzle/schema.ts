@@ -94,6 +94,7 @@ export const steadierCompassKeys = mysqlTable(
     connectorActor: mysqlEnum("connectorActor", [
       "claude",
       "chatgpt",
+      "grok",
       "connector",
     ]),
   },
@@ -116,6 +117,7 @@ export const steadierWorkspaceBackups = mysqlTable(
     actor: mysqlEnum("actor", [
       "claude",
       "chatgpt",
+      "grok",
       "connector",
       "owner",
     ]).notNull(),
@@ -139,7 +141,7 @@ export const steadierPendingDeletes = mysqlTable(
     itemId: varchar("itemId", { length: 128 }).notNull(),
     itemTitle: varchar("itemTitle", { length: 500 }).notNull(),
     reason: text("reason").notNull(),
-    requestedBy: mysqlEnum("requestedBy", ["claude", "chatgpt", "connector"])
+    requestedBy: mysqlEnum("requestedBy", ["claude", "chatgpt", "grok", "connector"])
       .default("claude")
       .notNull(),
     status: mysqlEnum("status", ["pending", "deleted", "kept"])
@@ -206,7 +208,7 @@ export const steadierCompassOAuthCodes = mysqlTable(
     codeChallenge: varchar("codeChallenge", { length: 128 }).notNull(),
     scope: varchar("scope", { length: 64 }).notNull(),
     offlineAccess: boolean("offlineAccess").default(false).notNull(),
-    connectorActor: mysqlEnum("connectorActor", ["claude", "chatgpt", "connector"])
+    connectorActor: mysqlEnum("connectorActor", ["claude", "chatgpt", "grok", "connector"])
       .default("connector")
       .notNull(),
     resource: varchar("resource", { length: 2048 }).notNull(),

@@ -35,6 +35,7 @@ export type DecidedBy =
   | "owner"
   | "claude"
   | "chatgpt"
+  | "grok"
   | "connector"
   | "steadier";
 
@@ -227,7 +228,7 @@ export function decisionField(value: unknown, label: string): Decision | null {
   if (!DECISION_OUTCOMES.includes(value.outcome as DecisionOutcome))
     fail(`${label} decision outcome is not recognised.`);
   if (
-    !["owner", "claude", "chatgpt", "connector", "steadier"].includes(
+    !["owner", "claude", "chatgpt", "grok", "connector", "steadier"].includes(
       value.by as string
     )
   )
@@ -597,6 +598,8 @@ export function describeDecision(decision: Decision | null): string {
         ? " (suggested by Claude)"
         : decision.by === "chatgpt"
           ? " (suggested by ChatGPT)"
+          : decision.by === "grok"
+          ? " (suggested by Grok)"
           : decision.by === "connector"
             ? " (suggested by MCP connector)"
             : decision.by === "steadier"

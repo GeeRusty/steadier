@@ -120,7 +120,12 @@ function hasAllowedOrigin(request: Request): boolean {
       parsed.origin === COMPASS_PUBLIC_ORIGIN ||
       parsed.origin === "https://claude.ai" ||
       parsed.origin === "https://chatgpt.com" ||
-      parsed.origin === "https://chat.openai.com"
+      parsed.origin === "https://chat.openai.com" ||
+      parsed.origin === "https://grok.com" ||
+      parsed.origin === "https://x.ai" ||
+      (parsed.protocol === "https:" &&
+        (parsed.hostname.endsWith(".grok.com") ||
+          parsed.hostname.endsWith(".x.ai")))
     )
       return true;
     return (
@@ -157,7 +162,7 @@ function userIdFromAuthInfo(authInfo: AuthInfo | undefined): number | null {
   ) {
     return null;
   }
-  const match = /^([1-9]\d*)(?::(?:claude|chatgpt|connector))?$/.exec(
+  const match = /^([1-9]\d*)(?::(?:claude|chatgpt|grok|connector))?$/.exec(
     clientId.slice(AUTH_INFO_CLIENT_PREFIX.length)
   );
   if (!match) return null;
@@ -171,7 +176,7 @@ function connectorActorFromAuthInfo(
   const clientId = authInfo?.clientId;
   const match =
     typeof clientId === "string"
-      ? /^steadier-reader:[1-9]\d*:(claude|chatgpt|connector)$/.exec(clientId)
+      ? /^steadier-reader:[1-9]\d*:(claude|chatgpt|grok|connector)$/.exec(clientId)
       : null;
   return (match?.[1] as ConnectorActor | undefined) ?? "claude";
 }

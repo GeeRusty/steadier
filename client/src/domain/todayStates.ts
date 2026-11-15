@@ -113,6 +113,7 @@ export function suggestionSource(task: Task): string {
   for (let i = task.history.length - 1; i >= 0; i--) {
     const text = task.history[i].text;
     if (text.startsWith("ChatGPT:")) return "ChatGPT";
+    if (text.startsWith("Grok:")) return "Grok";
     if (text.startsWith("Claude:")) return "Claude";
     if (text.startsWith("MCP connector:")) return "Connector";
   }
