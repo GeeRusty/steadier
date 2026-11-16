@@ -2,6 +2,7 @@ import { newAsset } from "../../client/src/domain/assets";
 import { describe, expect, it } from "vitest";
 import type { Workspace } from "../../client/src/domain/types";
 import { presentWorkspace, workspaceSheetCsv } from "./projections";
+import { createTask } from "../../client/src/domain/engine";
 
 const evidence = {
   id: "evidence-1",
@@ -239,5 +240,30 @@ describe("connector-safe workspace projection", () => {
     expect(csv).not.toContain("Synthetic purpose");
     expect(csv).not.toContain("Synthetic private note");
     expect(csv).not.toContain(credentialRenewal.renewalDate);
+  });
+});
+
+describe("photos stay private from the connector", () => {
+  it("never passes photo references, sizes or markup text to Claude or Grok", () => {
+    const task = {
+      ...createTask({ title: "Fix the gutter" }),
+      photos: [
+        {
+          id: "photo-1",
+          hash: "f".repeat(64),
+          addedAt: "2026-11-16T10:00:00+10:30",
+          label: "before" as const,
+          width: 10,
+          height: 10,
+          bytes: 10,
+          markup: [{ kind: "text" as const, x: 0.5, y: 0.5, text: "secret note" }],
+        },
+      ],
+    };
+    const shown = JSON.stringify(presentWorkspace({ ...workspace(), keepPhotoLocation: true, tasks: [task] }));
+    expect(shown).toContain("Fix the gutter");
+    expect(shown).not.toContain("f".repeat(64));
+    expect(shown).not.toContain("secret note");
+    expect(shown).not.toContain("keepPhotoLocation");
   });
 });

@@ -218,6 +218,11 @@ import { addLink, LIST_WORDING_GUIDE, linksFor, newListLinkId } from "../domain/
 import AssetsView, { downloadAssetCosts, type AssetFocus } from "../components/steadier/AssetsView";
 import UpkeepDueList, { type UpkeepAction } from "../components/steadier/UpkeepDueList";
 import UpkeepLogPrompt from "../components/steadier/UpkeepLogPrompt";
+import TaskPhotos from "../components/steadier/TaskPhotos";
+import PhotoMarkup from "../components/steadier/PhotoMarkup";
+import { AfterPhotoPrompt, PhotoBanner } from "../components/steadier/PhotoPrompts";
+import { usePhotoActions } from "../hooks/usePhotoActions";
+import { keepsPhotoLocation, markAfterPromptAsked, photosOf, setPhotoMarkup, wantsAfterPhoto } from "../domain/photos";
 import WorkPipelineView from "../components/steadier/WorkPipelineView";
 import RoutineRunnerView from "../components/steadier/RoutineRunnerView";
 import YearWheelView from "../components/steadier/YearWheelView";
@@ -455,6 +460,9 @@ export default function Home() {
   const [assetFocus, setAssetFocus] = useState<AssetFocus | null>(null);
   /** A task created from Upkeep due was ticked: ask to log it (owner choice B, 14 Nov). */
   const [upkeepLogTaskId, setUpkeepLogTaskId] = useState<string | null>(null);
+  /** A ticked task with a Before and no After: "Add an after photo?" (asked once). */
+  const [afterPhotoTaskId, setAfterPhotoTaskId] = useState<string | null>(null);
+  const [bannerMarkup, setBannerMarkup] = useState<{ taskId: string; photoId: string } | null>(null);
   const [focusOpen, setFocusOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [screenMenu, setScreenMenu] = useState<"app" | "page" | null>(null);
@@ -782,6 +790,19 @@ export default function Home() {
     }
     return true;
   };
+  const allowedRef = useRef(allowed);
+  allowedRef.current = allowed;
+  const photoGetWorkspace = useCallback(() => storeRef.current.workspace, []);
+  const photoMutate = useCallback(
+    (change: (w: Workspace) => Workspace) => Boolean(storeRef.current.mutate(change)),
+    []
+  );
+  const photoAllowed = useCallback(() => allowedRef.current(), []);
+  const photoActions = usePhotoActions({
+    getWorkspace: photoGetWorkspace,
+    mutate: photoMutate,
+    allowed: photoAllowed,
+  });
   // Task card: apply one change to a saved task, settled against its dots.
   const applyCard = (taskId: string, change: CardChange): boolean => {
     if (!allowed()) return false;
@@ -1073,8 +1094,13 @@ export default function Home() {
     }
     if (upkeepForTask(store.workspace, id)) {
       // The task sheet is modal; close it so the question can be answered.
+      // One sheet: it also holds the optional After photo.
       closeTaskPanel();
       setTimeout(() => setUpkeepLogTaskId(id), 0);
+    } else if (wantsAfterPhoto(storeRef.current.workspace.tasks.find(t => t.id === id))) {
+      closeTaskPanel();
+      storeRef.current.mutate(w => markAfterPromptAsked(w, id, adelaideTimestamp()));
+      setTimeout(() => setAfterPhotoTaskId(id), 0);
     }
     if (!stayOpen) setEditing(null);
     // Finished the last open subtask: gently offer to finish the parent.
@@ -2993,8 +3019,59 @@ export default function Home() {
                   return store.mutate(update);
                 }}
                 onClose={() => setUpkeepLogTaskId(null)}
+                onAfterPhoto={file => {
+                  void photoActions.attach(upkeepLogTaskId, file, "after");
+                }}
               />
             )}
+            {afterPhotoTaskId && store.workspace.tasks.some(t => t.id === afterPhotoTaskId) && (
+              <AfterPhotoPrompt
+                key={afterPhotoTaskId}
+                task={store.workspace.tasks.find(t => t.id === afterPhotoTaskId)!}
+                onPick={file => {
+                  void photoActions.attach(afterPhotoTaskId, file, "after");
+                }}
+                onClose={() => setAfterPhotoTaskId(null)}
+              />
+            )}
+            {photoActions.banner && (
+              <PhotoBanner
+                key={photoActions.banner.key}
+                banner={photoActions.banner}
+                onClose={photoActions.closeBanner}
+                onUndo={() => void photoActions.undoBanner()}
+                onOpen={() => {
+                  const task = store.workspace.tasks.find(t => t.id === photoActions.banner?.taskId);
+                  photoActions.closeBanner();
+                  if (task) openTaskView(task);
+                }}
+                onMarkUp={() => {
+                  const current = photoActions.banner;
+                  if (!current?.photoId) return;
+                  photoActions.closeBanner();
+                  setBannerMarkup({ taskId: current.taskId, photoId: current.photoId });
+                }}
+              />
+            )}
+            {bannerMarkup && (() => {
+              const photo = photosOf(store.workspace.tasks.find(t => t.id === bannerMarkup.taskId)).find(
+                p => p.id === bannerMarkup.photoId
+              );
+              if (!photo) return null;
+              return (
+                <PhotoMarkup
+                  photo={photo}
+                  onCancel={() => setBannerMarkup(null)}
+                  onSave={shapes => {
+                    if (allowed())
+                      store.mutate(w =>
+                        setPhotoMarkup(w, bannerMarkup.taskId, bannerMarkup.photoId, shapes, adelaideTimestamp())
+                      );
+                    setBannerMarkup(null);
+                  }}
+                />
+              );
+            })()}
             {v2Screen && screenMenu && (
               <TodayCalendarMenuSheet
                 kind={screenMenu}
@@ -3065,6 +3142,18 @@ export default function Home() {
                 }
                 onConfirmAll={confirmAllSuggestedSubtasks}
                 onRead={voice.read}
+                photos={
+                  store.cloud.active && <TaskPhotos
+                    task={tasks.find(task => task.id === selectedTask.id) ?? selectedTask}
+                    keepLocation={keepsPhotoLocation(store.workspace)}
+                    readOnly={store.readOnly}
+                    busy={photoActions.busyTaskId === selectedTask.id}
+                    onAdd={file => {
+                      void photoActions.attach(selectedTask.id, file, null);
+                    }}
+                    onMutate={change => allowed() && Boolean(store.mutate(change))}
+                  />
+                }
                 lists={
                   <ParentLists
                     workspace={store.workspace}
@@ -3169,6 +3258,13 @@ export default function Home() {
                   setCaptureFomSource(null);
                 }}
                 onAddFrontOfMind={addToFrontOfMind}
+                onPhoto={!store.cloud.active ? undefined : (file, words, capturedTaskId) => {
+                  if (capturedTaskId && store.workspace.tasks.some(t => t.id === capturedTaskId)) {
+                    void photoActions.attach(capturedTaskId, file, "before", { banner: true });
+                  } else {
+                    void photoActions.startPhotoTask(file, words);
+                  }
+                }}
                 onApplyMany={change => {
                   if (!allowed()) return false;
                   return store.mutate(change);

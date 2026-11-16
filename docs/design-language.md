@@ -87,6 +87,17 @@ No other colours carry meaning.
 - **Four actions, the same everywhere:** Make it a task · Promote to Imperative · Keep · Let go. Promote is a draft; Imperatives change only in the Weekly Review.
 - **Claude adds, rewords (History kept) and suggests.** Only the owner decides.
 
+## Photos on tasks
+- **Stored once, outside the workspace.** A task holds only a reference (fingerprint, size, Before/After label, markup as drawing instructions). Workspace backups never copy a photo. Files: `PHOTO_DIR` (host `~/steadier-photos`), nightly add-only backup `scripts/backup-photos.sh` → `~/backups/steadier-photos`.
+- **Never rejected:** over 1 MB or 2048 px is made smaller (phone first, server always). HEIC is converted on the server.
+- **Location off by default:** the file is written with no hidden details and checked. "Change" on the task sheet's photo line switches it, for new photos only.
+- **A deleted photo is kept 30 days** (longer only while a kept workspace backup still points at it), then removed from storage and its backup.
+- **Calm cards:** a small camera and the count in the meta line. Never a thumbnail, never a chip. The Before/After label sits on the photo, not as a chip.
+- **Markup has one ink, yellow,** so red stays for real risk. The original is never changed; copies you save have the markup drawn in.
+- **+ Photo always starts a new captured task** (not-ready, for Sort), titled from the words given, else "Photo job". It never goes on an existing task or the Now task. Adding to an existing task is done from that task's sheet.
+- **One question at a time:** ticking a task with a Before and no After asks "Add an after photo?" once. For an Upkeep task, the photo is part of "Log the service now?", never a second sheet.
+- **Claude and Grok never see photos,** their fingerprints or markup text.
+
 ## Standing rules for anyone (or any AI) working on Steadier
 - **Never sign in as the owner or create access passes** (session tokens, keys, login links) without asking the owner first, even temporarily and even for a screenshot.
 - **Never deploy with a failing test.** Fix first, run the full test suite green, then deploy.

@@ -36,6 +36,8 @@ export interface TaskViewPanelProps {
   card?: (more: React.ReactNode) => React.ReactNode;
   /** The Lists section (attached and link-only lists). */
   lists?: React.ReactNode;
+  /** The Photos section, under the notes. */
+  photos?: React.ReactNode;
 }
 
 function taskWhen(task: Task, today: string): string {
@@ -102,6 +104,7 @@ export default function TaskViewPanel({
   onRead,
   card,
   lists,
+  photos,
 }: TaskViewPanelProps) {
   const currentTask = tasks.find(candidate => candidate.id === selectedTask.id);
   const task = currentTask ?? selectedTask;
@@ -251,6 +254,7 @@ export default function TaskViewPanel({
             ? <p className="task-view-notes">{task.notes}</p>
             : <p className="task-view-empty">No notes yet.</p>}
         </section>
+        {photos}
 
         {suggestedParent && parent && (
           <section className="task-view-suggestion" aria-label="Suggested parent confirmation">

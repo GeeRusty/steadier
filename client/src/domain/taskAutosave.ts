@@ -1,4 +1,5 @@
 import type { CloudStatus } from "../../../shared/cloud";
+import { isPhotoHistoryLine } from "./photos";
 import { createTask, updateTask } from "./engine";
 import { scheduleFromQuickParse, type QuickParse } from "./quickParse";
 import type { Task, Workspace } from "./types";
@@ -131,7 +132,8 @@ export function buildCalendarDraftTask(
  * user edits. The persisted/server acknowledgement check below remains exact.
  */
 export function taskEditFingerprint(task: Task): string {
-  const { updatedAt: _updatedAt, history: _history, ...editable } = task;
+  // Photos are kept on their own (task sheet), never through a text draft.
+  const { updatedAt: _updatedAt, history: _history, photos: _photos, ...editable } = task;
   return JSON.stringify(editable);
 }
 
@@ -139,12 +141,21 @@ export function taskDraftChanged(draft: Task, saved: Task): boolean {
   return taskEditFingerprint(draft) !== taskEditFingerprint(saved);
 }
 
+function withoutPhotoChanges(task: Task) {
+  const { photos: _photos, updatedAt: _updatedAt, history, ...rest } = task;
+  return { ...rest, history: history.filter(entry => !isPhotoHistoryLine(entry.text)) };
+}
+
 /** Exact baseline comparison for all preflight and in-mutation stale checks. */
 export function taskMatchesExpectedSnapshot(
   current: Task | undefined,
   expected: Task
 ): boolean {
-  return Boolean(current && current.id === expected.id && JSON.stringify(current) === JSON.stringify(expected));
+  if (!current || current.id !== expected.id) return false;
+  if (JSON.stringify(current) === JSON.stringify(expected)) return true;
+  // A photo added while a draft is open isn't a conflict: drafts never carry
+  // photos (updateTask keeps the stored ones). Every other change still is.
+  return JSON.stringify(withoutPhotoChanges(current)) === JSON.stringify(withoutPhotoChanges(expected));
 }
 
 export type TaskDraftApplyResult =

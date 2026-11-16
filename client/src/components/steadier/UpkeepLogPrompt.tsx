@@ -11,11 +11,17 @@ import {
   upkeepForTask,
 } from "../../domain/assets";
 import { adelaideTimestamp } from "../../../../shared/time";
+import { photosOf } from "../../domain/photos";
+import { LocalPreview, PhotoThumb, SlotInputs } from "./PhotoPrompts";
 
 /**
  * Shown after ticking a task created from Upkeep due: "Log the service now?"
  * (or "Record the check now?"). Not now changes nothing; the item stays in
  * Upkeep due exactly as before.
+ *
+ * One sheet, not two (owner, 2026-11-15): it also holds the optional After
+ * photo, so an Upkeep task never gets a separate "Add an after photo?".
+ * The photo is saved only with Yes; Not now changes nothing, photo included.
  */
 export default function UpkeepLogPrompt({
   workspace,
@@ -23,12 +29,15 @@ export default function UpkeepLogPrompt({
   today,
   onMutate,
   onClose,
+  onAfterPhoto,
 }: {
   workspace: Workspace;
   taskId: string;
   today: string;
   onMutate: (update: (w: Workspace) => Workspace) => boolean;
   onClose: () => void;
+  /** Saves the chosen photo on the task, labelled After. */
+  onAfterPhoto?: (file: File) => void;
 }) {
   const found = upkeepForTask(workspace, taskId);
   const current = found ? lastReading(found.asset) : null;
@@ -36,7 +45,9 @@ export default function UpkeepLogPrompt({
   const [reading, setReading] = useState(current ? String(current.value) : "");
   const [condition, setCondition] = useState<AssetCondition | "">("");
   const [problem, setProblem] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
   if (!found) return null;
+  const before = photosOf(workspace.tasks.find(t => t.id === taskId)).find(p => p.label === "before");
   const { asset, kind, refId, what } = found;
   const service = kind === "service";
   const title = service ? "Log the service now?" : "Record the check now?";
@@ -67,7 +78,10 @@ export default function UpkeepLogPrompt({
       changed = next !== w;
       return next;
     });
-    if (ok && changed) onClose();
+    if (ok && changed) {
+      if (photo && onAfterPhoto) onAfterPhoto(photo);
+      onClose();
+    }
     else setProblem("Not saved. It's still in Upkeep due; try again or log it from the asset.");
   };
 
@@ -107,6 +121,40 @@ export default function UpkeepLogPrompt({
               </label>
             )}
           </span>
+          {onAfterPhoto && (
+            <SlotInputs onPick={setPhoto}>
+              {open => (
+                <div className="ph-upkeep">
+                  <span className="lv-meta">After photo (optional)</span>
+                  <span className="ph-slots">
+                    {before && <PhotoThumb photo={before} label="Before" />}
+                    {photo ? (
+                      <LocalPreview file={photo} label="After" />
+                    ) : (
+                      <button type="button" className="ph-slot ph-slot-add" onClick={open.camera}>
+                        Add
+                      </button>
+                    )}
+                    <span className="lv-meta ph-slot-note">
+                      {photo ? (
+                        <button type="button" className="text-button" onClick={() => setPhoto(null)}>
+                          Remove
+                        </button>
+                      ) : (
+                        <>
+                          <button type="button" className="text-button" onClick={open.gallery}>
+                            Choose from gallery
+                          </button>
+                          <br />
+                          Saved with Yes, on the log entry.
+                        </>
+                      )}
+                    </span>
+                  </span>
+                </div>
+              )}
+            </SlotInputs>
+          )}
           {problem && (
             <p className="lv-meta av-problem" role="alert">
               {problem}

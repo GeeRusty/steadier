@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { photoLabelText, photosOf } from "../../domain/photos";
+import { PhotoThumb } from "./PhotoPrompts";
 import { ChevronLeft, MoreHorizontal } from "lucide-react";
 import type {
   Asset,
@@ -739,6 +741,21 @@ function AssetDetail(
                 </span>
                 {facts.length > 0 && <span className="lv-meta">{facts.join(" · ")}</span>}
                 {l.notes && <span className="av-notes">{l.notes}</span>}
+                {(() => {
+                  // The log entry's Before / After photos, from its linked task.
+                  const pictures = photosOf(workspace.tasks.find(t => t.id === l.taskId)).filter(ph => ph.label);
+                  if (!l.taskId || !pictures.length) return null;
+                  const pair = [pictures.find(ph => ph.label === "before"), [...pictures].reverse().find(ph => ph.label === "after")].filter(
+                    (ph): ph is NonNullable<typeof ph> => Boolean(ph)
+                  );
+                  return (
+                    <button type="button" className="ph-slots ph-history" aria-label="Open the photos on the linked task" onClick={() => p.onOpenTask(l.taskId!)}>
+                      {pair.map(ph => (
+                        <PhotoThumb key={ph.id} photo={ph} label={photoLabelText(ph.label)} />
+                      ))}
+                    </button>
+                  );
+                })()}
                 {l.taskId && workspace.tasks.some(t => t.id === l.taskId) && (
                   <button type="button" className="av-inline-link lv-meta" onClick={() => p.onOpenTask(l.taskId!)}>
                     Linked task ›

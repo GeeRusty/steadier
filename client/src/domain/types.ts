@@ -2,6 +2,7 @@ import type { PlanningSettings, ProjectSchedule, TaskSchedule } from "./time";
 import type { Imperative, ProjectCompass, TaskCompass } from "./compass";
 import type { WeeklyReview } from "./review";
 import type { Goal } from "./goals";
+import type { TaskPhoto } from "./photos";
 export const STATES = [
   "ready",
   "inbox",
@@ -286,6 +287,8 @@ export interface Task {
   placeId?: string;
   /** Owner-confirmed source link for a generated obligation preparation task. */
   obligation?: TaskObligationOrigin;
+  /** Photo references (2026-11-15). The files live on the server, never in the workspace. */
+  photos?: TaskPhoto[];
 }
 export interface LinkCheckHold {
   kind: "imperative" | "project";
@@ -379,6 +382,8 @@ export interface Workspace {
    * only an explicit false lets Claude see or add amounts.
    */
   hideAmountsFromAI?: boolean;
+  /** Keep location inside photo files. Absent or false: location is removed from the file. */
+  keepPhotoLocation?: boolean;
   /** Manually maintained physical Assets and condition logs; absent until used. */
   assets?: Asset[];
   /** Owner-entered relationship follow-ups; absent until used. */

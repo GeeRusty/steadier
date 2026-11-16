@@ -40,6 +40,8 @@ import { isFaded, notReadyTasks } from "../../domain/taskCard";
 import CardDotsMark from "./CardDotsMark";
 import { isTaskAnchor, pastDueTasks } from "../../domain/anchorPlanning";
 import type { Task, View, Project, Workspace } from "../../domain/types";
+import PhotoCountMark from "./PhotoCountMark";
+import { photosOf } from "../../domain/photos";
 import ListProgressMark, { hasListProgress } from "./ListProgressMark";
 import type { Imperative } from "../../domain/compass";
 import { effectiveTaskRole, rowLabel } from "../../domain/linkCheck";
@@ -229,7 +231,7 @@ export default function WorkViews(p: Props) {
           .filter((c): c is string => !!c)
           .slice(0, 2);
     const list = !done && hasListProgress(p.workspace, task.id);
-    const signals = when || chips.length || broken || faded || suggested || task.droppedAt || list;
+    const signals = when || chips.length || broken || faded || suggested || task.droppedAt || list || photosOf(task).length > 0;
     return (
       <article
         key={task.id}
@@ -257,6 +259,7 @@ export default function WorkViews(p: Props) {
                 </span>
               ))}
               {list && <ListProgressMark workspace={p.workspace} id={task.id} chipCount={chips.length + (when ? 1 : 0)} />}
+              <PhotoCountMark task={task} />
               {broken && <Unlink size={16} className="tp-broken" role="img" aria-label="Missing its Goal Outcome or Imperative link" />}
               {faded && <CardDotsMark task={task} tasks={p.tasks} />}
               {suggested && <span className="tp-meta">suggested · tap to confirm</span>}

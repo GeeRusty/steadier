@@ -21,6 +21,7 @@ import {
   MAX_SHOPPING_LISTS,
 } from "./shoppingLists";
 import { validateDailyLogEntries } from "./dailyLog";
+import { validatePhotos } from "./photos";
 import { listsFromShoppingLists, pruneListLinks, validateLists } from "./lists";
 import {
   MAX_PEOPLE,
@@ -167,6 +168,7 @@ const CSV_FIELDS = [
 const LEGACY_CSV_FIELDS = [...CSV_FIELDS, "area", "important"] as const;
 
 type JsonRecord = Record<string, unknown>;
+
 
 function fail(message: string): never {
   throw new Error(`Could not import tasks: ${message}`);
@@ -805,6 +807,8 @@ function validateTask(value: unknown, label: string, requireV2 = false): Task {
   delete shapeRecord.passOverCount;
   delete shapeRecord.droppedAt;
   delete shapeRecord.actionConfirmed;
+  const hasPhotos = Object.prototype.hasOwnProperty.call(value, "photos");
+  delete shapeRecord.photos;
   // Removed fields (2026-11-12): older saves, backups and CSVs still load.
   // Important is dropped; a chosen Area is moved into the notes.
   delete shapeRecord.area;
@@ -938,6 +942,7 @@ function validateTask(value: unknown, label: string, requireV2 = false): Task {
           ),
         }
       : {}),
+    ...(hasPhotos ? { photos: validatePhotos(value.photos, label, fail) } : {}),
   };
 }
 function placesField(value: unknown): Place[] {
@@ -1562,6 +1567,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
     "dailyLog",
     "linkCheckHolds",
     "hideAmountsFromAI",
+    "keepPhotoLocation",
     "assets",
     "people",
     "credentialRenewals",
@@ -1593,6 +1599,9 @@ function validateV2Workspace(value: JsonRecord): Workspace {
   const hasLinkCheckHolds = hasKey("linkCheckHolds");
   if (hasKey("hideAmountsFromAI") && typeof value.hideAmountsFromAI !== "boolean") {
     fail("hideAmountsFromAI must be true or false.");
+  }
+  if (hasKey("keepPhotoLocation") && typeof value.keepPhotoLocation !== "boolean") {
+    fail("keepPhotoLocation must be true or false.");
   }
   const hasAssets = hasKey("assets");
   const hasPeople = hasKey("people");
@@ -1726,6 +1735,9 @@ function validateV2Workspace(value: JsonRecord): Workspace {
           ...(linkCheckHolds ? { linkCheckHolds } : {}),
           ...(typeof value.hideAmountsFromAI === "boolean"
             ? { hideAmountsFromAI: value.hideAmountsFromAI }
+            : {}),
+          ...(typeof value.keepPhotoLocation === "boolean"
+            ? { keepPhotoLocation: value.keepPhotoLocation }
             : {}),
           ...(hasAssets ? { assets } : {}),
           ...(hasPeople ? { people } : {}),

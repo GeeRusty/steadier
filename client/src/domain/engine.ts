@@ -892,6 +892,8 @@ export function updateTask(
     history: _history,
     checklist,
     dependencies,
+    // Photos change only through domain/photos.ts, so an older draft never drops one.
+    photos: _photos,
     ...safePatch
   } = patch;
   return {

@@ -12,8 +12,10 @@ import {
  * (same instant, still ISO-8601). The stored document is never altered.
  */
 export function presentTask(task: Task): Task {
+  // Photos stay private: no fingerprints, sizes or markup text go to Claude or Grok.
+  const { photos: _photos, ...rest } = task;
   return {
-    ...task,
+    ...rest,
     createdAt: toAdelaideIso(task.createdAt),
     updatedAt: toAdelaideIso(task.updatedAt),
     completedAt: toAdelaideIso(task.completedAt),
@@ -48,6 +50,7 @@ export function presentWorkspace(workspace: Workspace): Workspace {
   delete connectorSafeWorkspace.credentialRenewals;
   delete connectorSafeWorkspace.invoiceSettings;
   delete connectorSafeWorkspace.invoices;
+  delete connectorSafeWorkspace.keepPhotoLocation;
   return {
     ...connectorSafeWorkspace,
     tasks: workspace.tasks.map(presentTask),

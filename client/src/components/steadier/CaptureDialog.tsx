@@ -6,7 +6,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { Mic, Square, ArrowRight } from "lucide-react";
+import { Mic, Square, ArrowRight, Camera } from "lucide-react";
+import { PhotoPicker } from "./TaskPhotos";
 import {
   Dialog,
   DialogContent,
@@ -80,6 +81,12 @@ interface Props {
   onApplyMany?: (change: (w: Workspace) => Workspace) => boolean | void;
   /** "Idea" saves to Front of Mind; replacesTaskId is a task this draft autosaved before switching. */
   onAddFrontOfMind?: (text: string, notes: string, replacesTaskId: string | null) => boolean;
+  /**
+   * Photo from +: always starts a new captured task (never the Now task),
+   * titled from the words typed or said here. If this capture already
+   * autosaved its task, the photo goes on that new task instead.
+   */
+  onPhoto?: (file: File, words: string, capturedTaskId: string | null) => void;
 }
 export default function CaptureDialog({
   voice,
@@ -98,6 +105,7 @@ export default function CaptureDialog({
   onCommand,
   onApplyMany,
   onAddFrontOfMind,
+  onPhoto,
 }: Props) {
   const [text, setText] = useState(initialText);
   const [notes, setNotes] = useState(initialNotes);
@@ -456,6 +464,15 @@ export default function CaptureDialog({
       setTextSource("typed");
     voice.start();
   };
+  const takePhoto = (file: File) => {
+    if (!onPhoto) return;
+    const words = text.replace(IDEA_PREFIX, "").trim();
+    const captured = acceptedTaskRef.current?.id ?? null;
+    voice.abort();
+    voice.clear();
+    onClose();
+    onPhoto(file, words, captured);
+  };
   const nativeVoiceFallback = !voice.supported && hasNativeVoiceDraftHandoff();
   const focusNativeVoiceField = () => {
     setVoiceOriginated(true);
@@ -498,6 +515,18 @@ export default function CaptureDialog({
             </button>
           ) : (
             <span className="small muted">Voice recognition unavailable</span>
+          )}
+          {onPhoto && (
+            <PhotoPicker
+              disabled={voice.listening}
+              onPick={takePhoto}
+              className="button secondary"
+              label={
+                <>
+                  <Camera size={17} aria-hidden="true" /> Photo
+                </>
+              }
+            />
           )}
           <span className="small muted" role="status" aria-live="polite">
             {voice.listening

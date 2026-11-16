@@ -14,6 +14,10 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { registerSteadierRoutes } from "../steadier/routes";
+import { registerPhotoRoutes, schedulePhotoPurge, type PhotoReferenceSource } from "../steadier/photos";
+import { createProductionRepository } from "../steadier/repository";
+import { BACKUP_LIMIT } from "../steadier/changes";
+import { photoHashes } from "../../client/src/domain/photos";
 import { registerCompassMcpRoutes } from "../steadier/mcp";
 import { registerCompassOAuthRoutes } from "../steadier/compassOAuth";
 import { registerCompassConnectionDiagnostics } from "../steadier/connectionDiagnostics";
@@ -41,6 +45,27 @@ async function startServer() {
   registerPasteSplitRoutes(app);
   // Owner-scoped data routes must be registered before the Vite/static SPA fallback.
   registerSteadierRoutes(app);
+  // Photos on tasks: stored once, outside the workspace (PHOTO_DIR).
+  const photoRepository = createProductionRepository();
+  const photoReferences: PhotoReferenceSource = {
+    current: async ownerId => (await photoRepository.readWorkspace(ownerId))?.workspace ?? null,
+    kept: async ownerId => {
+      const copies = [];
+      for (const summary of await photoRepository.listWorkspaceBackups(ownerId, BACKUP_LIMIT)) {
+        const backup = await photoRepository.readWorkspaceBackup(ownerId, summary.id);
+        if (backup) copies.push(backup.workspace);
+      }
+      for (const recovery of await photoRepository.listWorkspaceRecoveries(ownerId, 50)) copies.push(recovery.workspace);
+      return copies;
+    },
+  };
+  registerPhotoRoutes(app, {
+    currentHashes: async ownerId => {
+      const workspace = await photoReferences.current(ownerId);
+      return workspace ? photoHashes(workspace) : null;
+    },
+  });
+  if (process.env.NODE_ENV === "production") schedulePhotoPurge(photoReferences);
   registerCompassConnectionDiagnostics(app);
   registerCompassOAuthRoutes(app);
   registerCompassMcpRoutes(app);

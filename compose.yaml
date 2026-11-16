@@ -43,8 +43,12 @@ services:
       ANDROID_PACKAGE: com.geerusty.steadier
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}   # voice assistant
       ANDROID_CERT_SHA256: ${ANDROID_CERT_SHA256:-}
+      PHOTO_DIR: /app/photos
     volumes:
       - ./downloads:/app/downloads:ro   # steadier.apk is served from here
+      # Task photos: stored once, outside the workspace and outside git.
+      # Backed up nightly by scripts/backup-photos.sh.
+      - ${PHOTOS_HOST_DIR:-/home/claudeuser/steadier-photos}:/app/photos
     # Apply any new database migrations, then start the server.
     command: ["sh", "-c", "pnpm db:migrate && exec node dist/index.js"]
     ports:

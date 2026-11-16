@@ -14,6 +14,8 @@ import {
 } from "../../domain/todayPlan";
 import type { Task, Workspace } from "../../domain/types";
 import CardDotsMark from "./CardDotsMark";
+import PhotoCountMark from "./PhotoCountMark";
+import { photosOf } from "../../domain/photos";
 import ListProgressMark, { hasListProgress } from "./ListProgressMark";
 import { attachedWithoutRun, newListRunId, startRun } from "../../domain/lists";
 
@@ -73,10 +75,11 @@ function RowMain({ row, tasks, time, onOpen, workspace }: { row: TodayRow; tasks
       <span className="tp-time">{time}</span>
       <span className="tp-title-wrap">
         <span className="tp-title">{row.task.title}</span>
-        {(row.label || row.suggested || row.chips.length > 0 || row.brokenLink || row.faded || list) && (
+        {(row.label || row.suggested || row.chips.length > 0 || row.brokenLink || row.faded || list || photosOf(row.task).length > 0) && (
           <span className="tp-signals">
             <Chips chips={row.chips} />
             <ListProgressMark workspace={workspace} id={row.task.id} chipCount={row.chips.length} />
+            <PhotoCountMark task={row.task} />
             {row.brokenLink && <Unlink size={16} className="tp-broken" role="img" aria-label="Missing its Goal Outcome or Imperative link" />}
             {row.faded && <CardDotsMark task={row.task} tasks={tasks} />}
             {(row.label || row.suggested) && (
@@ -328,10 +331,11 @@ export default function TodayPlanView(p: Props) {
                 ? "Focus running"
                 : [plan.next === null && p.workspace.nextThing?.when ? p.workspace.nextThing.when : null, now.label].filter(Boolean).join(" · ") || "Your Next thing"}
           </p>
-          {(now.chips.length > 0 || hasListProgress(p.workspace, now.task.id)) && (
+          {(now.chips.length > 0 || hasListProgress(p.workspace, now.task.id) || photosOf(now.task).length > 0) && (
             <span className="tp-signals">
               <Chips chips={now.chips} />
               <ListProgressMark workspace={p.workspace} id={now.task.id} chipCount={now.chips.length} />
+              <PhotoCountMark task={now.task} />
             </span>
           )}
           <ListOffer workspace={p.workspace} taskId={now.task.id} readOnly={p.readOnly} onMutate={p.onMutate} />
