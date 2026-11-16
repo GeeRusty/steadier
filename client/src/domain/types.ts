@@ -3,6 +3,7 @@ import type { Imperative, ProjectCompass, TaskCompass } from "./compass";
 import type { WeeklyReview } from "./review";
 import type { Goal } from "./goals";
 import type { TaskPhoto } from "./photos";
+import type { CaptureSession } from "./captureTo";
 export const STATES = [
   "ready",
   "inbox",
@@ -384,6 +385,8 @@ export interface Workspace {
   hideAmountsFromAI?: boolean;
   /** Keep location inside photo files. Absent or false: location is removed from the file. */
   keepPhotoLocation?: boolean;
+  /** Capture to a project: on until "end capture", End, or another project is chosen. */
+  captureSession?: CaptureSession;
   /** Manually maintained physical Assets and condition logs; absent until used. */
   assets?: Asset[];
   /** Owner-entered relationship follow-ups; absent until used. */

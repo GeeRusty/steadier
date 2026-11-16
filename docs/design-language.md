@@ -98,6 +98,15 @@ No other colours carry meaning.
 - **One question at a time:** ticking a task with a Before and no After asks "Add an after photo?" once. For an Upkeep task, the photo is part of "Log the service now?", never a second sheet.
 - **Claude and Grok never see photos,** their fingerprints or markup text.
 
+## Capture to a project
+- **"capture to Kingston: …"** (by + or voice; the colon is optional when spoken) puts that one task in Kingston. No session starts.
+- **"capture to Kingston"** on its own starts a session; **"end capture"**, End, or choosing another project ends it. It never ends on its own. The session is kept with the workspace (`captureSession`), so every device and the voice page see it.
+- **Quiet banner:** one grey line on every page, "Capturing to Kingston · End". No colour, count or timer. Tapping the name switches project.
+- **Place only:** the same fields picking the project in + sets. Tasks still land not-ready, for Sort. History line "Captured to Kingston (session)".
+- **Session photo:** a + photo during a session starts a new task in that project, titled from the words given, else "Photo job".
+- **Matching:** active projects whose title contains the name; two matches ask, none match lists the projects. Nothing goes to a wrong project.
+- **Not affected:** Front of Mind ideas, Paste anything, notes, lists, and tasks Claude or Grok add through the connector.
+
 ## Standing rules for anyone (or any AI) working on Steadier
 - **Never sign in as the owner or create access passes** (session tokens, keys, login links) without asking the owner first, even temporarily and even for a screenshot.
 - **Never deploy with a failing test.** Fix first, run the full test suite green, then deploy.

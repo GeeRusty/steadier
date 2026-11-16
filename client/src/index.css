@@ -12486,3 +12486,14 @@ a.nav-item { text-decoration: none; }
 .ph-history { border: 0; background: none; padding: 0; cursor: pointer; margin-top: 4px; }
 .ph-history .ph-slot { width: 64px; height: 64px; }
 .ph-gallery-link { align-self: flex-start; }
+
+/* Capture to a project: one plain grey line while a session is on. */
+.capture-session { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px 0 16px; margin: 0 0 8px; background: var(--surface-muted, #EDECE7); border-bottom: 1px solid var(--tp-line); color: var(--tp-strong); font-size: 14px; }
+.capture-session-text { flex: 1 1 auto; min-width: 0; }
+.capture-session-text select { min-height: 40px; border-radius: 10px; border: 1px solid var(--tp-btn-line); background: var(--card); color: var(--tp-strong); font: inherit; }
+.capture-session-project { border: 0; background: none; padding: 0 2px; min-height: 44px; font: inherit; font-weight: 600; color: inherit; text-decoration: underline; cursor: pointer; }
+.capture-session-project:disabled { text-decoration: none; cursor: default; }
+.capture-session-end { border: 0; background: none; min-height: 44px; min-width: 44px; font: inherit; font-weight: 600; color: var(--tp-strong); cursor: pointer; }
+.capture-session-line { margin: 0; }
+.capture-to { display: flex; flex-direction: column; gap: 6px; }
+.capture-to-choices { display: flex; flex-wrap: wrap; gap: 6px; }

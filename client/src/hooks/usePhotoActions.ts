@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createTask } from "../domain/engine";
 import { settleCardState } from "../domain/taskCard";
+import { placeInProject } from "../domain/captureTo";
 import {
   addPhoto,
   keepsPhotoLocation,
@@ -40,6 +41,12 @@ export interface PhotoBannerState {
 }
 
 const BANNER_MS = 8000;
+
+/** "Leaking downpipe · Kingston" when the task has a project. */
+function taskLabel(workspace: Workspace, task: Task): string {
+  const project = task.projectId ? workspace.projects.find(p => p.id === task.projectId) : undefined;
+  return project ? `${task.title} · ${project.title}` : task.title;
+}
 
 function record(uploaded: UploadedPhoto, label: PhotoLabel | null, id = newPhotoId()): TaskPhoto {
   return {
@@ -146,7 +153,7 @@ export function usePhotoActions({
         if (options.banner) {
           showBanner({
             taskId,
-            taskTitle: task.title,
+            taskTitle: taskLabel(getWorkspace(), task),
             photoId: photo.id,
             hash: photo.hash,
             label,
@@ -171,7 +178,7 @@ export function usePhotoActions({
           if (options.banner) {
             showBanner({
               taskId,
-              taskTitle: task.title,
+              taskTitle: taskLabel(getWorkspace(), task),
               photoId: null,
               hash: null,
               label,
@@ -199,22 +206,26 @@ export function usePhotoActions({
    * from the words given, else "Photo job". It lands not-ready, for Sort.
    */
   const startPhotoTask = useCallback(
-    async (file: File, words: string) => {
+    async (file: File, words: string, place: { projectId: string; session: boolean } | null = null) => {
       if (!allowed()) return false;
       const at = adelaideTimestamp();
       const base = createTask({ title: photoTaskTitle(words), state: "inbox" });
-      const task: Task = settleCardState({
+      let started: Task = {
         ...base,
         actionConfirmed: false,
         history: [...base.history, { at, text: "Started from a photo." }],
-      });
+      };
+      // Capture to a project: a session photo's task gets that project as its Place.
+      const project = place ? getWorkspace().projects.find(p => p.id === place.projectId && p.status === "active") : undefined;
+      if (project && place) started = placeInProject(started, project, place.session, at);
+      const task: Task = settleCardState(started);
       if (!mutate(w => ({ ...w, tasks: [...w.tasks, task] }))) {
         toast.error("The task wasn't saved. Check sync and try again.");
         return false;
       }
       return attach(task.id, file, "before", { banner: true, newTask: true });
     },
-    [allowed, attach, mutate]
+    [allowed, attach, getWorkspace, mutate]
   );
 
   /** Undo on the banner: remove the photo (and the task it started, if untouched). */

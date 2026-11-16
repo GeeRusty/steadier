@@ -33,10 +33,14 @@ const PAGE = `<!doctype html>
   .row button { font:600 18px inherit; padding:14px 26px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--text); cursor:pointer; }
   .row button.yes { background:var(--accent); color:var(--accent-on); border-color:transparent; }
   .hint { color:var(--muted); font-size:15px; max-width:34ch; }
+  #session { display:flex; align-items:center; gap:8px; min-height:44px; padding:0 8px 0 16px; border-radius:10px; background:var(--card); border:1px solid var(--line); font-size:15px; }
+  #session[hidden] { display:none; }
+  #session button { border:0; background:none; font:600 15px inherit; color:var(--text); min-height:44px; min-width:44px; cursor:pointer; }
 </style>
 </head>
 <body>
 <header><strong>Steadier Voice</strong><span><a href="/guide">Guide</a> · <a href="/">Open Steadier</a></span></header>
+<p id="session" role="status" hidden><span id="session-text"></span><button id="session-end" type="button">End</button></p>
 <main>
   <button id="mic" type="button" aria-live="polite">Tap and speak</button>
   <p id="heard"></p>
@@ -45,7 +49,7 @@ const PAGE = `<!doctype html>
     <button class="yes" id="yes" type="button">Yes, save</button>
     <button id="no" type="button">No</button>
   </div>
-  <p class="hint" id="hint">Try: "Uber shift Friday 4 till 8", "Done with the mechanic call", "Push the coffee to tomorrow morning", "Add eggs and bread to the shopping list", "Note: car's making a rattle", "How do I move a task?", or just say everything on your mind.</p>
+  <p class="hint" id="hint">Try: "Uber shift Friday 4 till 8", "Done with the mechanic call", "Push the coffee to tomorrow morning", "Add eggs and bread to the shopping list", "Note: car's making a rattle", "Capture to Kingston", "How do I move a task?", or just say everything on your mind.</p>
 </main>
 <script>
 (() => {
@@ -90,8 +94,18 @@ const PAGE = `<!doctype html>
     let data = {};
     try { data = await res.json(); } catch {}
     if (res.status === 401) { location.href = "/login"; throw new Error("signed out"); }
+    if (data && "session" in data) showSession(data.session);
     return data;
   }
+
+  // Capture to a project: one quiet line while a session is on.
+  const sessionEl = document.getElementById("session");
+  function showSession(title) {
+    sessionEl.hidden = !title;
+    document.getElementById("session-text").textContent = title ? "Capturing to " + title : "";
+  }
+  document.getElementById("session-end").addEventListener("click", () => handle("end capture"));
+  fetch("/api/voice/session", { credentials: "same-origin" }).then(r => r.json()).then(d => showSession(d.session)).catch(() => {});
 
   const YES = /^(yes|yeah|yep|yup|sure|ok(ay)?|correct|save( it)?|do it|go ahead|that's right|right)\\b/i;
   const NO = /^(no|nope|nah|cancel|stop|don't|forget it|never mind)\\b/i;

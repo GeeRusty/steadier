@@ -8,6 +8,7 @@ import {
 } from "react";
 import { Mic, Square, ArrowRight, Camera } from "lucide-react";
 import { PhotoPicker } from "./TaskPhotos";
+import { captureHistoryLine, parseCaptureCommand } from "../../domain/captureTo";
 import {
   Dialog,
   DialogContent,
@@ -86,7 +87,11 @@ interface Props {
    * titled from the words typed or said here. If this capture already
    * autosaved its task, the photo goes on that new task instead.
    */
-  onPhoto?: (file: File, words: string, capturedTaskId: string | null) => void;
+  onPhoto?: (file: File, words: string, capturedTaskId: string | null, projectId: string | null) => void;
+  /** Capture to a project: the session now on, if any. */
+  captureSession?: { projectId: string; title: string } | null;
+  onStartCaptureSession?: (projectId: string) => boolean;
+  onEndCaptureSession?: () => boolean;
 }
 export default function CaptureDialog({
   voice,
@@ -106,6 +111,9 @@ export default function CaptureDialog({
   onApplyMany,
   onAddFrontOfMind,
   onPhoto,
+  captureSession = null,
+  onStartCaptureSession,
+  onEndCaptureSession,
 }: Props) {
   const [text, setText] = useState(initialText);
   const [notes, setNotes] = useState(initialNotes);
@@ -132,11 +140,34 @@ export default function CaptureDialog({
   // Time phrases first (dates, times, length, repeat, reminders), then the
   // existing capture rules on what remains.
   // "Idea: …" (typed or spoken) switches to Idea; the word itself is dropped.
-  const startsAsIdea = IDEA_PREFIX.test(text);
+  // Capture to a project: "capture to Kingston: …" (one task), "capture to
+  // Kingston" (start a session), "end capture". Never autosaved as a task.
+  const captureCmd = useMemo(() => parseCaptureCommand(text, projects), [text, projects]);
+  const [chosenCaptureId, setChosenCaptureId] = useState("");
+  const captureChoices =
+    captureCmd?.kind === "ambiguous"
+      ? captureCmd.matches
+      : captureCmd?.kind === "nomatch"
+        ? projects.filter(p => p.status === "active")
+        : [];
+  const chosenCapture = captureChoices.find(p => p.id === chosenCaptureId) ?? null;
+  const captureRest = captureCmd && captureCmd.kind !== "end" && captureCmd.kind !== "start" ? captureCmd.rest : "";
+  const captureOne =
+    captureCmd?.kind === "one" ? captureCmd.project : chosenCapture && captureRest ? chosenCapture : null;
+  const captureStart =
+    captureCmd?.kind === "start" ? captureCmd.project : chosenCapture && !captureRest ? chosenCapture : null;
+  const captureEnd = captureCmd?.kind === "end";
+  const capturePartial =
+    /^\s*captur(?:e|ing)?(?:\s+(?:to|into))?\s*$/i.test(text) && text.trim().length >= 7 ||
+    /^\s*(?:end|stop|finish)\s+captu\w*\s*$/i.test(text);
+  /** Text that is a capture command, not a task: never saved as one. */
+  const captureBlocked = capturePartial || (Boolean(captureCmd) && !captureOne);
+  const taskText = captureOne ? captureRest : text;
+  const startsAsIdea = IDEA_PREFIX.test(taskText);
   const quick = useMemo(() => {
     const clock = adelaideClock();
-    return parseQuickAdd(text.replace(IDEA_PREFIX, ""), clock.date, clock.minutes);
-  }, [text]);
+    return parseQuickAdd(taskText.replace(IDEA_PREFIX, ""), clock.date, clock.minutes);
+  }, [taskText]);
   const parsed = useMemo(() => {
     const base = parseCapture(quick.title);
     return {
@@ -149,7 +180,8 @@ export default function CaptureDialog({
     () => scheduleFromQuickParse(quick),
     [quick]
   );
-  const [projectId, setProjectId] = useState(initialProjectId);
+  // During a session, Place starts as the session's project (this task only if changed).
+  const [projectId, setProjectId] = useState(initialProjectId || captureSession?.projectId || "");
   // Capture asks one thing after the title: Idea or Task (Task by default).
   const [kind, setKind] = useState<"task" | "idea">("task");
   useEffect(() => {
@@ -159,7 +191,13 @@ export default function CaptureDialog({
   const [catchAll, setCatchAll] = useState<CatchAll | "">("");
   const [role, setRole] = useState<LifeRole | "">("");
   const [pattern, setPattern] = useState<LifePattern | "">("");
-  const project = projects.find(p => p.id === projectId);
+  const effectiveProjectId = captureOne?.id ?? projectId;
+  const project = projects.find(p => p.id === effectiveProjectId);
+  const captureLine = captureOne
+    ? captureHistoryLine(captureOne, false)
+    : captureSession && project && project.id === captureSession.projectId
+      ? captureHistoryLine(project, true)
+      : null;
   const draftTask = useMemo(() => {
     const capturedNextAction = nextAction.trim() || parsed.nextAction || "";
     const capturedWaitingFor = waitingFor.trim() || parsed.waitingFor || "";
@@ -216,9 +254,12 @@ export default function CaptureDialog({
       actionConfirmed: actionOk,
       id: identity.id,
       createdAt: identity.createdAt,
-      history: identity.history,
+      history: captureLine
+        ? [...identity.history, { at: identity.createdAt, text: captureLine }]
+        : identity.history,
     });
   }, [
+    captureLine,
     actionOk,
     catchAll,
     kind,
@@ -275,7 +316,7 @@ export default function CaptureDialog({
     // An idea goes to Front of Mind only when Create is tapped; never autosaved as a task.
     if (kind === "idea" && onAddFrontOfMind) return true;
     if (severalThings && !acceptedTaskRef.current) return true;
-    if (!text.trim() || command || unsupportedVoiceCommand) return true;
+    if (!text.trim() || command || unsupportedVoiceCommand || captureBlocked) return true;
     if (!hasMeaningfulParsedTaskTitle(draftTask.title)) {
       if (acceptedTaskRef.current) {
         setAutoSaveState("not-saved");
@@ -376,6 +417,11 @@ export default function CaptureDialog({
       setAutoSaveDetail("Split it into items, or save it as one task.");
       return;
     }
+    if (captureBlocked) {
+      setAutoSaveState("idle");
+      setAutoSaveDetail("");
+      return;
+    }
     if (!hasMeaningfulParsedTaskTitle(draftTask.title)) {
       setAutoSaveState("not-saved");
       setAutoSaveDetail(
@@ -396,6 +442,7 @@ export default function CaptureDialog({
     );
     return () => window.clearTimeout(timeout);
   }, [
+    captureBlocked,
     command,
     draftTask,
     manualReviewOnly,
@@ -466,12 +513,35 @@ export default function CaptureDialog({
   };
   const takePhoto = (file: File) => {
     if (!onPhoto) return;
-    const words = text.replace(IDEA_PREFIX, "").trim();
+    const words = captureBlocked && !captureOne ? "" : taskText.replace(IDEA_PREFIX, "").trim();
     const captured = acceptedTaskRef.current?.id ?? null;
     voice.abort();
     voice.clear();
     onClose();
-    onPhoto(file, words, captured);
+    onPhoto(file, words, captured, project?.id ?? null);
+  };
+  const runCaptureCommand = () => {
+    if (captureEnd) {
+      if (!captureSession) {
+        setError("No capture is on.");
+        return;
+      }
+      if (onEndCaptureSession?.() === false) {
+        setError("That didn't save. Check sync and try again.");
+        return;
+      }
+    } else if (captureStart) {
+      if (onStartCaptureSession?.(captureStart.id) === false) {
+        setError("That didn't save. Check sync and try again.");
+        return;
+      }
+    } else {
+      setError(captureChoices.length ? "Choose the project first." : "Type the project's name after “capture to”.");
+      return;
+    }
+    voice.abort();
+    voice.clear();
+    onClose();
   };
   const nativeVoiceFallback = !voice.supported && hasNativeVoiceDraftHandoff();
   const focusNativeVoiceField = () => {
@@ -495,6 +565,9 @@ export default function CaptureDialog({
             ? "Review this proposed task. Nothing is saved or linked until you choose Create task."
             : "Capture a responsibility in your own words, by typing or speaking."}
         </DialogDescription>
+        {captureSession && (
+          <p className="capture-session-line small muted">Capturing to {captureSession.title}</p>
+        )}
         <div className="voice-control">
           {voice.supported ? (
             <button
@@ -588,6 +661,10 @@ export default function CaptureDialog({
           onSubmit={e => {
             e.preventDefault();
             if (!text.trim() || voice.listening) return;
+            if (captureBlocked) {
+              runCaptureCommand();
+              return;
+            }
             if (voiceTranscriptPending) {
               setError(
                 "Speech has not produced a final transcript. Edit the text or speak again before saving."
@@ -695,6 +772,59 @@ export default function CaptureDialog({
               placeholder="Call Sam tomorrow 3pm for 30 min every Tue, remind me 15 min before"
             />
           </label>
+          {(captureCmd || capturePartial) && (
+            <div className="capture-to" role="status" aria-live="polite">
+              {captureEnd ? (
+                captureSession ? (
+                  <button type="button" className="tp-btn tp-btn-primary" onClick={runCaptureCommand}>
+                    End capturing to {captureSession.title}
+                  </button>
+                ) : (
+                  <span className="small muted">No capture is on.</span>
+                )
+              ) : captureStart ? (
+                <>
+                  <span className="small muted">
+                    {captureSession?.projectId === captureStart.id
+                      ? `Already capturing to ${captureStart.title}.`
+                      : `Every task and photo will go into ${captureStart.title} until you end it.`}
+                  </span>
+                  {captureSession?.projectId !== captureStart.id && (
+                    <button type="button" className="tp-btn tp-btn-primary" onClick={runCaptureCommand}>
+                      {captureSession ? `Switch to ${captureStart.title}` : `Start capturing to ${captureStart.title}`}
+                    </button>
+                  )}
+                </>
+              ) : captureOne ? (
+                <span className="small muted">Place: {captureOne.title} · this task only</span>
+              ) : captureCmd?.kind === "ambiguous" ? (
+                <>
+                  <span className="small muted">Which project?</span>
+                  <span className="capture-to-choices">
+                    {captureCmd.matches.map(p => (
+                      <button key={p.id} type="button" className="tp-btn" onClick={() => setChosenCaptureId(p.id)}>
+                        {p.title}
+                      </button>
+                    ))}
+                  </span>
+                </>
+              ) : captureCmd?.kind === "nomatch" ? (
+                <label className="field">
+                  No project called “{captureCmd.name}”. Choose one:
+                  <select value={chosenCaptureId} onChange={e => setChosenCaptureId(e.target.value)}>
+                    <option value="">Choose…</option>
+                    {captureChoices.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <span className="small muted">Type the project's name after “capture to”.</span>
+              )}
+            </div>
+          )}
           {onApplyMany && !command && looksLikeSeveralThings(text) && (
             <PasteSplitPanel text={text} tasks={tasks} onApply={onApplyMany} onSaved={onClose} />
           )}
@@ -843,7 +973,7 @@ export default function CaptureDialog({
                 Place
                 <select
                   aria-label="Capture place"
-                  value={projectId ? `p:${projectId}` : catchAll ? `c:${catchAll}` : ""}
+                  value={effectiveProjectId ? `p:${effectiveProjectId}` : catchAll ? `c:${catchAll}` : ""}
                   onChange={e => {
                     const v = e.target.value;
                     setProjectId(v.startsWith("p:") ? v.slice(2) : "");

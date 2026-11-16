@@ -222,6 +222,14 @@ import TaskPhotos from "../components/steadier/TaskPhotos";
 import PhotoMarkup from "../components/steadier/PhotoMarkup";
 import { AfterPhotoPrompt, PhotoBanner } from "../components/steadier/PhotoPrompts";
 import { usePhotoActions } from "../hooks/usePhotoActions";
+import CaptureSessionBanner from "../components/steadier/CaptureSessionBanner";
+import {
+  captureSessionProject,
+  endCaptureSession,
+  endSpeech,
+  sessionTaskCount,
+  startCaptureSession,
+} from "../domain/captureTo";
 import { keepsPhotoLocation, markAfterPromptAsked, photosOf, setPhotoMarkup, wantsAfterPhoto } from "../domain/photos";
 import WorkPipelineView from "../components/steadier/WorkPipelineView";
 import RoutineRunnerView from "../components/steadier/RoutineRunnerView";
@@ -803,6 +811,25 @@ export default function Home() {
     mutate: photoMutate,
     allowed: photoAllowed,
   });
+  // Capture to a project: start, switch and end a session (kept with the workspace).
+  const sessionProject = captureSessionProject(store.workspace);
+  const startSession = (projectId: string): boolean => {
+    if (!allowed()) return false;
+    const target = store.workspace.projects.find(p => p.id === projectId);
+    if (!target) return false;
+    const switching = Boolean(store.workspace.captureSession);
+    const ok = Boolean(store.mutate(w => startCaptureSession(w, projectId, adelaideTimestamp())));
+    if (ok) toast.success(switching ? `Now capturing to ${target.title}.` : `Capturing to ${target.title}.`);
+    return ok;
+  };
+  const endSession = (): boolean => {
+    if (!allowed()) return false;
+    const project = captureSessionProject(store.workspace);
+    const count = sessionTaskCount(store.workspace);
+    const ok = Boolean(store.mutate(endCaptureSession));
+    if (ok && project) toast.success(endSpeech(project.title, count));
+    return ok;
+  };
   // Task card: apply one change to a saved task, settled against its dots.
   const applyCard = (taskId: string, change: CardChange): boolean => {
     if (!allowed()) return false;
@@ -2311,6 +2338,14 @@ export default function Home() {
                 tabIndex={-1}
                 className={`main-content${v2Screen ? " v2-main-content" : ""}`}
               >
+                {sessionProject && (
+                  <CaptureSessionBanner
+                    project={sessionProject}
+                    projects={store.workspace.projects}
+                    onEnd={endSession}
+                    onSwitch={startSession}
+                  />
+                )}
                 {risk && (
                   <RiskBanner
                     risk={risk}
@@ -3258,13 +3293,21 @@ export default function Home() {
                   setCaptureFomSource(null);
                 }}
                 onAddFrontOfMind={addToFrontOfMind}
-                onPhoto={!store.cloud.active ? undefined : (file, words, capturedTaskId) => {
+                onPhoto={!store.cloud.active ? undefined : (file, words, capturedTaskId, projectId) => {
                   if (capturedTaskId && store.workspace.tasks.some(t => t.id === capturedTaskId)) {
                     void photoActions.attach(capturedTaskId, file, "before", { banner: true });
                   } else {
-                    void photoActions.startPhotoTask(file, words);
+                    // A session photo starts a new task in that project; otherwise no Place.
+                    void photoActions.startPhotoTask(
+                      file,
+                      words,
+                      projectId ? { projectId, session: projectId === store.workspace.captureSession?.projectId } : null
+                    );
                   }
                 }}
+                captureSession={sessionProject ? { projectId: sessionProject.id, title: sessionProject.title } : null}
+                onStartCaptureSession={startSession}
+                onEndCaptureSession={endSession}
                 onApplyMany={change => {
                   if (!allowed()) return false;
                   return store.mutate(change);

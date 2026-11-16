@@ -22,6 +22,7 @@ import {
 } from "./shoppingLists";
 import { validateDailyLogEntries } from "./dailyLog";
 import { validatePhotos } from "./photos";
+import { validateCaptureSession } from "./captureTo";
 import { listsFromShoppingLists, pruneListLinks, validateLists } from "./lists";
 import {
   MAX_PEOPLE,
@@ -1568,6 +1569,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
     "linkCheckHolds",
     "hideAmountsFromAI",
     "keepPhotoLocation",
+    "captureSession",
     "assets",
     "people",
     "credentialRenewals",
@@ -1603,6 +1605,9 @@ function validateV2Workspace(value: JsonRecord): Workspace {
   if (hasKey("keepPhotoLocation") && typeof value.keepPhotoLocation !== "boolean") {
     fail("keepPhotoLocation must be true or false.");
   }
+  const captureSession = hasKey("captureSession")
+    ? validateCaptureSession(value.captureSession, fail)
+    : undefined;
   const hasAssets = hasKey("assets");
   const hasPeople = hasKey("people");
   const hasCredentialRenewals = hasKey("credentialRenewals");
@@ -1738,6 +1743,11 @@ function validateV2Workspace(value: JsonRecord): Workspace {
             : {}),
           ...(typeof value.keepPhotoLocation === "boolean"
             ? { keepPhotoLocation: value.keepPhotoLocation }
+            : {}),
+          // A session whose project is gone or achieved simply ends.
+          ...(captureSession &&
+          projects.some(p => p.id === captureSession.projectId && p.status === "active")
+            ? { captureSession }
             : {}),
           ...(hasAssets ? { assets } : {}),
           ...(hasPeople ? { people } : {}),

@@ -26,6 +26,17 @@ import { DEFAULT_LIST_TITLE, listForRequest, planAddItemsToRun } from "./listOps
 import { planAddNote } from "./notesOps";
 
 import { VOICE_MODEL } from "./voiceModel";
+import {
+  captureSessionProject,
+  endCaptureSession,
+  endSpeech,
+  parseCaptureCommand,
+  placeInProject,
+  sessionTaskCount,
+  startCaptureSession,
+} from "../../client/src/domain/captureTo";
+import { settleCardState } from "../../client/src/domain/taskCard";
+import { adelaideTimestamp } from "../../shared/time";
 import { claudeHelp, type HelpAnswerer } from "./guide";
 export { VOICE_MODEL };
 const MAX_CONTEXT_TASKS = 150;
@@ -81,7 +92,15 @@ export const TaskDraft = z
 export type TaskDraft = z.infer<typeof TaskDraft>;
 
 export const Proposal = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("add_tasks"), tasks: z.array(TaskDraft).min(1).max(15) }).strict(),
+  z
+    .object({
+      kind: z.literal("add_tasks"),
+      tasks: z.array(TaskDraft).min(1).max(15),
+      // Capture to a project: the Place for these tasks (checked again on save).
+      projectId: z.string().min(1).max(128).nullable().optional(),
+      session: z.boolean().optional(),
+    })
+    .strict(),
   z.object({ kind: z.literal("mark_done"), taskId: z.string().min(1).max(128), title: z.string().max(300) }).strict(),
   z
     .object({
@@ -297,11 +316,17 @@ function describeDraft(p: TaskDraft, today: string): string {
 }
 
 /** What the assistant reads back before saving. Built from the validated proposal, not from Claude's wording. */
-export function confirmationSpeech(p: Proposal, today: string): string {
+export function confirmationSpeech(p: Proposal, today: string, workspace: Workspace | null = null): string {
   switch (p.kind) {
-    case "add_tasks":
+    case "add_tasks": {
+      const project = p.projectId ? workspace?.projects.find(x => x.id === p.projectId && x.status === "active") : undefined;
+      if (project) {
+        if (p.tasks.length === 1) return `Add ${describeDraft(p.tasks[0], today)}, for ${project.title}. Save it?`;
+        return `${p.tasks.length} tasks for ${project.title}: ${p.tasks.map(t => describeDraft(t, today)).join(". ")}. Save them?`;
+      }
       if (p.tasks.length === 1) return `Add ${describeDraft(p.tasks[0], today)}. Save it?`;
       return `I heard ${p.tasks.length} things. ${p.tasks.map(t => describeDraft(t, today)).join(". ")}. Save all ${p.tasks.length}?`;
+    }
     case "mark_done":
       return `Mark ${p.title} as done?`;
     case "move_task":
@@ -390,7 +415,20 @@ export function planVoiceProposal(workspace: Workspace, p: Proposal, now: Date):
   switch (p.kind) {
     case "add_tasks": {
       let next = workspace;
-      for (const draft of p.tasks) next = planVoiceTask(next, draft, now).workspace;
+      const project = p.projectId ? workspace.projects.find(x => x.id === p.projectId && x.status === "active") : undefined;
+      for (const draft of p.tasks) {
+        const planned = planVoiceTask(next, draft, now);
+        next = planned.workspace;
+        if (project) {
+          // The owner heard "for Kingston" and said yes: Place only; Sort does the rest.
+          const id = planned.result.task.id;
+          const at = adelaideTimestamp(now);
+          next = {
+            ...next,
+            tasks: next.tasks.map(t => (t.id === id ? settleCardState(placeInProject(t, project, Boolean(p.session), at), next.tasks) : t)),
+          };
+        }
+      }
       const count = p.tasks.length;
       return { workspace: next, summary: `Claude: added ${count} task${count === 1 ? "" : "s"} by voice`, result: { speech: count === 1 ? "Saved." : `Saved all ${count}.` } };
     }
@@ -509,8 +547,58 @@ export function registerVoiceRoutes(
     const current = now();
     const today = adelaideClock(current).date;
 
+    // Capture to a project. Starting, switching and ending a session save at
+    // once (they only change where new tasks go); tasks still ask first.
+    const sessionNow = captureSessionProject(workspace);
+    const capture = parseCaptureCommand(text, workspace.projects);
+    const sessionReply = (speech: string, title: string | null) =>
+      send(res, 200, { kind: "answer", speech, session: title });
+    if (capture?.kind === "end") {
+      if (!sessionNow) return sessionReply("No capture is on.", null);
+      const count = sessionTaskCount(workspace);
+      try {
+        await applyGuardedChange(changes, userId, "owner", w => ({
+          workspace: endCaptureSession(w),
+          summary: `Ended capturing to ${sessionNow.title} by voice`,
+          result: null,
+        }));
+      } catch {
+        return sessionReply("That didn't save, so the capture is still on.", sessionNow.title);
+      }
+      return sessionReply(endSpeech(sessionNow.title, count), null);
+    }
+    if (capture?.kind === "start") {
+      const project = capture.project;
+      if (sessionNow?.id === project.id) return sessionReply(`Already capturing to ${project.title}.`, project.title);
+      try {
+        await applyGuardedChange(changes, userId, "owner", w => ({
+          workspace: startCaptureSession(w, project.id, adelaideTimestamp(current)),
+          summary: `Started capturing to ${project.title} by voice`,
+          result: null,
+        }));
+      } catch {
+        return sessionReply("That didn't save. Try again.", sessionNow?.title ?? null);
+      }
+      return sessionReply(
+        sessionNow ? `Now capturing to ${project.title}.` : `Capturing to ${project.title}. Say end capture when you're done.`,
+        project.title
+      );
+    }
+    if (capture?.kind === "ambiguous") {
+      return sessionReply(
+        `Which one: ${capture.matches.map(p => p.title).slice(0, 4).join(", or ")}? Say capture to and the full name.`,
+        sessionNow?.title ?? null
+      );
+    }
+    if (capture?.kind === "nomatch") {
+      return sessionReply(`There's no project called ${capture.name}. Say capture to and the project's name.`, sessionNow?.title ?? null);
+    }
+    // One task to a project ("capture to Kingston fix the gutter"), else the session's project.
+    const placeFor = capture?.kind === "one" ? { project: capture.project, session: false } : sessionNow ? { project: sessionNow, session: true } : null;
+    const spoken = capture?.kind === "one" ? capture.rest : text;
+
     // "Idea: …" always goes to the Ideas shelf, whatever the AI makes of it.
-    const sureIdea = spokenIdea(text);
+    const sureIdea = spokenIdea(spoken);
     if (sureIdea) {
       const proposal: Proposal = { kind: "add_idea", title: sureIdea, note: null };
       return send(res, 200, { kind: "confirm", proposal, speech: confirmationSpeech(proposal, today) } satisfies VoiceReply);
@@ -518,7 +606,7 @@ export function registerVoiceRoutes(
 
     let intent: VoiceIntent | null;
     try {
-      intent = await interpret(interpretMessage(text, current, draft, workspace));
+      intent = await interpret(interpretMessage(spoken, current, draft, workspace));
     } catch (error) {
       console.error("[Voice] interpret failed", error instanceof Anthropic.APIError ? `${error.status} ${error.message}` : error);
       return send(res, 502, { speech: "I couldn't reach the assistant. Check your connection and try again." });
@@ -542,14 +630,28 @@ export function registerVoiceRoutes(
     } else {
       const outcome = proposalFromIntent(intent, workspace, today);
       if (outcome && "proposal" in outcome) {
-        reply = { kind: "confirm", proposal: outcome.proposal, speech: confirmationSpeech(outcome.proposal, today) };
+        let proposal = outcome.proposal;
+        if (proposal.kind === "add_tasks") {
+          // A correction keeps the draft's project; otherwise the phrase or the session decides.
+          const kept = draft?.kind === "add_tasks" && draft.projectId ? { projectId: draft.projectId, session: Boolean(draft.session) } : null;
+          const place = placeFor ? { projectId: placeFor.project.id, session: placeFor.session } : kept;
+          if (place) proposal = { ...proposal, projectId: place.projectId, session: place.session };
+        }
+        reply = { kind: "confirm", proposal, speech: confirmationSpeech(proposal, today, workspace) };
       } else if (outcome) {
         reply = { kind: "unclear", speech: outcome.problem };
       } else {
         reply = { kind: "unclear", speech: intent.clarify?.trim().slice(0, 200) || "Sorry, I didn't follow. Try again." };
       }
     }
-    send(res, 200, reply);
+    send(res, 200, { ...reply, session: sessionNow?.title ?? null });
+  });
+
+  app.get("/api/voice/session", async (req, res) => {
+    const userId = await signedInUserId(req);
+    if (!userId) return send(res, 401, { session: null });
+    const stored = await changes.readWorkspace(userId).catch(() => null);
+    send(res, 200, { session: stored ? captureSessionProject(stored.workspace)?.title ?? null : null });
   });
 
   app.post("/api/voice/confirm", async (req, res) => {
