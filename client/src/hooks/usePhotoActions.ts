@@ -43,6 +43,35 @@ export interface PhotoBannerState {
 
 const BANNER_MS = 8000;
 
+// Photo references stored on the server but not yet on their task.
+const PENDING_KEY = "steadier.photo-refs.v1";
+type PendingReference = { taskId: string; photo: TaskPhoto };
+function pendingReferences(): PendingReference[] {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(PENDING_KEY) ?? "[]");
+    return Array.isArray(value) ? value.filter(v => v && typeof v.taskId === "string" && v.photo?.id) : [];
+  } catch {
+    return [];
+  }
+}
+function rememberPendingReference(taskId: string, photo: TaskPhoto) {
+  try {
+    const list = pendingReferences().filter(p => p.photo.id !== photo.id);
+    window.localStorage.setItem(PENDING_KEY, JSON.stringify([...list, { taskId, photo }].slice(-50)));
+  } catch {
+    /* storage unavailable */
+  }
+}
+function forgetPendingReference(photoId: string) {
+  try {
+    const list = pendingReferences();
+    if (list.some(p => p.photo.id === photoId))
+      window.localStorage.setItem(PENDING_KEY, JSON.stringify(list.filter(p => p.photo.id !== photoId)));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 /** "Leaking downpipe · Kingston" when the task has a project. */
 function taskLabel(workspace: Workspace, task: Task): string {
   const project = task.projectId ? workspace.projects.find(p => p.id === task.projectId) : undefined;
@@ -71,10 +100,13 @@ export function usePhotoActions({
   getWorkspace,
   mutate,
   allowed,
+  describeState,
 }: {
   getWorkspace: () => Workspace;
   mutate: (change: (w: Workspace) => Workspace) => boolean;
   allowed: () => boolean;
+  /** Sync status for the log when a save is refused, e.g. "loading". */
+  describeState?: () => string;
 }) {
   const [busyTaskId, setBusyTaskId] = useState<string | null>(null);
   const [banner, setBanner] = useState<PhotoBannerState | null>(null);
@@ -95,22 +127,47 @@ export function usePhotoActions({
     if (timer.current) window.clearTimeout(timer.current);
   }, []);
 
+  /**
+   * Put the stored photo on its task. Coming back from the camera, the app
+   * refreshes from the server and briefly refuses changes; that refusal is
+   * what left the 14:52 photo (16 Nov) off its task. So keep trying for a
+   * minute, then keep the reference on this phone and finish it on the next
+   * open or sync. Adding the same photo twice is a no-op.
+   */
   const saveReference = useCallback(
-    (taskId: string, photo: TaskPhoto) => {
-      const ok = mutate(w => addPhoto(w, taskId, photo, photo.addedAt));
-      if (!ok) {
-        toast.error("The photo is stored, but the task didn't save. Check sync and add it again.");
-        reportPhotoProblem("save-reference", "workspace change not accepted");
+    async (taskId: string, photo: TaskPhoto, quiet = false): Promise<boolean> => {
+      const deadline = Date.now() + 60_000;
+      let tries = 0;
+      for (;;) {
+        tries += 1;
+        if (mutate(w => addPhoto(w, taskId, photo, photo.addedAt))) {
+          forgetPendingReference(photo.id);
+          if (tries > 1) reportPhotoProblem("save-reference", `saved after ${tries} tries (${describeState?.() ?? "state unknown"})`);
+          return true;
+        }
+        if (tries === 1) reportPhotoProblem("save-reference", `refused, retrying (${describeState?.() ?? "state unknown"})`);
+        if (Date.now() > deadline) break;
+        await new Promise(resolve => window.setTimeout(resolve, 1500));
       }
-      return ok;
+      rememberPendingReference(taskId, photo);
+      reportPhotoProblem("save-reference", `still refused after a minute; kept on the phone (${describeState?.() ?? "state unknown"})`);
+      if (!quiet) toast.error("The photo is saved on the server. It will appear on the task once Steadier finishes syncing.");
+      return false;
     },
-    [mutate]
+    [describeState, mutate]
   );
 
   const flush = useCallback(async () => {
     if (flushing.current) return;
     flushing.current = true;
     try {
+      for (const pending of pendingReferences()) {
+        if (!getWorkspace().tasks.some(t => t.id === pending.taskId)) {
+          forgetPendingReference(pending.photo.id);
+          continue;
+        }
+        await saveReference(pending.taskId, pending.photo, true);
+      }
       for (const item of await queuedPhotos()) {
         const task = getWorkspace().tasks.find(t => t.id === item.taskId);
         if (!task) {
@@ -119,7 +176,7 @@ export function usePhotoActions({
         }
         try {
           const uploaded = await uploadPhoto(item.blob, item.keepLocation);
-          if (saveReference(item.taskId, record(uploaded, item.label, item.id))) {
+          if (await saveReference(item.taskId, record(uploaded, item.label, item.id), true)) {
             await unqueuePhoto(item.id);
             toast.success(`Photo uploaded to “${task.title}”.`);
           }
@@ -137,8 +194,15 @@ export function usePhotoActions({
   useEffect(() => {
     void flush();
     const online = () => void flush();
+    const visible = () => {
+      if (document.visibilityState === "visible") void flush();
+    };
     window.addEventListener("online", online);
-    return () => window.removeEventListener("online", online);
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      window.removeEventListener("online", online);
+      document.removeEventListener("visibilitychange", visible);
+    };
   }, [flush]);
 
   /** Add a photo to an existing task (from its sheet or a prompt). */
@@ -164,7 +228,7 @@ export function usePhotoActions({
       try {
         const uploaded = await uploadPhoto(file, keepLocation);
         const photo = record(uploaded, label);
-        if (!saveReference(taskId, photo)) return false;
+        if (!(await saveReference(taskId, photo))) return false;
         if (options.banner) {
           showBanner({
             taskId,

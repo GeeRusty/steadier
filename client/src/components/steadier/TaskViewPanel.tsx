@@ -254,7 +254,7 @@ export default function TaskViewPanel({
             ? <p className="task-view-notes">{task.notes}</p>
             : <p className="task-view-empty">No notes yet.</p>}
         </section>
-        {photos}
+        {!card && photos}
 
         {suggestedParent && parent && (
           <section className="task-view-suggestion" aria-label="Suggested parent confirmation">
@@ -339,7 +339,8 @@ export default function TaskViewPanel({
 
             </>
           );
-          return card ? card(details) : details;
+          // Photos sit outside "More", so an added photo is always in sight.
+          return card ? <>{card(details)}{photos}</> : details;
         })()}
         {lists}
         <div className="task-view-actions task-view-sticky-actions" role="group" aria-label="Task actions">

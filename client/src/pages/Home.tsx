@@ -807,10 +807,15 @@ export default function Home() {
     []
   );
   const photoAllowed = useCallback(() => allowedRef.current(), []);
+  const photoDescribeState = useCallback(() => {
+    const current = storeRef.current;
+    return [current.cloud.status, current.readOnly ? "read-only" : "", current.cloud.error].filter(Boolean).join(" · ").slice(0, 150);
+  }, []);
   const photoActions = usePhotoActions({
     getWorkspace: photoGetWorkspace,
     mutate: photoMutate,
     allowed: photoAllowed,
+    describeState: photoDescribeState,
   });
   // Capture to a project: start, switch and end a session (kept with the workspace).
   const sessionProject = captureSessionProject(store.workspace);

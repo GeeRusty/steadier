@@ -1,4 +1,5 @@
 import WhyLine from "./WhyLine";
+import PhotoCountMark from "./PhotoCountMark";
 import ParentLists from "./ParentLists";
 import { chainsForProject, describeWhy } from "../../domain/goals";
 import { groupByStable } from "../../domain/accordionGroups";
@@ -541,6 +542,7 @@ function ProjectTaskRow({
             {when && <span className="tp-chip">{when}</span>}
             {(state === "blocked" || state === "waiting") && <span className="tp-chip">{state}</span>}
             <TimingShapeMark task={task} noGreen />
+            <PhotoCountMark task={task} />
             {faded && <CardDotsMark task={task} tasks={workspace.tasks} />}
           </span>
         )}
