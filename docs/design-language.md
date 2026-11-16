@@ -86,6 +86,7 @@ No other colours carry meaning.
 - **Two chips at most**, only what's off normal: added by Claude, suggested: Let go (dashed), quiet Nd (after 30 days).
 - **Four actions, the same everywhere:** Make it a task · Promote to Imperative · Keep · Let go. Promote is a draft; Imperatives change only in the Weekly Review.
 - **Claude adds, rewords (History kept) and suggests.** Only the owner decides.
+- **Idea in + saves on Create or on close** (2026-11-16). If the draft had already autosaved as a task, that task is removed, so an idea never stays behind as a task. Voice and review-only drafts still need Create.
 
 ## Photos on tasks
 - **Stored once, outside the workspace.** A task holds only a reference (fingerprint, size, Before/After label, markup as drawing instructions). Workspace backups never copy a photo. Files: `PHOTO_DIR` (host `~/steadier-photos`), nightly add-only backup `scripts/backup-photos.sh` → `~/backups/steadier-photos`.

@@ -494,7 +494,27 @@ export default function CaptureDialog({
     autosaveCloud.status,
     tasks,
   ]);
+  /**
+   * Idea chosen, then the dialog closed without Create (owner-approved
+   * 2026-11-16): save it to Front of Mind and remove the task this draft may
+   * already have autosaved, so an idea never stays behind as a task.
+   * Voice drafts and review-only drafts still need Create.
+   */
+  const ideaSavedRef = useRef(false);
+  const saveIdeaOnClose = (): boolean => {
+    if (ideaSavedRef.current || kind !== "idea" || !onAddFrontOfMind) return true;
+    if (manualReviewOnly || voiceOriginated || captureBlocked) return true;
+    const wording = text.replace(IDEA_PREFIX, "").trim();
+    if (!wording) return true;
+    if (!onAddFrontOfMind(wording, notes.trim(), acceptedTaskRef.current?.id ?? null)) {
+      setError("This was not saved to Front of Mind. Keep it here and check sync before retrying.");
+      return false;
+    }
+    ideaSavedRef.current = true;
+    return true;
+  };
   const close = () => {
+    if (!saveIdeaOnClose()) return;
     if (
       !persistDraft() &&
       !window.confirm(
@@ -692,6 +712,7 @@ export default function CaptureDialog({
                 setError("This was not saved to Front of Mind. Keep it here and check sync before retrying.");
                 return;
               }
+              ideaSavedRef.current = true;
               close();
             } else {
               if (!hasMeaningfulParsedTaskTitle(draftTask.title)) {
@@ -945,7 +966,7 @@ export default function CaptureDialog({
               )}
               {kind === "idea" ? (
                 <p className="small muted capture-idea-note">
-                  Saves to Front of Mind. No dates, timers or warnings. Make it a task whenever you're ready.
+                  Saves to Front of Mind when you tap Create or close this. No dates, timers or warnings. Make it a task whenever you're ready.
                 </p>
               ) : (
                 <>
