@@ -239,7 +239,9 @@ export default function TodayPlanView(p: Props) {
                 choose(task);
               }}
             >
-              <span className="tp-title">{task.title}</span>
+              <span className="tp-title">
+                {task.title} <PhotoCountMark task={task} />
+              </span>
               <label className="tp-meta" htmlFor={`pick-do-${task.id}`}>First small action</label>
               <input
                 id={`pick-do-${task.id}`}
@@ -269,6 +271,7 @@ export default function TodayPlanView(p: Props) {
               }}
             >
               {task.title}
+              <PhotoCountMark task={task} />
             </button>
           )}
         </li>

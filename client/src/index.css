@@ -12497,3 +12497,4 @@ a.nav-item { text-decoration: none; }
 .capture-session-line { margin: 0; }
 .capture-to { display: flex; flex-direction: column; gap: 6px; }
 .capture-to-choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.tp-pick-item .ph-count, .tp-title .ph-count { margin-left: 6px; font-weight: 400; }

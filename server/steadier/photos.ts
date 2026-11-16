@@ -382,7 +382,10 @@ export function registerPhotoRoutes(app: Express, deps: PhotoRouteDeps = {}): vo
 
   app.get("/api/steadier/photos/:file", async (request, response) => {
     const userId = await userIdFor(request);
-    if (!userId) return send(response, 401, { error: "Please sign in to Steadier first." });
+    if (!userId) {
+      void photoEvent(dir(), { event: "view", user: "none", signin: signInSeen(request), status: 401, file: (request.params.file ?? "").slice(0, 12) });
+      return send(response, 401, { error: "Please sign in to Steadier first." });
+    }
     const match = /^([0-9a-f]{64})(\.thumb)?\.jpg$/.exec(request.params.file ?? "");
     if (!match) return send(response, 404, { error: "Not found." });
     const file = photoPath(dir(), userId, match[1], Boolean(match[2]));
@@ -396,6 +399,7 @@ export function registerPhotoRoutes(app: Express, deps: PhotoRouteDeps = {}): vo
         .set("X-Content-Type-Options", "nosniff")
         .send(data);
     } catch {
+      void photoEvent(dir(), { event: "view", user: userId, status: 404, file: match[1].slice(0, 12) });
       send(response, 404, { error: "This photo is no longer stored." });
     }
   });

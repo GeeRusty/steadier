@@ -339,8 +339,9 @@ export default function TaskViewPanel({
 
             </>
           );
-          // Photos sit outside "More", so an added photo is always in sight.
-          return card ? <>{card(details)}{photos}</> : details;
+          // Photos sit above the card, so an added photo is in sight as soon
+          // as the task opens (below the card they were off-screen on a phone).
+          return card ? <>{photos}{card(details)}</> : details;
         })()}
         {lists}
         <div className="task-view-actions task-view-sticky-actions" role="group" aria-label="Task actions">

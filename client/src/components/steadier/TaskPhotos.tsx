@@ -11,7 +11,7 @@ import {
   type TaskPhoto,
 } from "../../domain/photos";
 import type { Task, Workspace } from "../../domain/types";
-import { photoUrl } from "../../lib/photoUpload";
+import { photoUrl, reportPhotoProblem } from "../../lib/photoUpload";
 import { adelaideTimestamp } from "../../../../shared/time";
 import PhotoMarkup, { MarkupLayer, PhotoLayer, burnMarkup } from "./PhotoMarkup";
 import { usePhotoRequest } from "./PhotoInputs";
@@ -79,7 +79,15 @@ function PhotoImage({ photo, thumb = false }: { photo: TaskPhoto; thumb?: boolea
   if (gone) return <span className="ph-gone">Photo no longer stored</span>;
   return (
     <span className="ph-frame" data-markup-for={thumb ? undefined : photo.id} style={{ aspectRatio: `${photo.width} / ${photo.height}` }}>
-      <img src={photoUrl(photo.hash, thumb)} alt="" loading="lazy" onError={() => setGone(true)} />
+      <img
+        src={photoUrl(photo.hash, thumb)}
+        alt=""
+        loading="lazy"
+        onError={() => {
+          setGone(true);
+          reportPhotoProblem("view", `image did not load (${thumb ? "thumb" : "full"} ${photo.hash.slice(0, 12)})`);
+        }}
+      />
       {!thumb && photo.markup.length > 0 && <MarkupLayer shapes={photo.markup} width={photo.width} height={photo.height} />}
     </span>
   );
