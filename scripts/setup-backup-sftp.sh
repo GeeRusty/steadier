@@ -40,8 +40,13 @@ passwd -l "$ACCOUNT" >/dev/null
 echo "2/6 Read-only view of $SOURCE at $JAIL/backups"
 install -d -o root -g root -m 755 /srv "$JAIL"
 mountpoint -q "$JAIL/backups" || install -d -o root -g root -m 755 "$JAIL/backups"
-FSTAB="$SOURCE $JAIL/backups none bind,ro,nosuid,nodev,noexec 0 0"
-grep -qF "$FSTAB" /etc/fstab || echo "$FSTAB" >> /etc/fstab
+# nofail: if this view can't mount, the server still boots (and SSH comes up).
+FSTAB="$SOURCE $JAIL/backups none bind,ro,nosuid,nodev,noexec,nofail 0 0"
+if ! grep -qxF "$FSTAB" /etc/fstab; then
+  grep -v "^$SOURCE $JAIL/backups " /etc/fstab > /etc/fstab.steadier-new
+  echo "$FSTAB" >> /etc/fstab.steadier-new
+  cat /etc/fstab.steadier-new > /etc/fstab; rm -f /etc/fstab.steadier-new
+fi
 mountpoint -q "$JAIL/backups" || mount "$JAIL/backups"
 mount -o remount,bind,ro,nosuid,nodev,noexec "$JAIL/backups"
 VIEW_OPTS="$(findmnt -no OPTIONS "$JAIL/backups")"
