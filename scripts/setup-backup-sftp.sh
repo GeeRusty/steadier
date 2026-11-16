@@ -27,7 +27,7 @@ if [ "$ARG" != "--test-only" ]; then
   [ -f "$ARG" ] || { echo "No such key file: $ARG" >&2; exit 1; }
   [ "$(grep -cv '^\s*$' "$ARG")" = 1 ] || { echo "The key file must hold exactly one public key line." >&2; exit 1; }
   ssh-keygen -l -f "$ARG" >/dev/null || { echo "That isn't a valid public key." >&2; exit 1; }
-  REAL_KEY="$(grep -v '^\s*$' "$ARG" | head -1)"
+  REAL_KEY="$(grep -v '^\s*$' "$ARG" | sed -n 1p)"
   case "$REAL_KEY" in ssh-ed25519\ *|ssh-rsa\ *|ecdsa-sha2-*) ;; *) echo "Unsupported key type." >&2; exit 1 ;; esac
   case "$REAL_KEY" in *PRIVATE*) echo "That's a PRIVATE key. Send only the .pub file." >&2; exit 1 ;; esac
 fi
@@ -44,7 +44,8 @@ FSTAB="$SOURCE $JAIL/backups none bind,ro,nosuid,nodev,noexec 0 0"
 grep -qF "$FSTAB" /etc/fstab || echo "$FSTAB" >> /etc/fstab
 mountpoint -q "$JAIL/backups" || mount "$JAIL/backups"
 mount -o remount,bind,ro,nosuid,nodev,noexec "$JAIL/backups"
-findmnt -no OPTIONS "$JAIL/backups" | grep -qE '(^|,)ro(,|$)' || { echo "The view isn't read-only; stopping." >&2; exit 1; }
+VIEW_OPTS="$(findmnt -no OPTIONS "$JAIL/backups")"
+grep -qE '(^|,)ro(,|$)' <<<"$VIEW_OPTS" || { echo "The view isn't read-only; stopping." >&2; exit 1; }
 
 echo "3/6 Read permission for the account only (new backups included)"
 command -v setfacl >/dev/null || apt-get install -y acl >/dev/null
@@ -96,7 +97,10 @@ chmod 644 "$NEW"; mv "$NEW" "$SSHD"
 reload_sshd
 
 echo "5/6 Proving the limits with a temporary key"
-PORT="$(sshd -T 2>/dev/null | awk '$1=="port"{print $2; exit}')"
+# No early-exit pipes from here on: under pipefail a reader that stops early
+# (awk exit, grep -q) breaks the writer's pipe (exit 141). That stopped this
+# step on the server on 16 Nov, and in a check it could turn a FAIL into a PASS.
+PORT="$(sshd -T 2>/dev/null | awk '$1=="port" && !seen {print $2; seen=1}' || true)"
 OPTS=(-i "$TMP/test" -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -p "${PORT:-22}")
 SFTP=(sftp -i "$TMP/test" -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -P "${PORT:-22}" -b -)
 HOST="$ACCOUNT@127.0.0.1"
@@ -107,7 +111,7 @@ echo "selftest" > "$CANARY"; setfacl -m "u:$ACCOUNT:r" "$CANARY"
 sample="./.steadier-backup-selftest"
 
 out="$(printf 'ls /backups\n' | "${SFTP[@]}" "$HOST" 2>&1 || true)"
-echo "$out" | grep -q steadier && check "can list /backups" ok || check "can list /backups" bad
+grep -q steadier <<<"$out" && check "can list /backups" ok || check "can list /backups" bad
 if [ -n "$sample" ]; then
   printf 'get "/backups/%s" "%s/got"\n' "${sample#./}" "$TMP" | "${SFTP[@]}" "$HOST" >/dev/null 2>&1 && [ -s "$TMP/got" ] \
     && check "can download a backup file" ok || check "can download a backup file" bad
@@ -122,19 +126,20 @@ if [ -n "$sample" ]; then
   [ -f "$SOURCE/${sample#./}" ] && check "cannot delete or change files" ok || check "cannot delete or change files" bad
 fi
 out="$(printf 'ls /\n' | "${SFTP[@]}" "$HOST" 2>&1 || true)"
-echo "$out" | grep -qE '(^|/)(etc|home|root|usr)\b' && check "sees only /backups (no other folders)" bad || check "sees only /backups (no other folders)" ok
+grep -qE '(^|/)(etc|home|root|usr)\b' <<<"$out" && check "sees only /backups (no other folders)" bad || check "sees only /backups (no other folders)" ok
 printf 'get /etc/passwd %s/pw\n' "$TMP" | "${SFTP[@]}" "$HOST" >/dev/null 2>&1 \
   && check "cannot read system files" bad || check "cannot read system files" ok
 out="$(timeout 15 ssh "${OPTS[@]}" "$HOST" 'id; echo SHELL-RAN' 2>&1 || true)"
-echo "$out" | grep -q 'SHELL-RAN\|uid=' && check "no shell or commands" bad || check "no shell or commands" ok
+grep -q 'SHELL-RAN\|uid=' <<<"$out" && check "no shell or commands" bad || check "no shell or commands" ok
 timeout 15 ssh "${OPTS[@]}" -W 127.0.0.1:3001 "$HOST" </dev/null >/dev/null 2>&1 \
   && check "no port forwarding" bad || check "no port forwarding" ok
 EFFECTIVE="$(sshd -T -C "user=$ACCOUNT,host=localhost,addr=127.0.0.1" 2>/dev/null)"
 for want in "authenticationmethods publickey" "passwordauthentication no" "chrootdirectory $JAIL" \
   "forcecommand internal-sftp -R -d /backups" "allowtcpforwarding no" "permittty no" "x11forwarding no" "permittunnel no"; do
-  echo "$EFFECTIVE" | grep -qixF "$want" && check "sshd: $want" ok || check "sshd: $want" bad
+  grep -qixF "$want" <<<"$EFFECTIVE" && check "sshd: $want" ok || check "sshd: $want" bad
 done
-passwd -S "$ACCOUNT" | awk '{print $2}' | grep -q '^L' && check "password locked" ok || check "password locked" bad
+PW_STATE="$(passwd -S "$ACCOUNT" | awk '{print $2}')"
+[[ "$PW_STATE" == L* ]] && check "password locked" ok || check "password locked" bad
 
 if [ "$fail" != 0 ]; then
   : > "$KEYS"
