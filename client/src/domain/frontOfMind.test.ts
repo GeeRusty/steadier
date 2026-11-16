@@ -151,3 +151,19 @@ describe("owner actions and Claude's limits", () => {
     expect(() => validateFrontOfMind({ items: [{ ...claude.frontOfMind!.items[0], extra: 1 }] })).toThrow(/unknown/);
   });
 });
+
+describe("moving a task meant as an idea", () => {
+  it("keeps its wording and date, and refuses when something points at it", async () => {
+    const { moveTaskToFrontOfMind } = await import("./frontOfMind");
+    const { createTask } = await import("./engine");
+    const task = { ...createTask({ title: "Steadier as my own database front end" }), createdAt: "2026-11-14T19:03:46+10:30" };
+    const base = { tasks: [task], frontOfMind: { items: [] } } as unknown as Parameters<typeof moveTaskToFrontOfMind>[0];
+    const moved = moveTaskToFrontOfMind(base, task.id, "2026-11-16T14:00:00+10:30");
+    expect(moved.tasks).toHaveLength(0);
+    const item = moved.frontOfMind!.items[0];
+    expect(item.text).toBe("Steadier as my own database front end");
+    expect(item.createdAt).toBe("2026-11-14T19:03:46+10:30");
+    expect(item.history.at(-1)?.text).toMatch(/Moved from a task to Front of Mind/);
+    expect(() => moveTaskToFrontOfMind({ ...base, nextThing: { taskId: task.id, when: "", date: "2026-11-16", updatedAt: "2026-11-16T14:00:00+10:30" } }, task.id, "x")).toThrow(/stays a task/);
+  });
+});

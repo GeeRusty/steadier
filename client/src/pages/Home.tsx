@@ -219,6 +219,7 @@ import AssetsView, { downloadAssetCosts, type AssetFocus } from "../components/s
 import UpkeepDueList, { type UpkeepAction } from "../components/steadier/UpkeepDueList";
 import UpkeepLogPrompt from "../components/steadier/UpkeepLogPrompt";
 import TaskPhotos from "../components/steadier/TaskPhotos";
+import { PhotoInputsProvider } from "../components/steadier/PhotoInputs";
 import PhotoMarkup from "../components/steadier/PhotoMarkup";
 import { AfterPhotoPrompt, PhotoBanner } from "../components/steadier/PhotoPrompts";
 import { usePhotoActions } from "../hooks/usePhotoActions";
@@ -2144,6 +2145,7 @@ export default function Home() {
   const todayAttentionCount = attentionItems.reduce((sum, item) => sum + item.count, 0);
   return (
     <TaskListContext.Provider value={tasks}>
+      <PhotoInputsProvider>
       <TaskKindContext.Provider value={kindValue}>
         <PlacesContext.Provider value={placesOf(store.workspace)}>
           <div className={`app-shell${v2Screen ? " v2-shell" : ""}`}>
@@ -3406,6 +3408,7 @@ export default function Home() {
           )}
         </PlacesContext.Provider>
       </TaskKindContext.Provider>
+      </PhotoInputsProvider>
     </TaskListContext.Provider>
   );
 }

@@ -16,6 +16,7 @@ import type { Task, Workspace } from "../domain/types";
 import {
   PhotoOffline,
   discardPhoto,
+  reportPhotoProblem,
   queuePhoto,
   queuedPhotos,
   unqueuePhoto,
@@ -97,7 +98,10 @@ export function usePhotoActions({
   const saveReference = useCallback(
     (taskId: string, photo: TaskPhoto) => {
       const ok = mutate(w => addPhoto(w, taskId, photo, photo.addedAt));
-      if (!ok) toast.error("The photo is stored, but the task didn't save. Check sync and add it again.");
+      if (!ok) {
+        toast.error("The photo is stored, but the task didn't save. Check sync and add it again.");
+        reportPhotoProblem("save-reference", "workspace change not accepted");
+      }
       return ok;
     },
     [mutate]
@@ -139,17 +143,28 @@ export function usePhotoActions({
 
   /** Add a photo to an existing task (from its sheet or a prompt). */
   const attach = useCallback(
-    async (taskId: string, file: File, label: PhotoLabel | null, options: { banner?: boolean; newTask?: boolean } = {}) => {
+    async (
+      taskId: string,
+      file: File,
+      label: PhotoLabel | null,
+      options: { banner?: boolean; newTask?: boolean; task?: Task } = {}
+    ) => {
       if (!allowed()) return false;
       const keepLocation = keepsPhotoLocation(getWorkspace());
-      const task = getWorkspace().tasks.find(t => t.id === taskId);
-      if (!task) return false;
+      // A task made a moment ago (+ Photo) isn't in the rendered copy yet, so
+      // the caller hands it over. (Looking it up here alone was the bug that
+      // left "Photo job" tasks without their photo, 16 Nov.)
+      const task = getWorkspace().tasks.find(t => t.id === taskId) ?? options.task;
+      if (!task) {
+        toast.error("The photo wasn't added: its task couldn't be found. Try again from the task.");
+        reportPhotoProblem("attach", "task not found");
+        return false;
+      }
       setBusyTaskId(taskId);
       try {
         const uploaded = await uploadPhoto(file, keepLocation);
         const photo = record(uploaded, label);
         if (!saveReference(taskId, photo)) return false;
-        const saved = getWorkspace().tasks.find(t => t.id === taskId);
         if (options.banner) {
           showBanner({
             taskId,
@@ -158,7 +173,8 @@ export function usePhotoActions({
             hash: photo.hash,
             label,
             newTask: Boolean(options.newTask),
-            historyLength: saved?.history.length ?? 0,
+            // The task plus the one "Photo added" line just written.
+            historyLength: task.history.length + 1,
             offline: false,
             shrunkFrom: uploaded.shrunk ? uploaded.originalBytes : null,
             bytes: uploaded.bytes,
@@ -171,6 +187,7 @@ export function usePhotoActions({
       } catch (error) {
         if (error instanceof PhotoOffline) {
           const queued = await queuePhoto({ id: newPhotoId(), taskId, label, keepLocation, blob: file, queuedAt: adelaideTimestamp() });
+          reportPhotoProblem("upload", `offline or unreachable: ${error.message}`);
           if (!queued) {
             toast.error("You're offline and this phone couldn't hold the photo. Try again when online.");
             return false;
@@ -192,7 +209,9 @@ export function usePhotoActions({
           } else toast.success("Photo added · will upload when online.");
           return true;
         }
-        toast.error(error instanceof Error ? error.message : "The photo couldn't be saved.");
+        const message = error instanceof Error ? error.message : "The photo couldn't be saved.";
+        toast.error(message);
+        reportPhotoProblem("upload", message);
         return false;
       } finally {
         setBusyTaskId(null);
@@ -223,7 +242,7 @@ export function usePhotoActions({
         toast.error("The task wasn't saved. Check sync and try again.");
         return false;
       }
-      return attach(task.id, file, "before", { banner: true, newTask: true });
+      return attach(task.id, file, "before", { banner: true, newTask: true, task });
     },
     [allowed, attach, getWorkspace, mutate]
   );

@@ -14,8 +14,9 @@ import type { Task, Workspace } from "../../domain/types";
 import { photoUrl } from "../../lib/photoUpload";
 import { adelaideTimestamp } from "../../../../shared/time";
 import PhotoMarkup, { MarkupLayer, PhotoLayer, burnMarkup } from "./PhotoMarkup";
+import { usePhotoRequest } from "./PhotoInputs";
 
-/** The two hidden file inputs behind "+ Photo": Camera or Gallery. */
+/** "+ Photo": Camera or Gallery. The inputs live at the app root (PhotoInputs). */
 export function PhotoPicker({
   disabled,
   onPick,
@@ -27,13 +28,18 @@ export function PhotoPicker({
   label?: React.ReactNode;
   className?: string;
 }) {
+  const request = usePhotoRequest();
   const camera = useRef<HTMLInputElement>(null);
   const gallery = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
+  const choose = (source: "camera" | "gallery") => {
+    setOpen(false);
+    if (request) request(source, onPick);
+    else (source === "camera" ? camera : gallery).current?.click();
+  };
   const picked = (input: HTMLInputElement | null) => {
     const file = input?.files?.[0];
     if (input) input.value = "";
-    setOpen(false);
     if (file) onPick(file);
   };
   return (
@@ -43,16 +49,20 @@ export function PhotoPicker({
       </button>
       {open && (
         <span className="ph-picker-menu" role="group" aria-label="Add a photo from">
-          <button type="button" className="tp-btn" onClick={() => camera.current?.click()}>
+          <button type="button" className="tp-btn" onClick={() => choose("camera")}>
             <Camera size={16} aria-hidden="true" /> Camera
           </button>
-          <button type="button" className="tp-btn" onClick={() => gallery.current?.click()}>
+          <button type="button" className="tp-btn" onClick={() => choose("gallery")}>
             Gallery
           </button>
         </span>
       )}
-      <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={e => picked(e.currentTarget)} />
-      <input ref={gallery} type="file" accept="image/*,.heic,.heif" hidden onChange={e => picked(e.currentTarget)} />
+      {!request && (
+        <>
+          <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={e => picked(e.currentTarget)} />
+          <input ref={gallery} type="file" accept="image/*,.heic,.heif" hidden onChange={e => picked(e.currentTarget)} />
+        </>
+      )}
     </span>
   );
 }

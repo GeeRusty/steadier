@@ -258,6 +258,35 @@ export async function purgePhotos(
   return removed;
 }
 
+// ---- Event log ----
+// One line per upload attempt (and any failure the app reports), kept in the
+// photos folder so it survives a redeploy. Never holds photo contents.
+
+const EVENTS_MAX_BYTES = 2 * 1024 * 1024;
+
+export async function photoEvent(dir: string, fields: Record<string, string | number | boolean | null>): Promise<void> {
+  const line = `${new Date().toISOString()} ${Object.entries(fields)
+    .map(([key, value]) => `${key}=${String(value).replace(/\s+/g, "_").slice(0, 200)}`)
+    .join(" ")}\n`;
+  console.log(`[Photos] ${line.trim()}`);
+  try {
+    await fs.mkdir(dir, { recursive: true });
+    const file = path.join(dir, "photo-events.log");
+    const size = await fs.stat(file).then(st => st.size).catch(() => 0);
+    if (size > EVENTS_MAX_BYTES) await fs.rename(file, `${file}.1`).catch(() => undefined);
+    await fs.appendFile(file, line, { mode: 0o644 });
+  } catch {
+    /* logging must never block a photo */
+  }
+}
+
+function signInSeen(request: Request): string {
+  const cookie = request.headers.cookie ?? "";
+  if (/(?:^|;\s*)webdev_app_session=/.test(cookie)) return "cookie";
+  if (request.headers.authorization) return "bearer";
+  return cookie ? "other-cookies-only" : "none";
+}
+
 // ---- Routes ----
 
 export interface PhotoRouteDeps {
@@ -292,15 +321,32 @@ export function registerPhotoRoutes(app: Express, deps: PhotoRouteDeps = {}): vo
     express.raw({ type: () => true, limit: MAX_UPLOAD_BYTES }),
     async (request, response) => {
       const userId = await userIdFor(request);
-      if (!userId) return send(response, 401, { error: "Please sign in to Steadier first." });
-      if (request.get("x-steadier-request") !== "1" || !ownerHeaderMatches(request, userId))
-        return send(response, 403, { error: "This upload wasn't allowed." });
       const body = request.body;
-      if (!Buffer.isBuffer(body) || body.length === 0) return send(response, 400, { error: "No photo was sent." });
+      const base = {
+        event: "upload",
+        user: userId ?? "none",
+        signin: signInSeen(request),
+        bytes: Buffer.isBuffer(body) ? body.length : 0,
+        type: request.get("content-type") ?? "none",
+        agent: (request.get("user-agent") ?? "").includes("Android") ? "android" : "other",
+      };
+      if (!userId) {
+        void photoEvent(dir(), { ...base, status: 401 });
+        return send(response, 401, { error: "Steadier couldn't see your sign-in. Close and reopen the app, then try again." });
+      }
+      if (request.get("x-steadier-request") !== "1" || !ownerHeaderMatches(request, userId)) {
+        void photoEvent(dir(), { ...base, status: 403 });
+        return send(response, 403, { error: "This upload wasn't allowed." });
+      }
+      if (!Buffer.isBuffer(body) || body.length === 0) {
+        void photoEvent(dir(), { ...base, status: 400 });
+        return send(response, 400, { error: "No photo was sent." });
+      }
       const keepLocation = request.query.location === "keep";
       try {
         const processed = await processPhoto(body, keepLocation);
         const hash = await storePhoto(dir(), userId, processed);
+        void photoEvent(dir(), { ...base, status: 201, stored: processed.data.length, hash: hash.slice(0, 12) });
         return send(response, 201, {
           hash,
           width: processed.width,
@@ -311,12 +357,28 @@ export function registerPhotoRoutes(app: Express, deps: PhotoRouteDeps = {}): vo
           locationRemoved: processed.locationRemoved,
         });
       } catch (error) {
+        void photoEvent(dir(), { ...base, status: error instanceof PhotoUnreadable ? 422 : 500, error: error instanceof Error ? error.message : "unknown" });
         if (error instanceof PhotoUnreadable) return send(response, 422, { error: error.message });
-        console.error("Photo upload failed:", error instanceof Error ? error.message : error);
         return send(response, 500, { error: "The photo couldn't be saved. Try again." });
       }
     }
   );
+
+  /** The app reports a photo that failed before or after the upload. */
+  app.post("/api/steadier/photos-trace", async (request, response) => {
+    const userId = await userIdFor(request);
+    const body = (typeof request.body === "object" && request.body) || {};
+    const text = (key: string) => (typeof body[key] === "string" ? (body[key] as string).slice(0, 200) : "none");
+    await photoEvent(dir(), {
+      event: "app-report",
+      user: userId ?? "none",
+      signin: signInSeen(request),
+      stage: text("stage"),
+      message: text("message"),
+      agent: (request.get("user-agent") ?? "").includes("Android") ? "android" : "other",
+    });
+    response.status(204).set("Cache-Control", "no-store").end();
+  });
 
   app.get("/api/steadier/photos/:file", async (request, response) => {
     const userId = await userIdFor(request);

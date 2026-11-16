@@ -75,7 +75,8 @@ export async function uploadPhoto(file: Blob, keepLocation: boolean, originalByt
   }
   const reply = (await response.json().catch(() => null)) as (UploadedPhoto & { error?: string }) | null;
   if (!response.ok || !reply || reply.error) {
-    if (response.status >= 500 || response.status === 0) throw new PhotoOffline(reply?.error ?? "Server not reachable");
+    // Proxy or restart (502–504): try again when back. Anything else is a real error to show.
+    if (response.status === 0 || (response.status >= 502 && response.status <= 504)) throw new PhotoOffline(`HTTP ${response.status}`);
     throw new Error(reply?.error ?? "The photo couldn't be saved.");
   }
   return { ...reply, originalBytes: Math.max(originalBytes, reply.originalBytes), shrunk: reply.shrunk || originalBytes > PHOTO_LIMIT_BYTES };
@@ -91,6 +92,21 @@ export async function discardPhoto(hash: string): Promise<void> {
     });
   } catch {
     /* the 30-day rule cleans it up */
+  }
+}
+
+/** Tell the server log why a photo didn't attach (no photo contents are sent). */
+export function reportPhotoProblem(stage: string, message: string): void {
+  try {
+    void fetch("/api/steadier/photos-trace", {
+      method: "POST",
+      credentials: "include",
+      keepalive: true,
+      headers: { "Content-Type": "application/json", "X-Steadier-Request": "1" },
+      body: JSON.stringify({ stage: stage.slice(0, 60), message: message.slice(0, 200) }),
+    }).catch(() => undefined);
+  } catch {
+    /* never in the way */
   }
 }
 

@@ -4,6 +4,7 @@ import { photoLabelText, photosOf, type TaskPhoto } from "../../domain/photos";
 import type { Task } from "../../domain/types";
 import { photoUrl, sizeText } from "../../lib/photoUpload";
 import type { PhotoBannerState } from "../../hooks/usePhotoActions";
+import { usePhotoRequest } from "./PhotoInputs";
 
 /**
  * The capture banner: plain grey and white, under the header, 8 seconds or
@@ -94,8 +95,9 @@ export function LocalPreview({ file, label }: { file: File; label: string }) {
   );
 }
 
-/** Camera / gallery inputs for a single slot. */
+/** Camera / gallery for a single slot (root inputs when available). */
 export function SlotInputs({ onPick, children }: { onPick: (file: File) => void; children: (open: { camera: () => void; gallery: () => void }) => React.ReactNode }) {
+  const request = usePhotoRequest();
   const camera = useRef<HTMLInputElement>(null);
   const gallery = useRef<HTMLInputElement>(null);
   const picked = (input: HTMLInputElement) => {
@@ -103,11 +105,17 @@ export function SlotInputs({ onPick, children }: { onPick: (file: File) => void;
     input.value = "";
     if (file) onPick(file);
   };
+  const open = (source: "camera" | "gallery") =>
+    request ? request(source, onPick) : (source === "camera" ? camera : gallery).current?.click();
   return (
     <>
-      {children({ camera: () => camera.current?.click(), gallery: () => gallery.current?.click() })}
-      <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={e => picked(e.currentTarget)} />
-      <input ref={gallery} type="file" accept="image/*,.heic,.heif" hidden onChange={e => picked(e.currentTarget)} />
+      {children({ camera: () => open("camera"), gallery: () => open("gallery") })}
+      {!request && (
+        <>
+          <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={e => picked(e.currentTarget)} />
+          <input ref={gallery} type="file" accept="image/*,.heic,.heif" hidden onChange={e => picked(e.currentTarget)} />
+        </>
+      )}
     </>
   );
 }

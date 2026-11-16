@@ -366,7 +366,7 @@ function referencedTaskIds(workspace: Workspace): Set<string> {
   return ids;
 }
 
-function itemFromIdea(task: Task): FrontOfMindItem {
+function itemFromIdea(task: Task, movedLine = "Moved from the Ideas shelf to Front of Mind.", movedAt = task.updatedAt): FrontOfMindItem {
   const byClaude = /^Claude\b/.test(task.history[0]?.text ?? "");
   const kept = [...task.history].reverse().find(h => /^Idea kept\./.test(h.text));
   const history: FrontOfMindEntry[] = task.history.map(h => ({
@@ -374,7 +374,7 @@ function itemFromIdea(task: Task): FrontOfMindItem {
     by: /^Claude\b/.test(h.text) ? ("claude" as const) : ("owner" as const),
     text: h.text.slice(0, 2000),
   }));
-  history.push({ at: task.updatedAt, by: "owner", text: "Moved from the Ideas shelf to Front of Mind." });
+  history.push({ at: movedAt, by: "owner", text: movedLine });
   return {
     id: task.id,
     text: clean(task.title).slice(0, FRONT_OF_MIND_TEXT_LIMIT) || "Untitled",
@@ -407,7 +407,27 @@ export function moveIdeasToFrontOfMind(workspace: Workspace): Workspace {
   return {
     ...workspace,
     tasks: workspace.tasks.filter(t => !ids.has(t.id)),
-    frontOfMind: { items: moving.map(itemFromIdea) },
+    frontOfMind: { items: moving.map(task => itemFromIdea(task)) },
+  };
+}
+
+/**
+ * Move one task that was meant as an idea into Front of Mind (owner's request).
+ * Its wording, notes and date are kept. Refused when anything else points at
+ * the task, or it has photos or subtasks, so nothing breaks.
+ */
+export function moveTaskToFrontOfMind(workspace: Workspace, taskId: string, at: string): Workspace {
+  const task = workspace.tasks.find(t => t.id === taskId);
+  if (!task) throw new Error("No such task.");
+  if (task.state === "done") throw new Error("That task is done.");
+  if (referencedTaskIds(workspace).has(taskId)) throw new Error("Something else points at that task, so it stays a task.");
+  if (task.photos?.length) throw new Error("That task has photos, so it stays a task.");
+  if (frontOfMindOf(workspace).items.some(i => i.id === taskId)) throw new Error("Already in Front of Mind.");
+  const item = { ...itemFromIdea(task, "Moved from a task to Front of Mind (it was meant as an idea).", at), updatedAt: at };
+  return {
+    ...workspace,
+    tasks: workspace.tasks.filter(t => t.id !== taskId),
+    frontOfMind: { items: [...frontOfMindOf(workspace).items, item] },
   };
 }
 
