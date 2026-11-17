@@ -114,7 +114,7 @@ No other colours carry meaning.
 
 ## Imperatives
 
-- Standard header (page name once, date), the i holds the explanation word for word, the ⋮ menu has Read aloud, Undo and Theme; the five tabs and + as everywhere.
+- Standard header (page name once, date), the i holds the explanation word for word, the ⋮ (This page) menu has Read aloud and Undo, and Theme is under ☰ › App options, as on every page; the five tabs and + as everywhere.
 - Cards fit the screen width, with a green left bar for an active Imperative. Dates are written "27 Oct" (year only outside this year).
 - Chips stay grey (quiet, moved, review due) with the "projects · open steps" line.
 - On the map: a direct link has a small outlined **Unlink** button; a goal reached through work names its route ("via Move house", or "via 2 projects", tap to see them) and has no Unlink.

@@ -17,6 +17,8 @@ Steadier holds everything you're responsible for, then shows you a manageable fe
 
 ## Getting around
 
+For exactly where to tap on each screen, see the screen guide (**Screens: where to tap** at the top of the guide page). Claude can read it too and walk you through, one tap at a time.
+
 Open the menu to move between areas. The main ones are **My life today**, **Calendar**, **All work** and **Weekly Reality Review**. On other pages, tap the **i** button at the top for a short "What this page is for" note and the page's own explanation.
 
 On a phone, five tabs sit at the bottom: **Today · Overview · All work · Calendar · Projects**. Backups and Compass are in the menu, and Compass is also linked from Overview.

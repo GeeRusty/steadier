@@ -28,6 +28,52 @@ export function guideText(): string {
   return cached;
 }
 
+let screenCached: string | null = null;
+
+/** The screen-by-screen guide (docs/Screen-Guide.md): where to tap, one screen at a time. */
+export function screenGuideText(): string {
+  if (screenCached !== null) return screenCached;
+  const candidates = [
+    process.env.STEADIER_SCREEN_GUIDE_PATH,
+    path.resolve(process.cwd(), "docs/Screen-Guide.md"),
+    "/app/docs/Screen-Guide.md",
+  ].filter((p): p is string => Boolean(p));
+  for (const file of candidates) {
+    try {
+      screenCached = fs.readFileSync(file, "utf8");
+      return screenCached;
+    } catch {
+      // try the next location
+    }
+  }
+  screenCached = "";
+  return screenCached;
+}
+
+/** Every screen's name, as its heading says ("Today", "Sheet: Task" is listed as "Task"). */
+export function screenNames(text: string = screenGuideText()): string[] {
+  return guideSections(text)
+    .filter(s => s.level === 2 && /^(Screen|Sheet): /.test(s.heading))
+    .map(s => s.heading);
+}
+
+/**
+ * One screen, with its walks: "Today", "screen: today", "Task" (a sheet) all
+ * work. Null when nothing matches.
+ */
+export function screenFor(name: string, text: string = screenGuideText()): string | null {
+  const q = name.trim().toLowerCase().replace(/^(screen|sheet):\s*/, "");
+  if (!q) return null;
+  const sections = guideSections(text);
+  const bare = (h: string) => h.toLowerCase().replace(/^(screen|sheet):\s*/, "");
+  let start = sections.findIndex(s => s.level === 2 && bare(s.heading) === q);
+  if (start < 0) start = sections.findIndex(s => s.level === 2 && /^(screen|sheet): /i.test(s.heading) && bare(s.heading).includes(q));
+  if (start < 0) return null;
+  const parts = [sections[start]];
+  for (let i = start + 1; i < sections.length && sections[i].level > 2; i++) parts.push(sections[i]);
+  return parts.map(s => `${"#".repeat(s.level)} ${s.heading}\n\n${s.body}`).join("\n\n");
+}
+
 export type GuideSection = { heading: string; level: number; body: string };
 
 export function guideSections(text: string = guideText()): GuideSection[] {
@@ -154,19 +200,15 @@ export function renderGuideHtml(markdown: string): { body: string; toc: string }
   return { body: out.join("\n"), toc: toc.join("") };
 }
 
-export function registerGuidePage(app: Express) {
-  app.get("/guide", (_req, res) => {
-    const { body, toc } = renderGuideHtml(guideText() || "# Steadier user guide\n\nThe guide isn't available right now.");
-    res
-      .set("Cache-Control", "no-cache")
-      .type("html")
-      .send(`<!doctype html>
+function guidePageHtml(markdown: string, title: string, switchLink: string): string {
+  const { body, toc } = renderGuideHtml(markdown);
+  return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#24483E">
-<title>Steadier Guide</title>
+<title>${title}</title>
 <style>
   :root { color-scheme: light dark; --bg:#f7f8f3; --card:#fff; --text:#1d1f1c; --muted:#5f655d; --accent:#24483e; --line:#d9dcd2; }
   @media (prefers-color-scheme: dark) { :root { --bg:#121513; --card:#1b1f1c; --text:#e9ece7; --muted:#a0a79e; --accent:#7cc4ad; --line:#323832; } }
@@ -191,12 +233,38 @@ export function registerGuidePage(app: Express) {
 </head>
 <body>
 <div class="wrap">
-  <header><a href="/">← Open Steadier</a><a href="/voice">Ask by voice</a></header>
+  <header><a href="/">← Open Steadier</a>${switchLink}<a href="/voice">Ask by voice</a></header>
   <p class="tip">You can also ask the voice assistant things like "How do I move a task?"</p>
   <nav aria-label="Contents"><strong>Contents</strong><ul>${toc}</ul></nav>
   ${body}
 </div>
 </body>
-</html>`);
+</html>`;
+}
+
+export function registerGuidePage(app: Express) {
+  app.get("/guide", (_req, res) => {
+    res
+      .set("Cache-Control", "no-cache")
+      .type("html")
+      .send(
+        guidePageHtml(
+          guideText() || "# Steadier user guide\n\nThe guide isn't available right now.",
+          "Steadier Guide",
+          `<a href="/guide/screens">Screens: where to tap</a>`
+        )
+      );
+  });
+  app.get("/guide/screens", (_req, res) => {
+    res
+      .set("Cache-Control", "no-cache")
+      .type("html")
+      .send(
+        guidePageHtml(
+          screenGuideText() || "# Steadier screen guide\n\nThe screen guide isn't available right now.",
+          "Steadier Screens",
+          `<a href="/guide">User guide</a>`
+        )
+      );
   });
 }

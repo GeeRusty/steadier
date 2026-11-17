@@ -74,7 +74,7 @@ import { isDate } from "../../client/src/domain/time";
 import { linkCheckView, setupView } from "./cardOps";
 import { planAddFrontOfMind, planEditFrontOfMindWording, planSuggestFrontOfMindLetGo } from "./frontOfMindOps";
 import { frontOfMindForRead } from "../../client/src/domain/frontOfMind";
-import { guideFor } from "./guide";
+import { guideFor, screenFor, screenGuideText, screenNames } from "./guide";
 import {
   planStartRun,
   planSuggestItems,
@@ -570,20 +570,36 @@ export function registerBackupReadTools(
     "read_steadier_guide",
     {
       title: "Read the Steadier user guide",
-      description: "Read the Steadier user guide: what each area of the app is for and how to do things in it. Use it to explain the app or guide the owner step by step. Optional topic narrows it to matching sections (e.g. \"Calendar\", \"backup\", \"voice\").",
+      description: "Read the Steadier guides. With screen: one screen from the screen-by-screen guide: how to get there, every button with its exact label and where it leads, and step-by-step walks. Use it to walk the owner through taps one step at a time: give one step, say what they should see, and wait for them before the next. screen \"list\" lists every screen's name. Without screen, the user guide (what each area is for); optional topic narrows both guides to matching sections (e.g. \"Calendar\", \"backup\", \"voice\").",
       inputSchema: fromJsonSchema({
         type: "object",
-        properties: { topic: { type: "string", maxLength: 100 } },
+        properties: {
+          topic: { type: "string", maxLength: 100 },
+          screen: { type: "string", maxLength: 100, description: "A screen's name, e.g. \"Today\", \"Weekly Review\", \"Task\" (the task sheet), or \"list\"." },
+        },
         additionalProperties: false,
       }),
       annotations: READ_ONLY_ANNOTATIONS,
     },
     async input => {
-      const parsed = z.object({ topic: z.string().max(100).optional() }).strict().safeParse(input ?? {});
+      const parsed = z
+        .object({ topic: z.string().max(100).optional(), screen: z.string().max(100).optional() })
+        .strict()
+        .safeParse(input ?? {});
       if (!parsed.success) return invalid(parsed.error);
-      const guide = guideFor(parsed.data.topic);
+      const { topic, screen } = parsed.data;
+      if (screen !== undefined) {
+        const names = screenNames();
+        if (!names.length) return failure("UNAVAILABLE", "The screen guide isn't available right now.");
+        const one = screen.trim().toLowerCase() === "list" ? null : screenFor(screen);
+        const text = one ?? `${screen.trim().toLowerCase() === "list" ? "" : `No screen called "${screen}". `}Screens in the guide:\n${names.map(n => `- ${n}`).join("\n")}`;
+        return { content: [{ type: "text", text }] };
+      }
+      const guide = guideFor(topic);
       if (!guide) return failure("UNAVAILABLE", "The guide isn't available right now.");
-      return { content: [{ type: "text", text: guide }] };
+      const screens = topic?.trim() ? guideFor(topic, screenGuideText()) : "";
+      const text = screens && screens !== screenGuideText() ? `${guide}\n\n---\n\n# From the screen guide\n\n${screens}` : guide;
+      return { content: [{ type: "text", text }] };
     }
   );
 
