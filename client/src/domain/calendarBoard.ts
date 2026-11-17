@@ -9,8 +9,9 @@ import { effectiveTaskRole } from "./linkCheck";
 import { clockText } from "./todayPlan";
 import type { Task, Workspace } from "./types";
 
-/** Show the likely finish only when it is this many minutes or more late. */
-export const LATE_THRESHOLD_MINUTES = 10;
+import { LATE_THRESHOLD_MINUTES } from "./todayPlan";
+/** Show the likely finish only when it is this many minutes or more late (shared with Today). */
+export { LATE_THRESHOLD_MINUTES };
 
 export interface BoardRow {
   id: string;

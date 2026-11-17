@@ -27,6 +27,9 @@ No other colours carry meaning.
 - **Status chips** show ONLY what's off normal: at most two per card, the most time-critical first. On track shows nothing.
   - The chips: `⏱ −10m` / early · `⏱ +20m` · slipped · overdue 2d · moved 3× · quiet 9d · review due
   - Chips are grey. A chip turns red only when it will clash with a fixed booking or deadline.
+  - `⏱` shows only at 10 minutes or more early or late, on Today and the Calendar Board alike (decided 17 Nov). The Now card's "likely finish" follows the same rule.
+  - **Unplaced markers** (the unplaced pill, stage badges, row edges and the overdue panel edge) are grey too, decided 17 Nov: later stages are heavier, not a different colour. No amber anywhere.
+  - **Leave by** is quiet grey text, not a chip: "leave by 10:35" on a booked Today row (and the Up next line) at a place with an "Allow to get there" time. No allowance on the place = nothing shows. There is no distance estimate.
 - **Broken-link icon:** shown when a project, or a task in it, has no Goal Outcome or has an Imperative mismatch. These are also counted in Link check.
 - **Arrows** are used only for open or move.
 

@@ -160,7 +160,7 @@ export function addPlace(
 export function updatePlace(
   workspace: Workspace,
   placeId: string,
-  changes: Partial<Pick<Place, "name" | "radius">>
+  changes: Partial<Pick<Place, "name" | "radius">> & { travelMinutes?: number | null }
 ): Workspace {
   return {
     ...workspace,
@@ -176,8 +176,30 @@ export function updatePlace(
               ? { radius: clampRadius(changes.radius) }
               : {}),
           }
-    ),
+    ).map(p => {
+      if (p.id !== placeId || changes.travelMinutes === undefined) return p;
+      const { travelMinutes: _old, ...rest } = p;
+      const minutes = changes.travelMinutes;
+      return minutes && minutes > 0
+        ? { ...rest, travelMinutes: Math.min(TRAVEL_MINUTE_CHOICES[TRAVEL_MINUTE_CHOICES.length - 1], Math.round(minutes)) }
+        : rest;
+    }),
   };
+}
+
+/** Choices for "Allow to get there" on a saved place (minutes). */
+export const TRAVEL_MINUTE_CHOICES = [5, 10, 15, 20, 30, 45, 60, 90, 120] as const;
+
+/**
+ * "Leave by" for a booked task at a place with a travel allowance: the start
+ * minus the allowance. Null when the task has no place, the place has no
+ * allowance, or the task has no booked start. No distance estimate is made.
+ */
+export function leaveByMinute(workspace: Workspace, task: Task, start: number | null): number | null {
+  if (start === null || !task.placeId) return null;
+  const place = placesOf(workspace).find(p => p.id === task.placeId);
+  if (!place?.travelMinutes) return null;
+  return Math.max(0, start - place.travelMinutes);
 }
 
 /** Remove a place; its tasks are kept and simply lose the place. */

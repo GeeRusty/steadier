@@ -22,6 +22,7 @@ import {
   placesOf,
   removePlace,
   updatePlace,
+  TRAVEL_MINUTE_CHOICES,
 } from "../../domain/places";
 import type { LocationControls } from "../../hooks/useLocationReminders";
 import type { VoiceControls } from "../../hooks/useVoice";
@@ -300,6 +301,28 @@ export default function NearMeView({
                   {RADII.map(r => (
                     <option key={r} value={r}>
                       {describeDistance(r)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="small">
+                Allow to get there
+                <select
+                  value={p.travelMinutes ?? ""}
+                  disabled={readOnly}
+                  aria-label={`Time to allow to get to ${p.name}`}
+                  onChange={e =>
+                    onMutate(w =>
+                      updatePlace(w, p.id, {
+                        travelMinutes: e.target.value ? Number(e.target.value) : null,
+                      })
+                    )
+                  }
+                >
+                  <option value="">Not set</option>
+                  {TRAVEL_MINUTE_CHOICES.map(m => (
+                    <option key={m} value={m}>
+                      {m < 60 ? `${m} min` : `${m / 60} h`}
                     </option>
                   ))}
                 </select>

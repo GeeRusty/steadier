@@ -946,6 +946,9 @@ function validateTask(value: unknown, label: string, requireV2 = false): Task {
     ...(hasPhotos ? { photos: validatePhotos(value.photos, label, fail) } : {}),
   };
 }
+/** Longest "allow X min to get there" on a saved place. */
+const MAX_TRAVEL_MINUTES = 240;
+
 function placesField(value: unknown): Place[] {
   if (!Array.isArray(value) || value.length > MAX_PLACES) {
     fail(`places must be an array of at most ${MAX_PLACES} entries.`);
@@ -954,9 +957,12 @@ function placesField(value: unknown): Place[] {
   return value.map((entry, index) => {
     const label = `place ${index + 1}`;
     if (!isRecord(entry)) fail(`${label} is not an object.`);
+    const hasTravel = Object.prototype.hasOwnProperty.call(entry, "travelMinutes");
     hasExactKeys(
       entry,
-      ["id", "name", "address", "lat", "lng", "radius"],
+      hasTravel
+        ? ["id", "name", "address", "lat", "lng", "radius", "travelMinutes"]
+        : ["id", "name", "address", "lat", "lng", "radius"],
       label
     );
     const id = stringField(entry, "id", 128, { nonEmpty: true, id: true });
@@ -981,6 +987,9 @@ function placesField(value: unknown): Place[] {
       lat,
       lng,
       radius: integerField(entry, "radius", MIN_RADIUS, MAX_RADIUS),
+      ...(hasTravel
+        ? { travelMinutes: integerField(entry, "travelMinutes", 1, MAX_TRAVEL_MINUTES) }
+        : {}),
     };
   });
 }

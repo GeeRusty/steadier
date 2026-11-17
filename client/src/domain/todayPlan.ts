@@ -13,6 +13,7 @@ import { statusMarkStalenessForTask } from "./statusMarkStaleness";
 import { isFaded } from "./taskCard";
 import { daysBetween, minutesToTime, slotMinutes, timeToMinutes } from "./time";
 import { taskRescheduleCount } from "./timingShape";
+import { leaveByMinute } from "./places";
 import type { Project, Task, Workspace } from "./types";
 
 export type ChipKind = "clash" | "slipped" | "overdue" | "late" | "early" | "moved" | "review" | "quiet";
@@ -42,6 +43,8 @@ export interface TodayRow {
   label: string | null;
   /** Unfinished prerequisites, when booked today. */
   blockedBy: Task[];
+  /** "Leave by" minute: start minus the place's travel allowance, only while still ahead. */
+  leaveBy: number | null;
 }
 
 export interface TodayPlan {
@@ -89,6 +92,9 @@ export interface ChipContext {
   lastReviewDate: string | null;
 }
 
+/** Lateness (or earliness) shows only at this many minutes or more, on Today and the Calendar Board. */
+export const LATE_THRESHOLD_MINUTES = 10;
+
 /** The status chips for any open task, most time-critical first, at most two. */
 export function taskChips(
   task: Task,
@@ -103,8 +109,8 @@ export function taskChips(
   if (due && due < ctx.day) chips.push({ kind: "overdue", text: `overdue ${daysBetween(due, ctx.day)}d`, red: false });
   else if (task.schedule.date && task.schedule.date < ctx.day && !repeatRuleOf(task))
     chips.push({ kind: "overdue", text: `overdue ${daysBetween(task.schedule.date, ctx.day)}d`, red: false });
-  if (extra.lateBy && extra.lateBy > 0) chips.push({ kind: "late", text: `⏱ +${delta(extra.lateBy)}`, red: false });
-  if (extra.earlyBy && extra.earlyBy > 0) chips.push({ kind: "early", text: `⏱ −${delta(extra.earlyBy)}`, red: false });
+  if (extra.lateBy && extra.lateBy >= LATE_THRESHOLD_MINUTES) chips.push({ kind: "late", text: `⏱ +${delta(extra.lateBy)}`, red: false });
+  if (extra.earlyBy && extra.earlyBy >= LATE_THRESHOLD_MINUTES) chips.push({ kind: "early", text: `⏱ −${delta(extra.earlyBy)}`, red: false });
   const moved = taskRescheduleCount(task);
   if (moved >= 3) chips.push({ kind: "moved", text: `moved ${moved}×`, red: false });
   const stale = statusMarkStalenessForTask(task, ctx.lastReviewDate, { date: ctx.day, minutes: ctx.minute });
@@ -211,6 +217,7 @@ export function todayPlan(workspace: Workspace, tasks: Task[], day: string, minu
       brokenLink: taskHasBrokenLink(task, data),
       label: catchAllLabel(task),
       blockedBy,
+      leaveBy: start !== null && start > minute && !slippedNow ? leaveByMinute(workspace, task, start) : null,
     };
   };
 

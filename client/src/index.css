@@ -12530,3 +12530,30 @@ a.nav-item { text-decoration: none; }
 .imp .imperative-add { display: flex; flex-direction: column; gap: 10px; }
 .imp .imperative-add h2 { margin: 0; font-size: 16px; }
 .imp .field input, .imp .field textarea { width: 100%; box-sizing: border-box; }
+
+/* Unplaced markers are grey, like every other status signal (design language,
+   decided 17 Nov). Later stages differ in weight, not colour. */
+:root .orphan-pill,
+:root .orphan-pill.level-2,
+:root .orphan-pill.level-3,
+:root[data-theme="dark"] .orphan-pill,
+:root .orphan-badge,
+:root .orphan-badge.stage-2,
+:root .orphan-badge.stage-3 {
+  background: var(--tp-chip-bg);
+  border-color: var(--tp-line);
+  color: var(--tp-chip-ink);
+}
+:root .orphan-pill.level-3,
+:root .orphan-badge.stage-3 { font-weight: 700; }
+:root .orphan-banner {
+  background: var(--card);
+  border-color: var(--tp-line);
+  color: var(--tp-strong);
+}
+:root .orphan-mark,
+:root .orphan-mark.stage-2,
+:root .orphan-mark.stage-3 { color: var(--muted-foreground); }
+:root .unplaced-panel.has-overdue { border-color: var(--tp-btn-line); color: inherit; }
+:root .unplaced-list li.orphan-stage-2 { border-left: 3px solid var(--tp-line); }
+:root .unplaced-list li.orphan-stage-3 { border-left: 3px solid var(--tp-btn-line); }

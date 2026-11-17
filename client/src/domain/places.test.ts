@@ -12,6 +12,8 @@ import {
   parseCoordinates,
   removePlace,
   setTaskPlace,
+  updatePlace,
+  leaveByMinute,
   type VisitState,
 } from "./places";
 import type { Task, Workspace } from "./types";
@@ -169,6 +171,25 @@ describe("places", () => {
     expect(arrivalSpeech(place, four)).toBe(
       "You're at Bunnings. 4 things here: A, B, C, and 1 more."
     );
+  });
+
+  it("an optional travel allowance gives Leave by; none means nothing shows", () => {
+    const t = task("Buy screws");
+    const { workspace, place } = withBunnings([t]);
+    const linked = { ...workspace, tasks: [{ ...workspace.tasks[0], placeId: place.id }] };
+    const at9 = 9 * 60;
+    expect(leaveByMinute(linked, linked.tasks[0], at9)).toBeNull();
+    const set = updatePlace(linked, place.id, { travelMinutes: 20 });
+    expect(set.places![0].travelMinutes).toBe(20);
+    expect(leaveByMinute(set, set.tasks[0], at9)).toBe(at9 - 20);
+    expect(leaveByMinute(set, set.tasks[0], null)).toBeNull();
+    expect(leaveByMinute(set, t, at9)).toBeNull();
+    // Saves and loads; clearing removes the key.
+    const loaded = validateWorkspace(JSON.parse(JSON.stringify(set)));
+    expect(loaded.places![0].travelMinutes).toBe(20);
+    const cleared = updatePlace(set, place.id, { travelMinutes: null });
+    expect("travelMinutes" in cleared.places![0]).toBe(false);
+    expect(() => validateWorkspace(JSON.parse(JSON.stringify({ ...set, places: [{ ...set.places![0], travelMinutes: 0 }] })))).toThrow();
   });
 
   it("saves and loads places and task links; old records stay unchanged", () => {

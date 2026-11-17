@@ -33,12 +33,13 @@ The **Today** tab is for doing. It uses three words only: **Now · Next · Later
 - **Now:** the booked block running now, with its likely finish, a red now mark, and big **Done** / **Finished early** buttons. If nothing is running, it's your running focus, your chosen Next thing, or the next booking as **Up next in X min**, each with **Start** and **Done**. With nothing booked, pick a Next thing right there in the card (tap a task, check its first small action, **Make it my Next thing**). You're never sent to another screen.
 - **Next:** your chosen Next thing, or else the next booking.
 - **Later:** everything else dated or booked for today. Undated work is never on Today.
+- **Leave by:** a booked task at a saved place that has an **Allow to get there** time shows "leave by 10:35" in grey, until its start. Set the time per place under Near me › Your places. Places without one show nothing.
 - **Slipped:** a block past its likely finish shows **Keep going** (stretches it to its likely finish), **Move** or **Drop** (off today, kept in All work). If it slips again and you leave it, it's listed in the Weekly Review (Capacity step).
 - **Blocked by:** a booked task waiting on an unfinished prerequisite offers **Move it** or **Remove prerequisite**.
 - **Needs attention (n)** opens Overview: past-due work, review due, Sort, Link check, unplaced, Claude requests. This is the only count in Steadier: one row per kind, and the total is the sum of the rows (a task can count in more than one row).
 - Tap any row to open its sheet: notes, outcome, prerequisites, subtasks. The **i** button explains the signals.
 
-**Signals (everywhere):** a green left bar means it serves an Imperative. Dashed means suggested (tap to confirm). Faded with dots means not set up. Grey chips show only what's off normal: ⏱ +20m / −10m, slipped, overdue 2d, moved 3×, quiet 9d, review due. A chip turns red only when it will clash with a fixed booking or deadline. The broken-link icon means a project, or a task in it, is missing its Goal Outcome or Imperative link (also in Link check). The old shape-and-colour arrows are gone.
+**Signals (everywhere):** a green left bar means it serves an Imperative. Dashed means suggested (tap to confirm). Faded with dots means not set up. Grey chips show only what's off normal: ⏱ +20m / −10m (only at 10 minutes or more), slipped, overdue 2d, moved 3×, quiet 9d, review due. A chip turns red only when it will clash with a fixed booking or deadline. The broken-link icon means a project, or a task in it, is missing its Goal Outcome or Imperative link (also in Link check). The old shape-and-colour arrows are gone.
 
 ### Overview
 Overview is for seeing, top to bottom:

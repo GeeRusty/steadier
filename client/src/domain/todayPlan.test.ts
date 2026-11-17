@@ -142,6 +142,29 @@ describe("Chips: only what's off normal, max two, grey unless it clashes", () =>
     expect(chips.every(c => !c.red)).toBe(true);
   });
 
+  it("Leave by shows on a row at a place with a travel allowance, only while it's still ahead", () => {
+    const place = { id: "pl", name: "Site", address: "", lat: -34.9, lng: 138.6, radius: 150, travelMinutes: 25 };
+    const a = booked("Site meeting", "11:00", 60, { placeId: "pl" });
+    const b = booked("Ring council", "13:00", 30, { placeId: "other" });
+    const w = ws([a, b], { places: [place] });
+    const rows = (m: number) => {
+      const plan = todayPlan(w, [a, b], DAY, m);
+      return [plan.now, plan.next, ...plan.later].filter(Boolean) as { task: Task; leaveBy: number | null }[];
+    };
+    expect(rows(at(9)).find(r => r.task.id === a.id)!.leaveBy).toBe(at(10, 35));
+    expect(rows(at(9)).find(r => r.task.id === b.id)!.leaveBy).toBeNull();
+    expect(rows(at(11, 30)).find(r => r.task.id === a.id)?.leaveBy ?? null).toBeNull();
+  });
+
+  it("lateness and earliness show only at 10 minutes or more, as on the Calendar Board", () => {
+    const a = booked("Gutter clean", "09:30", 60);
+    const ctx = { day: DAY, minute: at(9), lastReviewDate: null };
+    expect(taskChips(a, ctx, { lateBy: 9 })).toEqual([]);
+    expect(taskChips(a, ctx, { earlyBy: 9 })).toEqual([]);
+    expect(taskChips(a, ctx, { lateBy: 10 }).map(c => c.text)).toEqual(["⏱ +10m"]);
+    expect(taskChips(a, ctx, { earlyBy: 12 }).map(c => c.text)).toEqual(["⏱ −12m"]);
+  });
+
   it("a block that runs into the next fixed booking clashes in red", () => {
     const a = booked("Long one", "13:00", 150);
     const b = booked("Meeting", "15:00", 60);

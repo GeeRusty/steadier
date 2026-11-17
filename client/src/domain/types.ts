@@ -671,6 +671,8 @@ export interface Place {
   lng: number;
   /** Arrival distance in metres. */
   radius: number;
+  /** Optional minutes to allow for getting there ("Leave by" on Today). Absent = show nothing. */
+  travelMinutes?: number;
 }
 export interface AttentionItem {
   task: Task;

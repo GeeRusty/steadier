@@ -7,6 +7,7 @@ import { poolTasks } from "../../domain/anchorPlanning";
 import {
   clockText,
   keepGoing,
+  LATE_THRESHOLD_MINUTES,
   removePrerequisites,
   todayPlan,
   type Chip,
@@ -77,8 +78,9 @@ function RowMain({ row, tasks, time, onOpen, workspace, onOpenList }: { row: Tod
       <span className="tp-time">{time}</span>
       <span className="tp-title-wrap">
         <span className="tp-title">{row.task.title}</span>
-        {(row.label || row.suggested || row.chips.length > 0 || row.brokenLink || row.faded || list || photosOf(row.task).length > 0) && (
+        {(row.label || row.suggested || row.chips.length > 0 || row.brokenLink || row.faded || list || photosOf(row.task).length > 0 || row.leaveBy !== null) && (
           <span className="tp-signals">
+            {row.leaveBy !== null && <span className="tp-meta tp-leave">leave by {clockText(row.leaveBy)}</span>}
             <Chips chips={row.chips} />
             <ListProgressMark workspace={workspace} id={row.task.id} chipCount={row.chips.length} onOpenList={onOpenList} />
             <PhotoCountMark task={row.task} />
@@ -329,9 +331,9 @@ export default function TodayPlanView(p: Props) {
           </button>
           <p className="tp-meta">
             {now.mode === "block" && now.start !== null && now.end !== null
-              ? `${clockText(now.start)} – ${clockText(now.end)}${now.likelyEnd !== null && now.likelyEnd !== now.end ? ` · likely finish ${clockText(now.likelyEnd)}` : ""}`
+              ? `${clockText(now.start)} – ${clockText(now.end)}${now.likelyEnd !== null && Math.abs(now.likelyEnd - now.end) >= LATE_THRESHOLD_MINUTES ? ` · likely finish ${clockText(now.likelyEnd)}` : ""}`
               : now.mode === "upnext" && now.start !== null
-                ? `Up next in ${now.minutesUntil! >= 60 ? `${Math.floor(now.minutesUntil! / 60)}h ${now.minutesUntil! % 60}m` : `${now.minutesUntil} min`} · ${clockText(now.start)}`
+                ? `Up next in ${now.minutesUntil! >= 60 ? `${Math.floor(now.minutesUntil! / 60)}h ${now.minutesUntil! % 60}m` : `${now.minutesUntil} min`} · ${clockText(now.start)}${now.leaveBy !== null ? ` · leave by ${clockText(now.leaveBy)}` : ""}`
                 : now.mode === "focus"
                 ? "Focus running"
                 : [plan.next === null && p.workspace.nextThing?.when ? p.workspace.nextThing.when : null, now.label].filter(Boolean).join(" · ") || "Your Next thing"}
