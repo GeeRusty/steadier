@@ -163,6 +163,18 @@ describe("Lists: attached to a task", () => {
     expect(full).toContain("Leaving the shack · 0 of 3 ticked");
   });
 
+  it("opens the list directly when tapped, without opening the card", () => {
+    let w = withTask();
+    w = startRun(w, "run-1", "list-shack", AT, { kind: "task", id: "task-drive" });
+    for (const chipCount of [0, 2]) {
+      const html = renderToStaticMarkup(<ListProgressMark workspace={w} id="task-drive" chipCount={chipCount} onOpenList={() => {}} />);
+      expect(html).toContain('role="button"');
+      expect(html).toContain('aria-label="Open list Leaving the shack, 0 of 3 ticked"');
+    }
+    const plain = renderToStaticMarkup(<ListProgressMark workspace={w} id="task-drive" chipCount={0} />);
+    expect(plain).not.toContain('role="button"');
+  });
+
   it("drops links to a task that no longer exists when loading", () => {
     const w = { ...withTask(), tasks: [] };
     expect(validateWorkspace(JSON.parse(JSON.stringify(w))).lists!.links).toEqual([]);

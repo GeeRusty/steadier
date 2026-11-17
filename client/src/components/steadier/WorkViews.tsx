@@ -77,6 +77,8 @@ interface Props {
   onDone: (id: string) => void;
   onReview: (id: string) => void;
   onAdd: () => void;
+  /** Open a list directly from a card's list progress. */
+  onOpenList?: (templateId: string) => void;
 }
 /** Review due list explanations; on that page they sit behind the page's info icon. */
 export const REVIEW_LIST_INFO =
@@ -258,7 +260,7 @@ export default function WorkViews(p: Props) {
                   {text}
                 </span>
               ))}
-              {list && <ListProgressMark workspace={p.workspace} id={task.id} chipCount={chips.length + (when ? 1 : 0)} />}
+              {list && <ListProgressMark workspace={p.workspace} id={task.id} chipCount={chips.length + (when ? 1 : 0)} onOpenList={p.onOpenList} />}
               <PhotoCountMark task={task} />
               {broken && <Unlink size={16} className="tp-broken" role="img" aria-label="Missing its Goal Outcome or Imperative link" />}
               {faded && <CardDotsMark task={task} tasks={p.tasks} />}

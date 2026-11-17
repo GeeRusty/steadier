@@ -12498,3 +12498,7 @@ a.nav-item { text-decoration: none; }
 .capture-to { display: flex; flex-direction: column; gap: 6px; }
 .capture-to-choices { display: flex; flex-wrap: wrap; gap: 6px; }
 .tp-pick-item .ph-count, .tp-title .ph-count { margin-left: 6px; font-weight: 400; }
+
+/* List progress on a card opens that list. */
+.lv-open { cursor: pointer; }
+.lv-open:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }

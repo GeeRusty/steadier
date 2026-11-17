@@ -2527,6 +2527,7 @@ export default function Home() {
                     onDrop={dropFromPool}
                     onMutate={store.mutate}
                     onChoose={chooseNextThing}
+                    onOpenList={openList}
                   />
                 )}
                 {view === "attention" && todayTab === "overview" && (
@@ -3001,6 +3002,7 @@ export default function Home() {
                     onDone={done}
                     onReview={review}
                     onAdd={() => openCapture()}
+                    onOpenList={openList}
                   />
                 )}
                 {!v2Screen && <footer className="app-footer">

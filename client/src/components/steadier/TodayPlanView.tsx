@@ -38,6 +38,8 @@ interface Props {
   onMutate: (change: (w: Workspace) => Workspace) => boolean | void;
   /** Make a task today's Next thing (WHEN trigger + one small DO action). */
   onChoose: (taskId: string, when: string, doAction: string) => boolean;
+  /** Open a list directly from a card's list progress. */
+  onOpenList?: (templateId: string) => void;
 }
 
 export const TODAY_INFO =
@@ -68,7 +70,7 @@ function rowClass(row: TodayRow, extra = ""): string {
     .join(" ");
 }
 
-function RowMain({ row, tasks, time, onOpen, workspace }: { row: TodayRow; tasks: Task[]; time: string; onOpen: () => void; workspace?: Workspace }) {
+function RowMain({ row, tasks, time, onOpen, workspace, onOpenList }: { row: TodayRow; tasks: Task[]; time: string; onOpen: () => void; workspace?: Workspace; onOpenList?: (templateId: string) => void }) {
   const list = hasListProgress(workspace, row.task.id);
   return (
     <button type="button" className="tp-row-main" onClick={onOpen}>
@@ -78,7 +80,7 @@ function RowMain({ row, tasks, time, onOpen, workspace }: { row: TodayRow; tasks
         {(row.label || row.suggested || row.chips.length > 0 || row.brokenLink || row.faded || list || photosOf(row.task).length > 0) && (
           <span className="tp-signals">
             <Chips chips={row.chips} />
-            <ListProgressMark workspace={workspace} id={row.task.id} chipCount={row.chips.length} />
+            <ListProgressMark workspace={workspace} id={row.task.id} chipCount={row.chips.length} onOpenList={onOpenList} />
             <PhotoCountMark task={row.task} />
             {row.brokenLink && <Unlink size={16} className="tp-broken" role="img" aria-label="Missing its Goal Outcome or Imperative link" />}
             {row.faded && <CardDotsMark task={row.task} tasks={tasks} />}
@@ -337,7 +339,7 @@ export default function TodayPlanView(p: Props) {
           {(now.chips.length > 0 || hasListProgress(p.workspace, now.task.id) || photosOf(now.task).length > 0) && (
             <span className="tp-signals">
               <Chips chips={now.chips} />
-              <ListProgressMark workspace={p.workspace} id={now.task.id} chipCount={now.chips.length} />
+              <ListProgressMark workspace={p.workspace} id={now.task.id} chipCount={now.chips.length} onOpenList={p.onOpenList} />
               <PhotoCountMark task={now.task} />
             </span>
           )}
@@ -401,7 +403,7 @@ export default function TodayPlanView(p: Props) {
 
       {plan.slipped.map(row => (
         <section key={row.task.id} className={rowClass(row)} aria-label={`Slipped: ${row.task.title}`}>
-          <RowMain row={row} tasks={p.tasks} workspace={p.workspace} time={row.timeText} onOpen={() => p.onOpen(row.task)} />
+          <RowMain row={row} tasks={p.tasks} workspace={p.workspace} onOpenList={p.onOpenList} time={row.timeText} onOpen={() => p.onOpen(row.task)} />
           <div className="tp-extra">
             {row.again && <p className="tp-meta">Slipped again. It'll be in your Weekly Review if you leave it.</p>}
             <div className={`tp-actions${row.again ? "" : " tp-actions--three"}`}>
@@ -428,6 +430,8 @@ export default function TodayPlanView(p: Props) {
             <RowMain
               row={plan.next}
               tasks={p.tasks}
+              workspace={p.workspace}
+              onOpenList={p.onOpenList}
               time={plan.next.start !== null ? plan.next.timeText : plan.next.when ? plan.next.when : plan.next.timeText}
               onOpen={() => p.onOpen(plan.next!.task)}
             />
@@ -442,7 +446,7 @@ export default function TodayPlanView(p: Props) {
           <div className="tp-list">
             {plan.later.map(row => (
               <section key={row.task.id} className={rowClass(row)} aria-label={row.task.title}>
-                <RowMain row={row} tasks={p.tasks} workspace={p.workspace} time={row.timeText} onOpen={() => p.onOpen(row.task)} />
+                <RowMain row={row} tasks={p.tasks} workspace={p.workspace} onOpenList={p.onOpenList} time={row.timeText} onOpen={() => p.onOpen(row.task)} />
                 {blocked(row)}
               </section>
             ))}

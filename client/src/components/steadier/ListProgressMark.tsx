@@ -12,20 +12,40 @@ export default function ListProgressMark({
   kind = "task",
   id,
   chipCount,
+  onOpenList,
 }: {
   workspace: Workspace | undefined;
   kind?: "task" | "project";
   id: string;
   chipCount: number;
+  /** Tapping the progress opens that list directly (not the card's sheet). */
+  onOpenList?: (templateId: string) => void;
 }) {
   if (!workspace?.lists) return null;
   const progress = parentProgress(workspace, kind, id);
   if (!progress) return null;
-  return chipCount < 2 ? (
-    <span className="tp-chip">{progress.label}</span>
-  ) : (
-    <span className="tp-meta lv-inside">
-      {progress.title} · {progress.done} of {progress.total} ticked
+  const className = chipCount < 2 ? "tp-chip" : "tp-meta lv-inside";
+  const text = chipCount < 2 ? progress.label : `${progress.title} · ${progress.done} of ${progress.total} ticked`;
+  if (!onOpenList) return <span className={className}>{text}</span>;
+  // The mark sits inside the card's own button, so it is a span with a
+  // button role (a nested <button> is invalid) and stops the card opening.
+  const open = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onOpenList(progress.templateId);
+  };
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      className={`${className} lv-open`}
+      aria-label={`Open list ${progress.title}, ${progress.done} of ${progress.total} ticked`}
+      onClick={open}
+      onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") open(e);
+      }}
+    >
+      {text}
     </span>
   );
 }
