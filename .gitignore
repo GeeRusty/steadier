@@ -119,3 +119,4 @@ docs/test-artifacts/synthetic-trial-backup.json
 __pycache__/
 *.py[cod]
 downloads/
+.deployed-commit

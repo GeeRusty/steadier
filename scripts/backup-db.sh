@@ -11,4 +11,6 @@ docker exec steadier-db-1 sh -c 'mysqldump -usteadier -p"$MYSQL_PASSWORD" --sing
 gunzip -c "$FILE.tmp" | tail -1 | grep -q "Dump completed" || { echo "Backup incomplete" >&2; rm -f "$FILE.tmp"; exit 1; }
 mv "$FILE.tmp" "$FILE"
 find "$DEST" -name 'steadier-*.sql.gz' -mtime +14 -delete
+# The runbook travels with the backups (the off-server account can read it).
+cp "$(dirname "$0")/../docs/RUNBOOK.md" "$HOME/backups/RUNBOOK.md" 2>/dev/null || true
 echo "$(date '+%F %T') saved $FILE ($(du -h "$FILE" | cut -f1))"
