@@ -9,6 +9,7 @@ import { registerBillScanRoutes } from "../steadier/billScan";
 import { registerPasteSplitRoutes } from "../steadier/pasteSplit";
 import { registerVoicePage } from "../steadier/voicePage";
 import { registerGuidePage } from "../steadier/guide";
+import { registerPushRoutes, schedulePushes } from "../steadier/push";
 import { publicPlatformScript } from "./publicConfig";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -66,6 +67,9 @@ async function startServer() {
     },
   });
   if (process.env.NODE_ENV === "production") schedulePhotoPurge(photoReferences);
+  // Phone notifications: task reminders and leave by, sent while the app is closed.
+  registerPushRoutes(app);
+  if (process.env.NODE_ENV === "production") schedulePushes(photoReferences.current);
   registerCompassConnectionDiagnostics(app);
   registerCompassOAuthRoutes(app);
   registerCompassMcpRoutes(app);

@@ -10,6 +10,7 @@ Job: the parts that are on every page.
 - **☰** (top left) opens the menu: every page in Steadier, in a list. At the bottom of the menu, **App options** opens the App menu. Leads to: the page you tap.
 - Page name and date (top middle): shows where you are. Not a button.
 - **⋮** (top right) opens This page: **Read aloud** (reads the page out), **Undo** (undoes your last change), **Theme** (light, dark or automatic) and, on some pages, extras such as **Export costs (CSV)** on Assets & Upkeep. Tap **Close** to shut it. Stays here.
+- ⋮ › **Notifications** opens the phone notifications panel (Sheet: Notifications).
 - **App options** (bottom of the ☰ menu) opens App: **Flag** (the unplaced list), **Connection**, and on Today **Say intention**, **Re-anchor** and **Backups**. Elsewhere it has **Speak** instead.
 - The **i** (right side, under the header) opens "What this page is for", the page's explanation. Tap it again to fold it. Stays here.
 - Bottom bar, left to right: **Today**, **Overview**, **All work**, **Calendar**, **Projects**. Leads to: that screen.
@@ -107,6 +108,22 @@ Opens with **+** (tap).
 - Step 3. Type the idea.
 - Step 4. Tap **Save to Front of Mind**. Closing the box also saves it. You'll find it on Screen: Front of Mind.
 - By voice: hold **+** and say "Idea: …".
+
+## Sheet: Notifications
+
+Phone notifications that arrive when Steadier is closed. Only two kinds: a task's own reminders, and leave by.
+Get there: ⋮ (top right, any page) › **Notifications**.
+- First line: whether this phone is on. **Turn on** asks the phone for permission and signs it up; **Turn off** stops this phone.
+- **Task reminders**: on or off. **Leave by**: on or off.
+- **Quiet hours**: on or off, with From and To times. A reminder in quiet hours is dropped, not held.
+- **Send a test**: sends "Steadier test" to every phone that's on. It should arrive in a few seconds.
+- **Close** shuts the panel.
+
+### Walk: Turn on phone notifications
+- Step 1. Open Steadier on the phone. Tap ⋮ at the top right, then **Notifications**. You should see "Off on this phone."
+- Step 2. Tap **Turn on**. The phone asks to allow notifications: tap Allow. The line should change to "On for this phone."
+- Step 3. Tap **Send a test**. Within a few seconds a "Steadier test" notification should appear. Close Steadier and it still works.
+- If it says "Blocked for Steadier in the phone's settings", open the phone's Settings › Apps › Steadier › Notifications, allow them, and start again.
 
 ## Screen: Sort
 

@@ -6,6 +6,7 @@ import {
   mediumtext,
   mysqlEnum,
   mysqlTable,
+  primaryKey,
   text,
   timestamp,
   varchar,
@@ -238,4 +239,31 @@ export const steadierCalendarFeeds = mysqlTable(
     revokedAt: timestamp("revokedAt"),
   },
   table => [index("steadier_calendar_owner").on(table.ownerId)]
+);
+
+/**
+ * Phones (browsers) signed up for push notifications. The endpoint is the
+ * push service address for that device; p256dh/auth encrypt each message so
+ * the push service can't read it.
+ */
+export const steadierPushSubscriptions = mysqlTable("steadier_push_subscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  ownerId: int("ownerId").notNull(),
+  endpointHash: char("endpointHash", { length: 64 }).notNull().unique(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: varchar("p256dh", { length: 200 }).notNull(),
+  auth: varchar("auth", { length: 100 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastSentAt: timestamp("lastSentAt"),
+});
+
+/** Which reminders were already pushed, so each one goes once (kept 3 days). */
+export const steadierPushSent = mysqlTable(
+  "steadier_push_sent",
+  {
+    ownerId: int("ownerId").notNull(),
+    keyHash: char("keyHash", { length: 64 }).notNull(),
+    sentAt: timestamp("sentAt").defaultNow().notNull(),
+  },
+  table => [primaryKey({ columns: [table.ownerId, table.keyHash] })]
 );

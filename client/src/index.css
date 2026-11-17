@@ -12557,3 +12557,11 @@ a.nav-item { text-decoration: none; }
 :root .unplaced-panel.has-overdue { border-color: var(--tp-btn-line); color: inherit; }
 :root .unplaced-list li.orphan-stage-2 { border-left: 3px solid var(--tp-line); }
 :root .unplaced-list li.orphan-stage-3 { border-left: 3px solid var(--tp-btn-line); }
+
+/* ⋮ › Notifications (web push). */
+.nt-info { margin: 0 0 8px; line-height: 1.45; }
+.nt-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 6px 4px; border-top: 1px solid var(--v2-border); font-size: 14px; color: var(--v2-text); }
+.nt-row input[type="checkbox"] { width: 22px; height: 22px; }
+.nt-times { justify-content: flex-start; flex-wrap: wrap; }
+.nt-times label { display: flex; align-items: center; gap: 8px; }
+.nt-times input { min-height: 40px; border: 1px solid var(--tp-btn-line); border-radius: 8px; padding: 0 8px; font: inherit; background: var(--card); color: var(--tp-strong); }

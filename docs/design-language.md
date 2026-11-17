@@ -126,6 +126,10 @@ No other colours carry meaning.
 
 - Standard header (page name, date), its explanation behind the i, ⋮ with Read aloud, Undo and Theme; five tabs and +. Moved 17 Nov. The cards and buttons are unchanged, and the Weekly Review's Link check step is unchanged.
 
+## Phone notifications
+
+- Only a task's own reminders and leave by; never Needs attention, Upkeep or reviews (17 Nov). Each kind has its own switch; quiet hours drop, never hold. Settings in ⋮ › Notifications on every page. Encrypted web push; the in-app chime takes a reminder when Steadier is on screen.
+
 ## Retired pages
 
 - Evidence Feed and Site Cards are off the menu since 17 Nov (`RETIRED_VIEWS` in `domain/pageNavigation.ts`). Their screens, code and data are kept; taking an id out of that list brings the page back.

@@ -1,5 +1,5 @@
 /* Steadier offline shell. Registration is intentionally owned by the production app entry point. */
-const CACHE_NAME = 'steadier-shell-v6';
+const CACHE_NAME = 'steadier-shell-v7';
 const CACHE_PREFIX = 'steadier-';
 const INDEX_PATH = '/index.html';
 const ROOT_PATH = '/';
@@ -125,4 +125,47 @@ self.addEventListener('fetch', event => {
   if (/^\/assets\/.+-[A-Za-z0-9_-]{6,}\.(?:js|mjs|css)$/.test(url.pathname)) {
     event.respondWith(cacheFirstAsset(request));
   }
+});
+
+/*
+ * Phone notifications (web push). The server encrypts each message; only this
+ * device can read it. Kinds: "reminder" (a task's own reminder), "leave-by",
+ * and "test". When Steadier is open on screen, a task reminder is left to the
+ * in-app chime instead, so it never rings twice.
+ */
+self.addEventListener('push', event => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
+  const title = typeof data.title === 'string' && data.title ? data.title : 'Steadier';
+  const body = typeof data.body === 'string' ? data.body : '';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windows => {
+      const onScreen = windows.some(w => w.visibilityState === 'visible');
+      if (onScreen && data.kind === 'reminder') return undefined;
+      return self.registration.showNotification(title, {
+        body,
+        tag: typeof data.tag === 'string' ? data.tag : undefined,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        data: { url: typeof data.url === 'string' && data.url.startsWith('/') ? data.url : '/' },
+      });
+    })
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const target = new URL((event.notification.data && event.notification.data.url) || '/', self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windows => {
+      for (const w of windows) {
+        if (w.url.startsWith(self.location.origin) && 'focus' in w) return w.focus();
+      }
+      return self.clients.openWindow(target);
+    })
+  );
 });

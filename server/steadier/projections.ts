@@ -51,6 +51,7 @@ export function presentWorkspace(workspace: Workspace): Workspace {
   delete connectorSafeWorkspace.invoiceSettings;
   delete connectorSafeWorkspace.invoices;
   delete connectorSafeWorkspace.keepPhotoLocation;
+  delete connectorSafeWorkspace.notifications;
   return {
     ...connectorSafeWorkspace,
     tasks: workspace.tasks.map(presentTask),

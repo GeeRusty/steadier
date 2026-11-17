@@ -357,6 +357,8 @@ export interface Workspace {
   goals: Goal[];
   /** Saved places for location reminders (v2.7). Absent until the first one. */
   places?: Place[];
+  /** Phone notification choices (web push). Absent = the defaults. */
+  notifications?: NotificationSettings;
   /** Active bills and other dated obligations; absent only on historical saves. */
   obligations?: Obligation[];
   /** Owner-saved evidence feed; absent until the first evidence entry. */
@@ -657,6 +659,12 @@ export interface WorkspaceContact {
   status: "active" | "archived";
   createdAt: string;
   updatedAt: string;
+}
+/** Phone notifications: each kind on or off, and quiet hours (Adelaide clock). */
+export interface NotificationSettings {
+  taskReminders: boolean;
+  leaveBy: boolean;
+  quietHours: { on: boolean; from: string; to: string };
 }
 /**
  * A saved place. Coordinates sync with the workspace like other records;

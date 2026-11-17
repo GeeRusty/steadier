@@ -39,6 +39,7 @@ import {
 import type {
   Context,
   DailyLogEntry,
+  NotificationSettings,
   LinkCheckHold,
   DailyIntention,
   FocusSession,
@@ -946,6 +947,24 @@ function validateTask(value: unknown, label: string, requireV2 = false): Task {
     ...(hasPhotos ? { photos: validatePhotos(value.photos, label, fail) } : {}),
   };
 }
+function notificationsField(value: unknown): NotificationSettings {
+  if (!isRecord(value)) fail("notifications must be an object.");
+  hasExactKeys(value, ["taskReminders", "leaveBy", "quietHours"], "notifications");
+  if (typeof value.taskReminders !== "boolean" || typeof value.leaveBy !== "boolean")
+    fail("notifications switches must be true or false.");
+  const q = value.quietHours;
+  if (!isRecord(q)) fail("quiet hours must be an object.");
+  hasExactKeys(q, ["on", "from", "to"], "quiet hours");
+  const clock = /^([01]\d|2[0-3]):[0-5]\d$/;
+  if (typeof q.on !== "boolean" || typeof q.from !== "string" || typeof q.to !== "string" || !clock.test(q.from) || !clock.test(q.to))
+    fail("quiet hours need on/off and two HH:MM times.");
+  return {
+    taskReminders: value.taskReminders as boolean,
+    leaveBy: value.leaveBy as boolean,
+    quietHours: { on: q.on as boolean, from: q.from as string, to: q.to as string },
+  };
+}
+
 /** Longest "allow X min to get there" on a saved place. */
 const MAX_TRAVEL_MINUTES = 240;
 
@@ -1578,6 +1597,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
     "linkCheckHolds",
     "hideAmountsFromAI",
     "keepPhotoLocation",
+    "notifications",
     "captureSession",
     "assets",
     "people",
@@ -1611,6 +1631,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
   if (hasKey("hideAmountsFromAI") && typeof value.hideAmountsFromAI !== "boolean") {
     fail("hideAmountsFromAI must be true or false.");
   }
+  const notifications = hasKey("notifications") ? notificationsField(value.notifications) : undefined;
   if (hasKey("keepPhotoLocation") && typeof value.keepPhotoLocation !== "boolean") {
     fail("keepPhotoLocation must be true or false.");
   }
@@ -1753,6 +1774,7 @@ function validateV2Workspace(value: JsonRecord): Workspace {
           ...(typeof value.keepPhotoLocation === "boolean"
             ? { keepPhotoLocation: value.keepPhotoLocation }
             : {}),
+          ...(notifications ? { notifications } : {}),
           // A session whose project is gone or achieved simply ends.
           ...(captureSession &&
           projects.some(p => p.id === captureSession.projectId && p.status === "active")

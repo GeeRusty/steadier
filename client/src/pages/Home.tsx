@@ -31,6 +31,7 @@ import TodayCalendarMenuSheet, {
   TODAY_GUIDE,
 } from "../components/steadier/TodayCalendarMenuSheet";
 import PagePurposeNote from "../components/steadier/PagePurposeNote";
+import NotificationsSheet from "../components/steadier/NotificationsSheet";
 import MyLifeNavigationButton from "../components/steadier/MyLifeNavigationButton";
 import ImperativesView, { IMPERATIVES_INFO, spokenImperatives } from "../components/steadier/ImperativesView";
 import CompassStatusView from "../components/steadier/CompassStatusView";
@@ -475,6 +476,7 @@ export default function Home() {
   const [focusOpen, setFocusOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [screenMenu, setScreenMenu] = useState<"app" | "page" | null>(null);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [install, setInstall] = useState<InstallPrompt | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
   const calendarReadRef = useRef<(() => void) | null>(null);
@@ -3127,6 +3129,14 @@ export default function Home() {
                 />
               );
             })()}
+            {notificationsOpen && (
+              <NotificationsSheet
+                workspace={store.workspace}
+                readOnly={store.readOnly}
+                onMutate={store.mutate}
+                onClose={() => setNotificationsOpen(false)}
+              />
+            )}
             {v2Screen && screenMenu && (
               <TodayCalendarMenuSheet
                 kind={screenMenu}
@@ -3149,11 +3159,12 @@ export default function Home() {
                   store.undo();
                   toast("Last change undone.");
                 }}
-                extraRows={
-                  view === "assets" && (store.workspace.assets ?? []).some(a => a.logs.some(l => l.cost !== null))
+                extraRows={[
+                  ...(view === "assets" && (store.workspace.assets ?? []).some(a => a.logs.some(l => l.cost !== null))
                     ? [{ label: "Export costs (CSV)", onClick: () => downloadAssetCosts(store.workspace) }]
-                    : []
-                }
+                    : []),
+                  { label: "Notifications", onClick: () => setNotificationsOpen(true) },
+                ]}
               />
             )}
             {v2Screen && (

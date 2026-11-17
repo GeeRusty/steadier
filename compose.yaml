@@ -43,6 +43,9 @@ services:
       ANDROID_PACKAGE: com.geerusty.steadier
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}   # voice assistant
       ANDROID_CERT_SHA256: ${ANDROID_CERT_SHA256:-}
+      # Phone notifications (web push); without them notifications stay off.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       PHOTO_DIR: /app/photos
     volumes:
       - ./downloads:/app/downloads:ro   # steadier.apk is served from here

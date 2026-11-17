@@ -198,7 +198,9 @@ A spreadsheet-style snapshot of the last saved server copy, which you can view o
 
 ## Reminders
 
-Give a booked task a reminder, for example 15 minutes before. Reminders work while Steadier is open. Calendar feed alerts depend on your calendar app's settings.
+Give a booked task a reminder, for example 15 minutes before. While Steadier is open it chimes in the app.
+
+**Phone notifications (Steadier closed):** tap ⋮ › **Notifications**, then **Turn on** and allow them. Only two kinds are ever sent: a task's own reminders, and **Leave by** for a booked task at a place with an Allow to get there time. Each has its own switch, and **Quiet hours** (22:00–07:00 to start) drop anything in that time. **Send a test** checks it reaches your phone. Each message is encrypted on Steadier's server before it goes out through the phone's push service. Calendar feed alerts depend on your calendar app's settings.
 
 ## The voice assistant
 
