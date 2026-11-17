@@ -1,7 +1,7 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { PAGE_NAVIGATION_SECTIONS } from "../../domain/pageNavigation";
+import { PAGE_NAVIGATION_SECTIONS, RETIRED_VIEWS } from "../../domain/pageNavigation";
 import type { View } from "../../domain/types";
 import PagePurposeNote, {
   PAGE_PURPOSE_CORE_VIEWS,
@@ -14,7 +14,8 @@ function render(view: View) {
 
 describe("PagePurposeNote", () => {
   it("provides concise guidance for every specialist destination in the grouped menu", () => {
-    const menuViews = PAGE_NAVIGATION_SECTIONS.flatMap(section => section.ids);
+    // Retired pages keep their explanation, so bringing one back needs nothing else.
+    const menuViews = [...PAGE_NAVIGATION_SECTIONS.flatMap(section => section.ids), ...RETIRED_VIEWS];
     const expected = menuViews
       .filter(view => !PAGE_PURPOSE_CORE_VIEWS.includes(view as (typeof PAGE_PURPOSE_CORE_VIEWS)[number]))
       .slice()

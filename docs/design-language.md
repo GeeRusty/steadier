@@ -122,6 +122,14 @@ No other colours carry meaning.
 - The link picker hides behind **+ Link**; the Add form behind **+ Add an Imperative**; Retired is folded.
 - **Edit** is outlined, **Retire…** is a grey filled button set apart on the right, and asks to confirm (approved 17 Nov).
 
+## Link check
+
+- Standard header (page name, date), its explanation behind the i, ⋮ with Read aloud, Undo and Theme; five tabs and +. Moved 17 Nov. The cards and buttons are unchanged, and the Weekly Review's Link check step is unchanged.
+
+## Retired pages
+
+- Evidence Feed and Site Cards are off the menu since 17 Nov (`RETIRED_VIEWS` in `domain/pageNavigation.ts`). Their screens, code and data are kept; taking an id out of that list brings the page back.
+
 ## Standing rules for anyone (or any AI) working on Steadier
 - **Never sign in as the owner or create access passes** (session tokens, keys, login links) without asking the owner first, even temporarily and even for a screenshot.
 - **Never deploy with a failing test.** Fix first, run the full test suite green, then deploy.

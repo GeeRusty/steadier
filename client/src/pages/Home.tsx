@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import LinkCheckView from "../components/steadier/LinkCheckView";
+import LinkCheckView, { LINK_CHECK_INFO, linkCheckSpeech } from "../components/steadier/LinkCheckView";
 import { linkCheckCount } from "../domain/linkCheck";
 import { pastDueOffToday, todayPlan, todayTaskIds } from "../domain/todayPlan";
 import TodayPlanView from "../components/steadier/TodayPlanView";
@@ -513,8 +513,8 @@ export default function Home() {
     setEditing(null);
     setTaskPanelMode("view");
   };
-  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects" || view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas" || view === "imperatives";
-  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas" || view === "imperatives" ? "plain" : "today";
+  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects" || view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas" || view === "imperatives" || view === "linkcheck";
+  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas" || view === "imperatives" || view === "linkcheck" ? "plain" : "today";
   const changeAppearance = (next: Appearance) => {
     setAppearance(next);
     persistAppearance(next);
@@ -2021,6 +2021,10 @@ export default function Home() {
       if (text) readOutLoud(text);
       return;
     }
+    if (view === "linkcheck") {
+      readOutLoud(linkCheckSpeech(store.workspace));
+      return;
+    }
     if (view === "imperatives") {
       readOutLoud(spokenImperatives(imperativeViews(store.workspace, adelaideClock().date)));
       return;
@@ -2278,7 +2282,7 @@ export default function Home() {
                     />
                     <div className="v2-topbar-center" aria-live="polite">
                       <strong className="v2-page-title">
-                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : view === "review" ? "Review due / unplaced" : view === "weekly" ? "Weekly Review" : view === "shopping" ? "Lists" : view === "assets" ? "Assets & Upkeep" : view === "ideas" ? "Front of Mind" : view === "imperatives" ? "Imperatives" : todayTab === "overview" ? "Overview" : "Today"}
+                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : view === "review" ? "Review due / unplaced" : view === "weekly" ? "Weekly Review" : view === "shopping" ? "Lists" : view === "assets" ? "Assets & Upkeep" : view === "ideas" ? "Front of Mind" : view === "imperatives" ? "Imperatives" : view === "linkcheck" ? "Link check" : todayTab === "overview" ? "Overview" : "Today"}
                       </strong>
                       <span className={`v2-sync-status ${topbarConnectionTone}`}>
                         <span>{topbarDate}</span><span aria-hidden="true"> · </span><i aria-hidden="true" />
@@ -2495,7 +2499,9 @@ export default function Home() {
                             ? [ASSETS_INFO_MORE]
                             : view === "imperatives"
                               ? [IMPERATIVES_INFO]
-                              : undefined
+                              : view === "linkcheck"
+                                ? [LINK_CHECK_INFO]
+                                : undefined
                     }
                   />
                 )}

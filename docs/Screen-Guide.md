@@ -154,6 +154,7 @@ Get there: Overview › **Weekly review** (when due), the review card on Review 
 
 Job: Imperatives with no work, Imperative projects with no Imperative, and projects with no Goal Outcome.
 Get there: Overview › **Link check**, or ☰ › **Link check**. It's also the Link check step of the Weekly Review.
+- Standard header: the page name and date at the top, the **i** for its explanation, and ⋮ with **Read aloud**, **Undo** and **Theme**.
 - An Imperative with no work: **Link work** (pick **A project** or **Or a task**), **Not yet** (held until your next Weekly Review), **Step down** (**Sustain**, **Delegate or minimise** or **Retire**). **Cancel** closes a picker.
 - An Imperative project with no Imperative: a **Suggested** line with **Confirm**, **Link to an Imperative** (then tap the Imperative), **Make it Support**, **Not yet**.
 - A project with no Goal Outcome: **Open project**. Leads to: Screen: Project page.
@@ -330,16 +331,16 @@ Short entries for pages you rarely use. Each opens from ☰.
 - **Time / plans**: the week's time against planned work.
 - **Server sheet**: a read-only snapshot of the last confirmed server copy.
 - **Decision Log**: decisions saved in Weekly Reviews. Read-only.
-- **Evidence Feed**: dated evidence on tasks and projects.
-- **Site Cards**: reference cards and links for useful places.
 - **Work Pipeline**: projects and their tasks together, by stage.
 - **Routine Runner**: run a repeating task's checklist.
 - **Year Wheel**: seasonal reviews, tasks, projects and obligations across the year.
 - **Move & Energy**: movement and energy windows, kept only in this browser.
 - **Weather / Forecast**: a forecast for a chosen place, kept only in this browser.
-- **People & Follow-ups**: people and what you promised them.
+- **People & Follow-ups**: people and what you promised them; it will serve your Friends & Relations outcome as a ledger of who, and when you last made contact.
 - **Credential renewal dates**: renewal names and dates, never the secret values.
 - **Invoices**: create and export invoice records.
+
+Retired 17 Nov (off the menu; their data is kept and they can be brought back): Evidence Feed and Site Cards.
 
 ## Screen: Outside the app
 

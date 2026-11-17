@@ -31,8 +31,6 @@ export const PAGE_NAVIGATION_SECTIONS: readonly {
     ids: [
       "journal",
       "decisions",
-      "evidence",
-      "sites",
       "shopping",
       "assets",
       "credentialRenewals",
@@ -49,6 +47,12 @@ export const PAGE_NAVIGATION_SECTIONS: readonly {
   },
 ];
 
+/**
+ * Retired pages: off the menu, but their screens, code and data are kept, so
+ * taking an id out of this list brings the page back as it was (owner, 17 Nov).
+ */
+export const RETIRED_VIEWS: readonly View[] = ["evidence", "sites"];
+
 export interface PageNavigationGroup<T> {
   title: string;
   items: T[];
@@ -61,6 +65,7 @@ export interface PageNavigationGroup<T> {
 export function groupPageNavigation<T extends { id: View }>(
   items: readonly T[]
 ): PageNavigationGroup<T>[] {
+  items = items.filter(item => !RETIRED_VIEWS.includes(item.id));
   const byId = new Map(items.map(item => [item.id, item]));
   const used = new Set<View>();
   const groups = PAGE_NAVIGATION_SECTIONS.map(section => {

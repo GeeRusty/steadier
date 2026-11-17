@@ -46,7 +46,10 @@ describe("screen guide", () => {
     const text = screenGuideText();
     const home = fs.readFileSync(path.join(ROOT, "client/src/pages/Home.tsx"), "utf8");
     const nav = home.slice(home.indexOf("const nav:"), home.indexOf("];", home.indexOf("const nav:")));
-    const titles = [...nav.matchAll(/title: "([^"]+)"/g)].map(m => m[1]);
+    const retired = ["evidence", "sites"]; // RETIRED_VIEWS in client/src/domain/pageNavigation.ts
+    const titles = [...nav.matchAll(/id: "([^"]+)",\s*title: "([^"]+)"/g)]
+      .filter(m => !retired.includes(m[1]))
+      .map(m => m[2]);
     expect(titles.length).toBeGreaterThan(30);
     const missing = titles.filter(t => !text.includes(`**${t}**`));
     expect(missing).toEqual([]);

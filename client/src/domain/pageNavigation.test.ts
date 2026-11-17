@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupPageNavigation, PAGE_NAVIGATION_SECTIONS } from "./pageNavigation";
+import { groupPageNavigation, PAGE_NAVIGATION_SECTIONS, RETIRED_VIEWS } from "./pageNavigation";
 import type { View } from "./types";
 
 const allPageIds: View[] = [
@@ -24,8 +24,6 @@ const allPageIds: View[] = [
   "obligations",
   "journal",
   "decisions",
-  "evidence",
-  "sites",
   "shopping",
   "assets",
   "pipeline",
@@ -61,6 +59,13 @@ describe("full page navigation groups", () => {
       "Planning tools",
       "Settings and data",
     ]);
+  });
+
+  it("leaves retired pages (Evidence Feed, Site Cards) off the menu", () => {
+    expect([...RETIRED_VIEWS].sort()).toEqual(["evidence", "sites"]);
+    const groups = groupPageNavigation([{ id: "attention" as View }, { id: "evidence" as View }, { id: "sites" as View }]);
+    const ids = groups.flatMap(g => g.items.map(i => i.id));
+    expect(ids).toEqual(["attention"]);
   });
 
   it("keeps a newly added route visible in a final direct-link group", () => {

@@ -35,6 +35,23 @@ interface Props {
 
 type Open = { id: string; panel: "link" | "step" } | null;
 
+/** The page's explanation, word for word, behind the i (the page itself shows none). */
+export const LINK_CHECK_INFO =
+  "Only links you made count. Work means open tasks and active projects. Not yet holds an item until your next Weekly Review.";
+
+/** Read aloud for the Link check page (⋮ › Read aloud). */
+export function linkCheckSpeech(workspace: Workspace): string {
+  const imps = unlinkedImperatives(workspace);
+  const projects = unlinkedProjects(workspace);
+  const noOutcome = projectsWithoutGoalOutcome(workspace);
+  if (!imps.length && !projects.length && !noOutcome.length) return "Link check. Everything is linked.";
+  const parts = ["Link check."];
+  if (imps.length) parts.push(`Imperatives with no work: ${imps.map(i => i.title).join("; ")}.`);
+  if (projects.length) parts.push(`Imperative projects with no Imperative: ${projects.map(p => p.title).join("; ")}.`);
+  if (noOutcome.length) parts.push(`Projects with no Goal Outcome: ${noOutcome.map(p => p.title).join("; ")}.`);
+  return parts.join(" ");
+}
+
 /**
  * Link check: Imperatives with no work, and Imperative-row projects with no
  * Imperative. Every choice is one owner tap; nothing links itself.
@@ -237,13 +254,13 @@ export default function LinkCheckView({ workspace, readOnly, onMutate, reviewMod
       {reviewMode ? (
         <h3 id="link-check-title">Link check: Not yet ({imperatives.length + projects.length})</h3>
       ) : (
-        <h1 id="link-check-title" className="page-purpose-heading"><Link2 size={22} aria-hidden="true" /> Link check</h1>
+        <h1 id="link-check-title" className="sr-only">Link check</h1>
       )}
-      <p className="small muted">
-        {reviewMode
-          ? "These were held with Not yet. Decide each again: link it, change it, or hold it one more week. Anything left expires when you save the review and comes back to Link check."
-          : "Only links you made count. Work means open tasks and active projects. Not yet holds an item until your next Weekly Review."}
-      </p>
+      {reviewMode && (
+        <p className="small muted">
+          These were held with Not yet. Decide each again: link it, change it, or hold it one more week. Anything left expires when you save the review and comes back to Link check.
+        </p>
+      )}
       {nothing ? (
         <p className="ideas-empty">
           <Check size={18} aria-hidden="true" /> {reviewMode ? "Nothing was held with Not yet." : "Everything is linked."}

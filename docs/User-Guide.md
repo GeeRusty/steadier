@@ -125,8 +125,8 @@ The full weekly decision process: look at what happened, what's waiting, and wha
 ### Decision Log
 Read-only list of decisions saved during Weekly Reality Reviews.
 
-### Evidence Feed
-Add dated evidence to a task or project, for example "spoke to the bank". Evidence never marks something Done by itself.
+### Evidence Feed (retired)
+Retired 17 Nov: no longer in the menu. Anything saved in it is kept, and the page can be brought back.
 
 ### Time / plans
 Compares the time you have this week with the work you've planned, so you can see whether the plan fits.
@@ -173,8 +173,8 @@ Physical things you look after: vehicles, places, equipment and appliances. (Ass
 ### Notes / Daily Log
 Notes to yourself, one or more per day. A note never becomes a task unless you choose **convert to task**. Notes sync with the rest of Steadier and are included in backups.
 
-### Site Cards
-Reference cards and links for useful places and websites.
+### Site Cards (retired)
+Retired 17 Nov: no longer in the menu. Anything saved in it is kept, and the page can be brought back.
 
 ### Backups & trial
 - **Download full backup** saves everything to a file. This is the only format that restores exactly.
