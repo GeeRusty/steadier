@@ -9,7 +9,7 @@ echo "== 1/5 Tests (type check + full suite, in Docker)"
 docker run --rm -v "$PWD":/src:ro -v steadier-test-nm:/app/node_modules -w /app node:22 bash -c \
   'cd /src && tar --exclude=node_modules --exclude=.git --exclude=android --exclude=downloads -cf - . | (cd /app && tar xf -) && cd /app && corepack enable >/dev/null 2>&1 && CI=1 pnpm install --frozen-lockfile >/dev/null && CI=1 pnpm check && CI=1 pnpm test' \
   > /tmp/steadier-deploy-tests.log 2>&1 || { echo "Tests failed: nothing deployed. See /tmp/steadier-deploy-tests.log"; exit 1; }
-grep -E "Tests +[0-9]+ passed" /tmp/steadier-deploy-tests.log | tail -1
+sed 's/\x1b\[[0-9;]*m//g' /tmp/steadier-deploy-tests.log | grep -E "Tests +[0-9]+ passed" | tail -1 || true
 echo "== 2/5 Database backup"
 bash scripts/backup-db.sh
 echo "== 3/5 Backup check (restores into a throwaway database)"
