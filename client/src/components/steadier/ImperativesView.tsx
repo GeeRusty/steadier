@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Compass, ExternalLink, Plus, Volume2 } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import type { Task, Workspace } from "../../domain/types";
 import {
   activeImperatives,
@@ -15,19 +15,23 @@ import { adelaideClock } from "../../domain/time";
 import TimingShapeMark from "./TimingShapeMark";
 import { DecisionField, NotionField } from "./CompassFields";
 import { GOAL_LEVEL_LABEL, GOAL_LEVELS } from "../../domain/goals";
+import { shortDate } from "../../domain/assets";
 import {
-  goalsThroughWork,
+  goalRoutesThroughWork,
   imperativeMapLinks,
+  routeText,
   linkImperativeToGoal,
   unlinkImperativeFromGoal,
 } from "../../domain/mapPages";
+
+/** The page's explanation, word for word, behind the i. */
+export const IMPERATIVES_INFO = `What, given present reality, you cannot responsibly ignore. Set in your Weekly Reality Review. About ${MAX_ACTIVE_IMPERATIVES} active. One can stand without any project. Steadier flags any that go quiet for ${QUIET_DAYS} days; it never sets or retires them for you.`;
 
 interface Props {
   workspace: Workspace;
   onMutate: (fn: (w: Workspace) => Workspace) => boolean | void;
   onOpenTask: (task: Task) => void;
   onOpenGoal?: (id: string) => void;
-  onRead: (text: string) => void;
   readOnly: boolean;
   focusId?: string | null;
   onFocusDone?: () => void;
@@ -56,7 +60,6 @@ export default function ImperativesView({
   onMutate,
   onOpenTask,
   onOpenGoal,
-  onRead,
   readOnly,
   focusId,
   onFocusDone,
@@ -75,10 +78,16 @@ export default function ImperativesView({
   const [message, setMessage] = useState("");
   const [confirmOver, setConfirmOver] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
+  const [linking, setLinking] = useState<string | null>(null);
+  const [retiring, setRetiring] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [showRetired, setShowRetired] = useState(false);
 
   useEffect(() => {
     if (!focusId) return;
-    document.getElementById(`imperative-${focusId}`)?.focus();
+    if (workspace.imperatives.some(i => i.id === focusId && i.status === "retired")) setShowRetired(true);
+    // After the retired list (if any) has opened.
+    setTimeout(() => document.getElementById(`imperative-${focusId}`)?.focus(), 0);
     onFocusDone?.();
     // This is a one-time navigation focus, not a data effect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,18 +102,24 @@ export default function ImperativesView({
 
   function add() {
     const clean = title.trim();
-    if (!clean) return setMessage("Name the Imperative first.");
+    if (!clean) {
+      setMessage("Name the Imperative first.");
+      return false;
+    }
     const url = notion.trim() ? normaliseNotionUrl(notion) : null;
-    if (notion.trim() && !url)
-      return setMessage("Use an https notion.so or notion.site link.");
+    if (notion.trim() && !url) {
+      setMessage("Use an https notion.so or notion.site link.");
+      return false;
+    }
     if (
       activeImperatives(workspace).length >= MAX_ACTIVE_IMPERATIVES &&
       !confirmOver
     ) {
       setConfirmOver(true);
-      return setMessage(
+      setMessage(
         `You already hold ${MAX_ACTIVE_IMPERATIVES} Active Imperatives. Retire one first, or tap Add again to hold one more.`
       );
+      return false;
     }
     const stamp = adelaideTimestamp();
     const imperative: Imperative = {
@@ -130,7 +145,9 @@ export default function ImperativesView({
       setReason("");
       setNotion("");
       setConfirmOver(false);
+      return true;
     }
+    return false;
   }
 
   function update(id: string, change: Partial<Imperative>, line: string) {
@@ -153,13 +170,20 @@ export default function ImperativesView({
     );
   }
 
+  function unlinkGoal(i: Imperative, goalId: string, title: string) {
+    commit(
+      w => unlinkImperativeFromGoal(w, i.id, goalId, adelaideTimestamp()),
+      `Unlinked from “${title}”.`
+    );
+  }
+
   function mapSection(i: Imperative) {
     const goals = workspace.goals ?? [];
     const direct = imperativeMapLinks(i)
       .map(id => goals.find(g => g.id === id))
       .filter(Boolean) as typeof goals;
-    const through = goalsThroughWork(workspace, i).filter(
-      g => !direct.some(d => d.id === g.id)
+    const through = goalRoutesThroughWork(workspace, i).filter(
+      r => !direct.some(d => d.id === r.goal.id)
     );
     const candidates = goals.filter(
       g => g.status === "active" && !imperativeMapLinks(i).includes(g.id)
@@ -167,64 +191,54 @@ export default function ImperativesView({
     const pick = mapPick[i.id] ?? "";
     const offMap =
       i.status === "active" && direct.length === 0 && through.length === 0;
+    const picking = linking === i.id;
     return (
-      <div className="imperative-map">
-        <p className="small">
-          <strong>On the map: </strong>
-          {offMap && <span className="gap-chip">not on the map yet</span>}
-        </p>
-        <ul className="imperative-steps">
-          {direct.map(g => (
-            <li key={g.id}>
-              <button
-                className="text-button"
-                onClick={() => onOpenGoal?.(g.id)}
-              >
-                {GOAL_LEVEL_LABEL[g.level]} “{g.title}”
+      <div className="imp-map">
+        <span className="imp-label">On the map</span>
+        {offMap && <span className="lv-meta">Not on the map yet</span>}
+        {direct.map(g => (
+          <div className="imp-map-row" key={g.id}>
+            <button type="button" className="imp-goal" onClick={() => onOpenGoal?.(g.id)}>
+              {GOAL_LEVEL_LABEL[g.level]} “{g.title}”
+            </button>
+            {!readOnly && (
+              <button type="button" className="imp-unlink" onClick={() => unlinkGoal(i, g.id, g.title)}>
+                Unlink
               </button>
-              {!readOnly && (
-                <button
-                  className="text-button"
-                  onClick={() =>
-                    commit(
-                      w =>
-                        unlinkImperativeFromGoal(
-                          w,
-                          i.id,
-                          g.id,
-                          adelaideTimestamp()
-                        ),
-                      `Unlinked from “${g.title}”.`
-                    )
-                  }
-                >
-                  Unlink
-                </button>
-              )}
-            </li>
-          ))}
-          {through.map(g => (
-            <li key={g.id}>
-              <button
-                className="text-button"
-                onClick={() => onOpenGoal?.(g.id)}
-              >
-                {GOAL_LEVEL_LABEL[g.level]} “{g.title}”
-              </button>{" "}
-              <span className="small muted">through linked work</span>
-            </li>
-          ))}
-        </ul>
-        {!readOnly && candidates.length > 0 && (
-          <div className="notion-row">
+            )}
+          </div>
+        ))}
+        {through.map(({ goal: g, projects }) => (
+          <div className="imp-map-row" key={g.id}>
+            <button type="button" className="imp-goal" onClick={() => onOpenGoal?.(g.id)}>
+              {GOAL_LEVEL_LABEL[g.level]} “{g.title}”
+            </button>
+            {projects.length > 1 ? (
+              <details className="imp-route">
+                <summary className="lv-meta">{routeText(projects)}</summary>
+                <span className="lv-meta">{projects.map(p => p.title).join(", ")}</span>
+              </details>
+            ) : (
+              <span className="lv-meta">{routeText(projects)}</span>
+            )}
+          </div>
+        ))}
+        {!readOnly && candidates.length > 0 && !picking && (
+          <button type="button" className="lv-link" onClick={() => setLinking(i.id)}>
+            + Link
+          </button>
+        )}
+        {!readOnly && candidates.length > 0 && picking && (
+          <div className="imp-link-form">
+            <label className="lv-meta" htmlFor={`imp-link-${i.id}`}>
+              Link to a Pillar, Value Goal or Outcome
+            </label>
             <select
+              id={`imp-link-${i.id}`}
               value={pick}
-              aria-label={`Link ${i.title} to the map`}
-              onChange={e =>
-                setMapPick(m => ({ ...m, [i.id]: e.target.value }))
-              }
+              onChange={e => setMapPick(m => ({ ...m, [i.id]: e.target.value }))}
             >
-              <option value="">Link to a Pillar, Value Goal or Outcome…</option>
+              <option value="">Choose…</option>
               {GOAL_LEVELS.map(level => (
                 <optgroup key={level} label={GOAL_LEVEL_LABEL[level]}>
                   {candidates
@@ -237,23 +251,37 @@ export default function ImperativesView({
                 </optgroup>
               ))}
             </select>
-            <button
-              className="button secondary small-button"
-              disabled={!pick}
-              onClick={() => {
-                const g = goals.find(x => x.id === pick);
-                if (
-                  commit(
-                    w =>
-                      linkImperativeToGoal(w, i.id, pick, adelaideTimestamp()),
-                    `Linked to “${g?.title}” on the map.`
-                  )
-                )
+            <span className="lv-row-actions">
+              <button
+                type="button"
+                className="tp-btn tp-btn-primary"
+                disabled={!pick}
+                onClick={() => {
+                  const g = goals.find(x => x.id === pick);
+                  if (
+                    commit(
+                      w => linkImperativeToGoal(w, i.id, pick, adelaideTimestamp()),
+                      `Linked to “${g?.title}” on the map.`
+                    )
+                  ) {
+                    setMapPick(m => ({ ...m, [i.id]: "" }));
+                    setLinking(null);
+                  }
+                }}
+              >
+                Link
+              </button>
+              <button
+                type="button"
+                className="tp-btn"
+                onClick={() => {
                   setMapPick(m => ({ ...m, [i.id]: "" }));
-              }}
-            >
-              Link
-            </button>
+                  setLinking(null);
+                }}
+              >
+                Cancel
+              </button>
+            </span>
           </div>
         )}
       </div>
@@ -264,104 +292,102 @@ export default function ImperativesView({
     const i = v.imperative;
     const open = v.tasks.filter(t => t.state !== "done");
     const isEditing = editing === i.id;
+    const counts =
+      v.projects.length === 0 && open.length === 0
+        ? "stands on its own, no projects"
+        : `${v.projects.length} project${v.projects.length === 1 ? "" : "s"} · ${open.length} open step${open.length === 1 ? "" : "s"}`;
     return (
       <li
         id={`imperative-${i.id}`}
         tabIndex={-1}
         aria-labelledby={`imperative-title-${i.id}`}
         key={i.id}
-        className={`imperative-card${v.quiet ? " quiet" : ""}${i.status === "retired" ? " retired" : ""}`}
+        className={`lv-card imp-card${i.status === "active" ? " imp-active" : " imp-retired"}`}
       >
-        <div className="imperative-head">
-          <div>
-            <h3 id={`imperative-title-${i.id}`}>
-              <TimingShapeMark imperative={i} /> {i.title}
-            </h3>
-            {i.reason && <p className="small">{i.reason}</p>}
-          </div>
-          {i.notionUrl && (
-            <a
-              className="text-button"
-              href={i.notionUrl}
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              <ExternalLink size={14} /> Notion
-            </a>
-          )}
-        </div>
-        <p className="small muted">
-          Set {i.setOn} · {v.projects.length} project
-          {v.projects.length === 1 ? "" : "s"} · {open.length} open step
-          {open.length === 1 ? "" : "s"}
-          {v.projects.length === 0 && open.length === 0
-            ? " · stands on its own, which is fine"
+        <span className="lv-row-top">
+          <h3 id={`imperative-title-${i.id}`} className="imp-title">
+            {i.title}
+          </h3>
+          {v.quiet && v.quietDays !== null && <span className="tp-chip">quiet {v.quietDays}d</span>}
+        </span>
+        {i.reason && <span className="imp-why">{i.reason}</span>}
+        <span className="lv-meta">
+          {i.status === "retired" && i.retiredOn
+            ? `Retired ${shortDate(i.retiredOn, today)} · `
             : ""}
-        </p>
-        {v.quiet && (
-          <p className="quiet-note small" role="status">
-            Quiet for {v.quietDays} days. Nothing linked has moved. Is this
-            still something you cannot ignore? Pick one small step, or decide in
-            your review.
-          </p>
-        )}
+          Set {shortDate(i.setOn, today)} · {counts}
+          {i.notionUrl && (
+            <>
+              {" · "}
+              <a href={i.notionUrl} target="_blank" rel="noreferrer noopener">
+                Notion
+              </a>
+            </>
+          )}
+        </span>
         {open.length > 0 && (
-          <ul className="imperative-steps">
+          <ul className="imp-steps">
             {open.slice(0, 5).map(t => (
               <li key={t.id}>
-                <button className="text-button" onClick={() => onOpenTask(t)}>
-                  <TimingShapeMark task={t} /> {t.nextAction || t.title}
+                <button type="button" className="imp-step" onClick={() => onOpenTask(t)}>
+                  <span className="imp-step-text">{t.nextAction || t.title}</span>
+                  <TimingShapeMark task={t} />
                 </button>
               </li>
             ))}
-            {open.length > 5 && (
-              <li className="small muted">and {open.length - 5} more</li>
-            )}
+            {open.length > 5 && <li className="lv-meta">and {open.length - 5} more</li>}
           </ul>
         )}
         {(workspace.goals ?? []).length > 0 && mapSection(i)}
         {i.decision && (
-          <p className="small">
+          <span className="lv-meta">
             Decision: <strong>{i.decision.outcome}</strong>
             {i.decision.confirmed ? "" : " (suggested, not decided)"}
-          </p>
+          </span>
         )}
-        {!readOnly && (
-          <div className="missed-actions">
-            <button
-              className="text-button"
-              onClick={() => setEditing(isEditing ? null : i.id)}
-            >
-              {isEditing ? "Close" : "Edit"}
-            </button>
-            {i.status === "active" ? (
+        {!readOnly && retiring === i.id ? (
+          <div className="lv-card lv-confirm imp-confirm" role="alertdialog" aria-label={`Retire ${i.title}?`}>
+            <strong>Retire “{i.title}”?</strong>
+            <span className="lv-meta">
+              It moves to Retired, with its history kept. Its projects and steps stay as they are. You can make it active again at any time.
+            </span>
+            <span className="lv-row-actions">
               <button
-                className="text-button"
-                onClick={() =>
-                  update(
-                    i.id,
-                    { status: "retired", retiredOn: today },
-                    "Retired."
-                  )
-                }
+                type="button"
+                className="tp-btn tp-btn-primary"
+                onClick={() => {
+                  update(i.id, { status: "retired", retiredOn: today }, "Retired.");
+                  setRetiring(null);
+                }}
               >
                 Retire
               </button>
-            ) : (
-              <button
-                className="text-button"
-                onClick={() =>
-                  update(
-                    i.id,
-                    { status: "active", retiredOn: null },
-                    "Made active again."
-                  )
-                }
-              >
-                Make active again
+              <button type="button" className="tp-btn" onClick={() => setRetiring(null)}>
+                Cancel
               </button>
-            )}
+            </span>
           </div>
+        ) : (
+          !readOnly && (
+            <div className="imp-actions">
+              <button type="button" className="tp-btn" onClick={() => setEditing(isEditing ? null : i.id)}>
+                {isEditing ? "Close" : "Edit"}
+              </button>
+              {i.status === "active" ? (
+                <button type="button" className="imp-retire" onClick={() => setRetiring(i.id)}>
+                  Retire…
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="imp-retire"
+                  onClick={() => update(i.id, { status: "active", retiredOn: null }, "Made active again.")}
+                >
+                  Make active again
+                </button>
+              )}
+            </div>
+          )
         )}
         {isEditing && !readOnly && (
           <div className="imperative-edit">
@@ -385,31 +411,19 @@ export default function ImperativesView({
                 maxLength={2000}
                 onBlur={e =>
                   e.target.value.trim() !== i.reason &&
-                  update(
-                    i.id,
-                    { reason: e.target.value.trim() },
-                    "Reason updated."
-                  )
+                  update(i.id, { reason: e.target.value.trim() }, "Reason updated.")
                 }
               />
             </label>
             <DecisionField
               decision={i.decision}
               onChange={decision =>
-                update(
-                  i.id,
-                  { decision },
-                  decision
-                    ? `Decision: ${decision.outcome}.`
-                    : "Decision cleared."
-                )
+                update(i.id, { decision }, decision ? `Decision: ${decision.outcome}.` : "Decision cleared.")
               }
             />
             <NotionField
               value={i.notionUrl}
-              onChange={notionUrl =>
-                update(i.id, { notionUrl }, "Notion link updated.")
-              }
+              onChange={notionUrl => update(i.id, { notionUrl }, "Notion link updated.")}
               onError={setMessage}
             />
           </div>
@@ -419,37 +433,29 @@ export default function ImperativesView({
   }
 
   return (
-    <section className="imperatives-view" aria-labelledby="imperatives-title">
-      <div className="calendar-toolbar">
-        <h1 id="imperatives-title">
-          <Compass size={22} /> Imperatives
-        </h1>
-        <button
-          className="text-button"
-          onClick={() => onRead(spokenImperatives(views))}
-        >
-          <Volume2 size={15} /> Read aloud
-        </button>
-      </div>
-      <p className="muted">
-        What, given present reality, you cannot responsibly ignore. Set in your
-        Weekly Reality Review. {active.length} of about {MAX_ACTIVE_IMPERATIVES}{" "}
-        active. One can stand without any project. Steadier flags any that go
-        quiet for {QUIET_DAYS} days; it never sets or retires them for you.
-      </p>
+    <section className="lv imp" aria-labelledby="imperatives-title">
+      <h1 id="imperatives-title" className="sr-only">
+        Imperatives
+      </h1>
+      <span className="lv-meta imp-count">{active.length} active</span>
       {active.length > MAX_ACTIVE_IMPERATIVES && (
-        <p className="quiet-note small">
-          You are holding {active.length}. More than {MAX_ACTIVE_IMPERATIVES}{" "}
-          usually means some are not really imperative.
-        </p>
+        <span className="lv-meta">
+          You are holding {active.length}. More than {MAX_ACTIVE_IMPERATIVES} usually means some are not really imperative.
+        </span>
       )}
-      <ul className="imperative-list">{active.map(card)}</ul>
-      {!readOnly && (
+      {!active.length && <p className="lv-quiet">No Active Imperatives yet.</p>}
+      <ul className="imp-list">{active.map(card)}</ul>
+      {!readOnly && !adding && (
+        <button type="button" className="lv-link" onClick={() => setAdding(true)}>
+          + Add an Imperative
+        </button>
+      )}
+      {!readOnly && adding && (
         <form
-          className="imperative-add"
+          className="lv-card imperative-add"
           onSubmit={e => {
             e.preventDefault();
-            add();
+            if (add()) setAdding(false);
           }}
         >
           <h2>Add an Imperative</h2>
@@ -480,19 +486,26 @@ export default function ImperativesView({
               placeholder="https://www.notion.so/…"
             />
           </label>
-          <button className="button primary small-button">
-            <Plus size={14} /> Add
-          </button>
+          <span className="lv-row-actions">
+            <button type="submit" className="tp-btn tp-btn-primary">
+              <Plus size={14} aria-hidden="true" /> Add
+            </button>
+            <button type="button" className="tp-btn" onClick={() => setAdding(false)}>
+              Cancel
+            </button>
+          </span>
         </form>
       )}
       {retired.length > 0 && (
-        <details className="detail-section">
-          <summary>Retired ({retired.length})</summary>
-          <ul className="imperative-list">{retired.map(card)}</ul>
-        </details>
+        <>
+          <button type="button" className="lv-link" aria-expanded={showRetired} onClick={() => setShowRetired(v => !v)}>
+            Retired ({retired.length}) {showRetired ? "⌄" : "›"}
+          </button>
+          {showRetired && <ul className="imp-list">{retired.map(card)}</ul>}
+        </>
       )}
       {message && (
-        <p className="small muted" role="status">
+        <p className="lv-meta" role="status">
           {message}
         </p>
       )}

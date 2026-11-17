@@ -93,7 +93,11 @@ Tap a project to open its page: **Next step** first, then **Why**, **Outcome** (
 **Balance, not ranking.** Four cells, each with a plain description: a chosen thing with a window; a chosen thing that grows through regular engagement; upkeep that falls due; upkeep that recurs. Each cell shows how many open tasks it holds, their estimated time, and time logged this week. The matrix only describes your work. It never changes the order of your suggestions.
 
 ### Imperatives
-Your few current focus areas. Review them now and then, and retire ones that no longer deserve attention.
+Your few current focus areas: what you can't responsibly ignore right now. Each card shows its reason, when it was set, its projects and open steps (tap a step to open it), and where it sits **On the map**.
+- **Unlink** removes a direct map link. A row reading **via Move house** is reached through that project, so it changes when the project's link does.
+- **+ Link** opens the picker to link a Pillar, Value Goal or Outcome; **Cancel** folds it away.
+- **Edit** changes the wording, reason, decision and Notion link. **Retire…** asks first, then moves it to **Retired** with its history; you can make it active again.
+- **+ Add an Imperative** at the bottom adds one. Read aloud, Undo and Theme are in the ⋮ menu; the **i** explains the page.
 
 ### Link check
 Three short lists, shown as **Link check (n)** in Needs attention:

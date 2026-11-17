@@ -5,7 +5,7 @@ import { pastDueOffToday, todayPlan, todayTaskIds } from "../domain/todayPlan";
 import TodayPlanView from "../components/steadier/TodayPlanView";
 import OverviewView, { type AttentionItem } from "../components/steadier/OverviewView";
 import { kindCounts } from "../domain/todayStates";
-import { activeImperatives } from "../domain/compass";
+import { activeImperatives, imperativeViews } from "../domain/compass";
 import CaptureHoldButton from "../components/steadier/CaptureHoldButton";
 import { privateOwnerJSON } from "../lib/cloudApi";
 import ClaudeConsent from "../components/steadier/ClaudeConsent";
@@ -32,7 +32,7 @@ import TodayCalendarMenuSheet, {
 } from "../components/steadier/TodayCalendarMenuSheet";
 import PagePurposeNote from "../components/steadier/PagePurposeNote";
 import MyLifeNavigationButton from "../components/steadier/MyLifeNavigationButton";
-import ImperativesView from "../components/steadier/ImperativesView";
+import ImperativesView, { IMPERATIVES_INFO, spokenImperatives } from "../components/steadier/ImperativesView";
 import CompassStatusView from "../components/steadier/CompassStatusView";
 import WeeklyReviewFlow from "../components/steadier/WeeklyReviewFlow";
 import CompassMapView from "../components/steadier/CompassMapView";
@@ -513,8 +513,8 @@ export default function Home() {
     setEditing(null);
     setTaskPanelMode("view");
   };
-  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects" || view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas";
-  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas" ? "plain" : "today";
+  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects" || view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas" || view === "imperatives";
+  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas" || view === "imperatives" ? "plain" : "today";
   const changeAppearance = (next: Appearance) => {
     setAppearance(next);
     persistAppearance(next);
@@ -2021,6 +2021,10 @@ export default function Home() {
       if (text) readOutLoud(text);
       return;
     }
+    if (view === "imperatives") {
+      readOutLoud(spokenImperatives(imperativeViews(store.workspace, adelaideClock().date)));
+      return;
+    }
     if (view === "assets") {
       const text = assetsReadRef.current?.();
       if (text) readOutLoud(text);
@@ -2274,7 +2278,7 @@ export default function Home() {
                     />
                     <div className="v2-topbar-center" aria-live="polite">
                       <strong className="v2-page-title">
-                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : view === "review" ? "Review due / unplaced" : view === "weekly" ? "Weekly Review" : view === "shopping" ? "Lists" : view === "assets" ? "Assets & Upkeep" : view === "ideas" ? "Front of Mind" : todayTab === "overview" ? "Overview" : "Today"}
+                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : view === "review" ? "Review due / unplaced" : view === "weekly" ? "Weekly Review" : view === "shopping" ? "Lists" : view === "assets" ? "Assets & Upkeep" : view === "ideas" ? "Front of Mind" : view === "imperatives" ? "Imperatives" : todayTab === "overview" ? "Overview" : "Today"}
                       </strong>
                       <span className={`v2-sync-status ${topbarConnectionTone}`}>
                         <span>{topbarDate}</span><span aria-hidden="true"> · </span><i aria-hidden="true" />
@@ -2489,7 +2493,9 @@ export default function Home() {
                           ? [LIST_WORDING_GUIDE]
                           : view === "assets"
                             ? [ASSETS_INFO_MORE]
-                            : undefined
+                            : view === "imperatives"
+                              ? [IMPERATIVES_INFO]
+                              : undefined
                     }
                   />
                 )}
@@ -2698,7 +2704,6 @@ export default function Home() {
                     onMutate={store.mutate}
                     onOpenTask={openTaskView}
                     onOpenGoal={openGoal}
-                    onRead={voice.read}
                     readOnly={store.readOnly}
                     focusId={focusImperativeId}
                     onFocusDone={() => setFocusImperativeId(null)}

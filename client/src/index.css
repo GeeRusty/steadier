@@ -12502,3 +12502,31 @@ a.nav-item { text-decoration: none; }
 /* List progress on a card opens that list. */
 .lv-open { cursor: pointer; }
 .lv-open:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+/* Imperatives page (design language, 17 Nov mock-up). */
+.imp { width: 100%; box-sizing: border-box; min-width: 0; }
+.imp-count { margin: 0; }
+.imp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.imp-card { display: flex; flex-direction: column; gap: 6px; box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; overflow-wrap: anywhere; }
+.imp-card.imp-active { border-left: 4px solid var(--tp-green); }
+.imp-card.imp-retired { opacity: 0.75; }
+.imp-title { margin: 0; flex: 1 1 auto; font-size: 17px; font-weight: 600; line-height: 1.3; }
+.imp-why { font-size: 14px; color: var(--tp-strong); }
+.imp-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.imp-step { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 40px; padding: 0; border: 0; border-top: 1px solid var(--tp-line); background: none; font: inherit; font-size: 14px; color: var(--tp-strong); text-align: left; cursor: pointer; }
+.imp-step-text { flex: 1 1 auto; min-width: 0; }
+.imp-label { font-size: 12px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted-foreground); margin-top: 4px; }
+.imp-map { display: flex; flex-direction: column; gap: 2px; }
+.imp-map-row { display: flex; align-items: center; gap: 8px; min-height: 40px; flex-wrap: wrap; }
+.imp-goal { flex: 1 1 auto; min-width: 0; padding: 0; border: 0; background: none; font: inherit; font-size: 14px; color: var(--primary); text-align: left; cursor: pointer; }
+.imp-unlink { min-height: 36px; padding: 0 12px; border: 1px solid var(--tp-btn-line); border-radius: 8px; background: var(--card); color: var(--tp-strong); font: inherit; font-size: 13px; cursor: pointer; }
+.imp-route summary { cursor: pointer; list-style: none; }
+.imp-route summary::-webkit-details-marker { display: none; }
+.imp-link-form { display: flex; flex-direction: column; gap: 8px; }
+.imp-link-form select { width: 100%; max-width: 100%; box-sizing: border-box; }
+.imp-actions { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--tp-line); padding-top: 8px; }
+.imp-retire { margin-left: auto; min-height: 44px; padding: 0 14px; border: 1px solid var(--tp-line); border-radius: 8px; background: var(--tp-chip-bg); color: var(--tp-chip-ink); font: inherit; font-size: 15px; cursor: pointer; }
+.imp-confirm { border-color: var(--tp-btn-line); }
+.imp .imperative-add { display: flex; flex-direction: column; gap: 10px; }
+.imp .imperative-add h2 { margin: 0; font-size: 16px; }
+.imp .field input, .imp .field textarea { width: 100%; box-sizing: border-box; }

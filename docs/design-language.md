@@ -109,6 +109,15 @@ No other colours carry meaning.
 - **Matching:** active projects whose title contains the name; two matches ask, none match lists the projects. Nothing goes to a wrong project.
 - **Not affected:** Front of Mind ideas, Paste anything, notes, lists, and tasks Claude or Grok add through the connector.
 
+## Imperatives
+
+- Standard header (page name once, date), the i holds the explanation word for word, the ⋮ menu has Read aloud, Undo and Theme; the five tabs and + as everywhere.
+- Cards fit the screen width, with a green left bar for an active Imperative. Dates are written "27 Oct" (year only outside this year).
+- Chips stay grey (quiet, moved, review due) with the "projects · open steps" line.
+- On the map: a direct link has a small outlined **Unlink** button; a goal reached through work names its route ("via Move house", or "via 2 projects", tap to see them) and has no Unlink.
+- The link picker hides behind **+ Link**; the Add form behind **+ Add an Imperative**; Retired is folded.
+- **Edit** is outlined, **Retire…** is a grey filled button set apart on the right, and asks to confirm (approved 17 Nov).
+
 ## Standing rules for anyone (or any AI) working on Steadier
 - **Never sign in as the owner or create access passes** (session tokens, keys, login links) without asking the owner first, even temporarily and even for a screenshot.
 - **Never deploy with a failing test.** Fix first, run the full test suite green, then deploy.

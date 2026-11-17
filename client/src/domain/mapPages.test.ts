@@ -11,6 +11,8 @@ import {
   createChildUnder,
   createProjectUnder,
   goalsThroughWork,
+  goalRoutesThroughWork,
+  routeText,
   imperativesForGoal,
   linkImperativeToGoal,
   parentLinkStatus,
@@ -249,6 +251,9 @@ describe("Imperatives on the map", () => {
     expect(goalsThroughWork(w, w.imperatives[1]).map(x => x.id)).toEqual([
       "o1",
     ]);
+    const routes = goalRoutesThroughWork(w, w.imperatives[1]);
+    expect(routes.map(r => [r.goal.id, routeText(r.projects)])).toEqual([["o1", "via Find rental"]]);
+    expect(routeText([{ title: "A" }, { title: "B" }])).toBe("via 2 projects");
     expect(spokenMapItem(w, find(w, "v1"), TODAY)).toMatch(
       /Imperatives here: Keep the house, Move well/
     );

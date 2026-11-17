@@ -431,6 +431,30 @@ export function goalsThroughWork(w: Workspace, imperative: Imperative): Goal[] {
   return [...seen.values()];
 }
 
+/** Each goal reached through linked work, with the projects that reach it ("via Move house"). */
+export function goalRoutesThroughWork(
+  w: Workspace,
+  imperative: Imperative
+): { goal: Goal; projects: { id: string; title: string }[] }[] {
+  const routes = new Map<string, { goal: Goal; projects: { id: string; title: string }[] }>();
+  for (const pid of imperativeProjectIds(w, imperative)) {
+    const project = w.projects.find(p => p.id === pid);
+    for (const g of outcomesForProject(w, pid)) {
+      const route = routes.get(g.id) ?? { goal: g, projects: [] };
+      if (project && !route.projects.some(p => p.id === pid)) route.projects.push({ id: pid, title: project.title });
+      routes.set(g.id, route);
+    }
+  }
+  return [...routes.values()];
+}
+
+/** "via Move house", or "via 2 projects" when more than one project leads there. */
+export function routeText(projects: { title: string }[]): string {
+  if (projects.length === 1) return `via ${projects[0].title}`;
+  if (projects.length === 0) return "via linked work";
+  return `via ${projects.length} projects`;
+}
+
 // ---------------------------------------------------------------------------
 // Page summary
 // ---------------------------------------------------------------------------
