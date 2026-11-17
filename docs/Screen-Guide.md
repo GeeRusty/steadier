@@ -9,11 +9,12 @@ For Claude: give one step at a time, then wait. Each step says what the owner sh
 Job: the parts that are on every page.
 - **☰** (top left) opens the menu: every page in Steadier, in a list. At the bottom of the menu, **App options** opens the App menu. Leads to: the page you tap.
 - Page name and date (top middle): shows where you are. Not a button.
-- **⋮** (top right) opens This page: **Read aloud** (reads the page out), **Undo** (undoes your last change) and, on some pages, extras such as **Export costs (CSV)** on Assets & Upkeep. Tap **Close** to shut it. Stays here.
-- **App options** (bottom of the ☰ menu) opens App: **Theme** (light, dark or automatic), **Flag** (the unplaced list), **Connection**, and on Today **Say intention**, **Re-anchor** and **Backups**. Elsewhere it has **Speak** instead.
+- **⋮** (top right) opens This page: **Read aloud** (reads the page out), **Undo** (undoes your last change), **Theme** (light, dark or automatic) and, on some pages, extras such as **Export costs (CSV)** on Assets & Upkeep. Tap **Close** to shut it. Stays here.
+- **App options** (bottom of the ☰ menu) opens App: **Flag** (the unplaced list), **Connection**, and on Today **Say intention**, **Re-anchor** and **Backups**. Elsewhere it has **Speak** instead.
 - The **i** (right side, under the header) opens "What this page is for", the page's explanation. Tap it again to fold it. Stays here.
 - Bottom bar, left to right: **Today**, **Overview**, **All work**, **Calendar**, **Projects**. Leads to: that screen.
 - **+** (bottom right, in the bar): tap to capture by typing, hold to talk to the voice assistant. Leads to: Sheet: Capture.
+- Older pages (those with "My life /" and the page name at the top) have no ⋮: their Theme switch is in the top bar.
 - Back: the device back button, or the page's own back link (for example **All lists** or **All assets**).
 
 ## Screen: Today

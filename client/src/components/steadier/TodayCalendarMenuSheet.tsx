@@ -95,10 +95,6 @@ export default function TodayCalendarMenuSheet({
 
         {isApp ? (
           <div className="v2-menu-rows">
-            <div className="v2-menu-row v2-menu-theme">
-              <span>Theme</span>
-              <AppearanceToggle appearance={appearance} onChange={onAppearance} />
-            </div>
             <button type="button" className="v2-menu-row" onClick={() => runAndClose(onFlag)}>
               <span>Flag</span>
               {flagCount > 0 && <span className="v2-menu-row-value"><Flag size={15} aria-hidden="true" /> {flagCount}</span>}
@@ -146,6 +142,11 @@ export default function TodayCalendarMenuSheet({
             >
               <span>Undo</span><RotateCcw size={16} aria-hidden="true" />
             </button>
+            {/* Theme sits with Read aloud and Undo on every page's ⋮ (owner, 17 Nov). */}
+            <div className="v2-menu-row v2-menu-theme">
+              <span>Theme</span>
+              <AppearanceToggle appearance={appearance} onChange={onAppearance} />
+            </div>
             {extraRows.map(row => (
               <button key={row.label} type="button" className="v2-menu-row" onClick={() => runAndClose(row.onClick)}>
                 <span>{row.label}</span>

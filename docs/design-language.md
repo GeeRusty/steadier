@@ -60,6 +60,7 @@ No other colours carry meaning.
 
 ## Review due and Weekly Review
 - **Header:** the same as Today (title, date · sync, ⋮). The theme toggle, Undo and Read aloud live in the menu. No footer.
+- **⋮ (This page) on every page:** Read aloud, Undo and Theme. App options (bottom of ☰) keeps Flag, Connection and the Today extras.
 - **One Read aloud per page**, in ⋮. It reads the page: on Review due, the review card and the unplaced list; on Weekly Review, the current step.
 - **Explanations** sit behind the **i**, word for word, never on the page.
 - **Weekly Review steps:** one line, "Step n of 10", with a thin grey bar. Tap it for the step list. Back and Next stay.
@@ -114,7 +115,7 @@ No other colours carry meaning.
 
 ## Imperatives
 
-- Standard header (page name once, date), the i holds the explanation word for word, the ⋮ (This page) menu has Read aloud and Undo, and Theme is under ☰ › App options, as on every page; the five tabs and + as everywhere.
+- Standard header (page name once, date), the i holds the explanation word for word, the ⋮ (This page) menu has Read aloud, Undo and Theme, as on every page (Theme moved there from App options, 17 Nov); the five tabs and + as everywhere.
 - Cards fit the screen width, with a green left bar for an active Imperative. Dates are written "27 Oct" (year only outside this year).
 - Chips stay grey (quiet, moved, review due) with the "projects · open steps" line.
 - On the map: a direct link has a small outlined **Unlink** button; a goal reached through work names its route ("via Move house", or "via 2 projects", tap to see them) and has no Unlink.
