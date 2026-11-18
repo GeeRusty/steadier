@@ -55,6 +55,10 @@ No other colours carry meaning.
 - One save model: autosave with "Saved". The only thing that waits is a voice draft (dashed, **Keep it** / **Undo**). Explanations sit behind the **i**.
 - Times read "9am–4pm · 7h", never "9:00–4:00". "Finish by" is one date-and-time row. "Not before" covers both old hide-until dates; "Start preparing from" stays separate because it hides nothing.
 
+## Pillars & Goals
+- One card per Pillar in the owner's own stored order, never sorted by activity, all at the same strength, styled like Project Outcomes rows. Name, one-line definition (or "+ Add definition"), then "1 Value Goal · 1 Outcome · 2 projects". Green bar only when an active Imperative links to the Pillar or anything under it. Grey chips, at most two: "no definition", "no Value Goal", "quiet 30d". No counts in the header (owner, 18 Nov).
+- Tap to open: Value Goals › Goal Outcomes › projects, with "+ Add Value Goal" / "+ Add Outcome" in place. "+ Add" rows are plain grey text, never dashed (dashed means suggested). Enter adds and keeps the box open; pasted lines add one each.
+
 ## Calendar
 - **Blocks** are neutral cards with primary text on a neutral surface. The title comes first, then the time and chips.
 - **Colour:** the green left bar is for Imperative work only. Blue/lavender fills and lock icons are gone.

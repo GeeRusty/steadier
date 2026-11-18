@@ -38,7 +38,8 @@ import CompassStatusView from "../components/steadier/CompassStatusView";
 import WeeklyReviewFlow from "../components/steadier/WeeklyReviewFlow";
 import CompassMapView from "../components/steadier/CompassMapView";
 import MapItemPage from "../components/steadier/MapItemPage";
-import PillarsGoalsView from "../components/steadier/PillarsGoalsView";
+import PillarsGoalsView, { PILLARS_INFO } from "../components/steadier/PillarsGoalsView";
+import { pillarCards, spokenPillars } from "../domain/pillarCards";
 import {
   TaskListContext,
   PlacesContext,
@@ -515,8 +516,8 @@ export default function Home() {
     setEditing(null);
     setTaskPanelMode("view");
   };
-  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects" || view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas" || view === "imperatives" || view === "linkcheck";
-  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas" || view === "imperatives" || view === "linkcheck" ? "plain" : "today";
+  const v2Screen = view === "calendar" || view === "attention" || view === "all" || view === "projects" || view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas" || view === "imperatives" || view === "linkcheck" || view === "compass-directory";
+  const v2Page = view === "calendar" ? "calendar" : view === "all" || view === "projects" ? "all" : view === "review" || view === "weekly" || view === "shopping" || view === "assets" || view === "ideas" || view === "imperatives" || view === "linkcheck" || view === "compass-directory" ? "plain" : "today";
   const changeAppearance = (next: Appearance) => {
     setAppearance(next);
     persistAppearance(next);
@@ -2027,6 +2028,10 @@ export default function Home() {
       readOutLoud(linkCheckSpeech(store.workspace));
       return;
     }
+    if (view === "compass-directory") {
+      readOutLoud(spokenPillars(pillarCards(store.workspace, adelaideClock().date).active));
+      return;
+    }
     if (view === "imperatives") {
       readOutLoud(spokenImperatives(imperativeViews(store.workspace, adelaideClock().date)));
       return;
@@ -2284,7 +2289,7 @@ export default function Home() {
                     />
                     <div className="v2-topbar-center" aria-live="polite">
                       <strong className="v2-page-title">
-                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : view === "review" ? "Review due / unplaced" : view === "weekly" ? "Weekly Review" : view === "shopping" ? "Lists" : view === "assets" ? "Assets & Upkeep" : view === "ideas" ? "Front of Mind" : view === "imperatives" ? "Imperatives" : view === "linkcheck" ? "Link check" : todayTab === "overview" ? "Overview" : "Today"}
+                        {view === "calendar" ? "Calendar" : view === "all" ? "All work" : view === "projects" ? "Projects" : view === "review" ? "Review due / unplaced" : view === "weekly" ? "Weekly Review" : view === "shopping" ? "Lists" : view === "assets" ? "Assets & Upkeep" : view === "ideas" ? "Front of Mind" : view === "imperatives" ? "Imperatives" : view === "linkcheck" ? "Link check" : view === "compass-directory" ? "Pillars & Goals" : todayTab === "overview" ? "Overview" : "Today"}
                       </strong>
                       <span className={`v2-sync-status ${topbarConnectionTone}`}>
                         <span>{topbarDate}</span><span aria-hidden="true"> · </span><i aria-hidden="true" />
@@ -2503,7 +2508,9 @@ export default function Home() {
                               ? [IMPERATIVES_INFO]
                               : view === "linkcheck"
                                 ? [LINK_CHECK_INFO]
-                                : undefined
+                                : view === "compass-directory"
+                                  ? [PILLARS_INFO]
+                                  : undefined
                     }
                   />
                 )}
@@ -2662,7 +2669,9 @@ export default function Home() {
                     workspace={store.workspace}
                     onOpenGoal={openGoal}
                     onOpenMap={() => navigate("map")}
-                    voice={voice}
+                    onOpenProject={openProjectById}
+                    onMutate={store.mutate}
+                    readOnly={store.readOnly}
                   />
                 ) : view === "weekly" ? (
                   <WeeklyReviewFlow

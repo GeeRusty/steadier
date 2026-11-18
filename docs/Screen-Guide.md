@@ -274,8 +274,19 @@ Get there: tap an item on the Compass map, on Pillars & Goals, or under On the m
 
 ## Screen: Pillars & Goals
 
-Get there: ☰ › **Pillars & Goals**.
-- Every Pillar, Value Goal and Goal Outcome as a list, with **Active** / **Retired**. Tap one to edit it (Screen: Compass item). **Open Compass map** leads to Screen: Compass map.
+Job: your Pillars and what sits under each.
+Get there: ☰ › **Pillars & Goals**. Or **Pillars & Goals** (back link) from a Compass item opened here.
+- One card per Pillar, in your own order. Each shows its name, its definition (or **+ Add definition**) and what's under it, e.g. "1 Value Goal · 1 Outcome · 2 projects". A green bar: an active Imperative is linked to it or something under it. Grey chips only when something's off: "no definition", "no Value Goal", "quiet 30d".
+- Tap a card to open it: its Value Goals, under each its Goal Outcomes, under each the projects serving it. Tap any name to open it (Screen: Compass item, or the project).
+- **+ Add Value Goal** and **+ Add Outcome**: type one and press Enter for the next, or paste several lines at once; tap **Add** or **Done**. Tap the definition to change it, then **Save**.
+- **Retired (n)** (bottom) lists retired Pillars. **Open Compass map ›** leads to Screen: Compass map.
+
+### Walk: Fill in a Pillar
+- Step 1. Open ☰ › **Pillars & Goals** and tap the Pillar's card. It opens.
+- Step 2. Tap **+ Add definition**, type it, and press Enter (or **Save**).
+- Step 3. Tap **+ Add Value Goal**, type it, and press Enter. The box stays open for another; tap **Done** when finished.
+- Step 4. Under that Value Goal, tap **+ Add Outcome**, type it, and press Enter.
+- Several at once: paste them into the box, one per line, then press Enter.
 
 ## Screen: Lists
 

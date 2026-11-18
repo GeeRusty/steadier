@@ -124,7 +124,7 @@ Only links you made count. Suggested links show a **Confirm** button. **Not yet*
 ### Compass view, Compass map, and Pillars & Goals
 - **Compass view**: active Imperatives and Projects at a glance, with status marks.
 - **Compass map**: traces Pillars, Goals, Outcomes and Projects, and shows where a purpose link is missing.
-- **Pillars & Goals**: where you add and edit the Pillar and Goal structure behind the map.
+- **Pillars & Goals**: one card per Pillar, in your own order, with its definition and a line like "1 Value Goal · 1 Outcome · 2 projects". Tap a card to see its Value Goals, Outcomes and projects. Fill it in right there: **+ Add definition**, **+ Add Value Goal** and **+ Add Outcome** (press Enter for the next one, or paste several lines at once). A green bar means an active Imperative is linked to it; grey chips show only what's missing or quiet for 30 days.
 
 ### Compass Library
 Four reference links in the menu (Projects, Pillars, Goal Outcomes, Compass Library). Front of Mind's Notion page was retired when Front of Mind moved into Steadier. They open Notion in a new tab for now and will be swapped for server library links when Notion is retired. (The old Command Centre page is gone: its check-in is on Today, its Imperatives summary is Overview's Compass row, and its sync details are on Server & Compass.)

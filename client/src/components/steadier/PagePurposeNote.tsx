@@ -27,7 +27,7 @@ export const SPECIALIST_PAGE_PURPOSES: Partial<Record<View, string>> = {
   imperatives: "Review the few focus areas active now and decide whether they still deserve attention.",
   "compass-view": "Scan active Imperatives and Projects with live status marks; use the key to interpret them.",
   map: "Trace Pillars, goals, outcomes and Projects to find missing purpose links.",
-  "compass-directory": "Browse and maintain the Pillar–Goal hierarchy behind the Compass map.",
+  "compass-directory": "Your Pillars, and the Value Goals, Outcomes and projects under each.",
   near: "Find place-linked tasks; arrival alerts depend on location permission and Steadier being open.",
   obligations: "Track bill, licence, renewal, insurance, tax and cancel-by dates with preparation lead time; scan a bill to fill one in. Not accounting.",
   journal: "Keep notes to self by day; they sync with Steadier and are included in backups.",

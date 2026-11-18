@@ -3,26 +3,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { newGoal } from "../../domain/goals";
 import type { Workspace } from "../../domain/types";
-import type { VoiceControls } from "../../hooks/useVoice";
 import PillarsGoalsView from "./PillarsGoalsView";
 
 const stamp = "2026-11-01T10:00:00+10:30";
-const voice = {
-  supported: false,
-  speechSupported: false,
-  listening: false,
-  speaking: false,
-  transcript: "",
-  finalTranscript: "",
-  interimTranscript: "",
-  error: "",
-  start: () => {},
-  stop: () => {},
-  abort: () => {},
-  clear: () => {},
-  read: () => {},
-  stopSpeaking: () => {},
-} satisfies VoiceControls;
 
 function syntheticWorkspace(): Workspace {
   const bec = newGoal("pillar", "Bec", stamp);
@@ -76,24 +59,24 @@ function render(): string {
       workspace: syntheticWorkspace(),
       onOpenGoal: () => {},
       onOpenMap: () => {},
-      voice,
+      onMutate: () => true,
+      readOnly: false,
     })
   );
 }
 
-describe("Pillars & Goals directory", () => {
-  it("groups every goal level and shows status and existing relationships", () => {
-    const markup = render();
-    expect(markup).toContain("Pillars &amp; Goals");
-    expect(markup).toContain("Pillars");
-    expect(markup).toContain("Value Goals");
-    expect(markup).toContain("Goal Outcomes");
-    expect(markup).toContain("Bec");
-    expect(markup).toContain("Friends &amp; Family");
-    expect(markup).toContain("Retired");
-    expect(markup).toContain("Under: Bec, Friends &amp; Family (suggested)");
-    expect(markup).toContain("Projects: Plan a visit");
-    expect(markup).toContain("Open Compass map");
-    expect(markup).toContain("Read aloud");
+describe("Pillars & Goals page", () => {
+  it("shows one card per active Pillar with its definition prompt, summary and chips; retired folded away", () => {
+    const html = render();
+    expect(html).toContain('aria-label="Bec"');
+    expect(html).toContain("+ Add definition");
+    expect(html).toContain("1 Value Goal · 1 Outcome · 1 project");
+    expect(html).toContain(">no definition<");
+    // Retired Pillars aren't cards; they sit behind "Retired (1)".
+    expect(html).not.toContain('aria-label="Friends &amp; Family"');
+    expect(html).toContain("Retired (1)");
+    // No counts in a header, no dashed "+ Add".
+    expect(html).not.toMatch(/\d+ active/);
+    expect(html).not.toContain("dashed");
   });
 });

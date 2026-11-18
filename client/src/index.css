@@ -12650,3 +12650,28 @@ a.nav-item { text-decoration: none; }
 .te-lists { margin: 8px 0; }
 .te-step .check-line, .te-more .check-line { display: flex; flex-direction: row; align-items: center; gap: 8px; min-height: 44px; font-size: 15px; }
 .te-step .check-line input, .te-more .check-line input { width: 22px; height: 22px; flex: none; margin: 0; }
+
+/* Pillars & Goals (18 Nov): cards like Project Outcomes; "+ Add" rows are plain grey text (never dashed). */
+.pg { display: flex; flex-direction: column; gap: 10px; padding: 0 0 24px; }
+.pg-card { cursor: pointer; gap: 4px; }
+.pg-head { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+.pg-head .tp-title { flex: 1 1 auto; }
+.pg-head svg { color: var(--muted-foreground); flex: none; }
+.pg-definition { display: block; width: 100%; padding: 2px 0; border: 0; background: none; color: var(--tp-strong); font: inherit; font-size: 15px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 32px; }
+.pg-summary { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pg-add { align-self: flex-start; min-height: 44px; padding: 0 2px; border: 0; background: none; color: var(--muted-foreground); font: inherit; font-size: 15px; text-align: left; }
+.pg-add:disabled { opacity: 0.5; }
+.pg-add-box { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.pg-add-box textarea, .pg-add-box input { width: 100%; box-sizing: border-box; min-height: 44px; padding: 8px 10px; border: 1px solid var(--tp-btn-line); border-radius: 8px; background: var(--card); color: var(--tp-strong); font: inherit; font-size: 15px; resize: vertical; }
+.pg-add-actions { display: flex; align-items: center; gap: 8px; }
+.pg-tree { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--tp-line); cursor: auto; }
+.pg-vg { display: flex; flex-direction: column; gap: 2px; }
+.pg-name { display: block; width: 100%; min-height: 40px; padding: 0; border: 0; background: none; color: var(--tp-strong); font: inherit; font-size: 15px; text-align: left; }
+.pg-name--vg { font-weight: 600; font-size: 16px; }
+.pg-outcomes { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 1px solid var(--tp-line); display: flex; flex-direction: column; }
+.pg-projects { list-style: none; margin: 0 0 4px; padding: 0 0 0 14px; display: flex; flex-direction: column; }
+.pg-project { min-height: 36px; padding: 0; border: 0; background: none; color: var(--muted-foreground); font: inherit; font-size: 13px; text-align: left; }
+.pg-project::before { content: "· "; }
+.pg-open-full { font-size: 13px; }
+.pg-retired { display: flex; flex-direction: column; }
+.pg-retired-name { color: var(--muted-foreground); padding-left: 2px; }

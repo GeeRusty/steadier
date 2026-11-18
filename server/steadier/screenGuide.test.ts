@@ -11,11 +11,13 @@ const BUILT_LABELS = new Set([
   "☰", // the menu icon
   "Needs attention (n)", // "Needs attention" + count
   "Free · 2h 15m", // "Free · {length}" on Today's agenda
+  "Retired (n)", // "Retired ({count})" on Pillars & Goals
   "Step n of 10", // "Step {n} of {total}"
   "Add Pillar", // "Add {level}"
   "Add Value Goal",
   "Add Goal Outcome",
-  "Value Goal title", // "{level} title"
+  "Pillar title", // "{level} title"
+  "Value Goal title",
   "Goal Outcome title",
   "Reading (km, optional)", // "Reading ({unit}, optional)"
 ]);
