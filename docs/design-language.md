@@ -39,9 +39,16 @@ No other colours carry meaning.
 - One column, 16 px edges.
 
 ## Today
-- **Words:** Now · Next · Later only.
-- **Later** = dated or booked for today, after Next. Nothing undated appears on Today.
+- **Sections, top to bottom:** check-in line and **Needs attention** · **Now** · **Next thing** · **Any time today** · week strip · the agenda, with **Free** rows in its gaps. These words replace the old "only Now · Next · Later" rule (owner, 18 Nov).
+- **Now** = only what's running: a booked block in progress (to its likely finish) or the focus timer. Nothing running = no Now section at all. A booking and a running focus on different tasks both show, each labelled; neither is picked for you.
+- **Next thing** = only the owner's chosen Next thing, always labelled "your choice". The next booking never fills it.
+- **Any time today** = dated for today with no clock time. Nothing undated appears on Today.
+- **Agenda** = every timed item today in time order. Times on the left, a thin line, and the red now line (it crosses a running block). Each booking is one row: time range and length, title, round done circle. Height grows with length, from 52 px at 30 min or less to a 96 px cap at 3 h. Past and done items fade; a slip never fades and keeps **Keep going / Move / Drop**. The next booking's "in 25 min" (and its leave by) sits on its own row above it, not in Now.
+- **Free** = a gap of over an hour between bookings, or from now to the next one, counted from now. One quiet grey row (not dashed: dashed means suggested) with **+ Add**, which opens capture at that time.
+- **Week strip** = Mon–Sun, today highlighted, a quiet grey mark sized to booked time only (never undated, flexible or deadline items). Display only.
+- **One thing, once** has one exception here: the agenda is the whole day, so a running block or a booked Next thing also shows on its agenda row.
 - **Order is by time only.** No priority, scores or ranking, anywhere.
+- **Decision change, 18 Nov 2026:** replaces decisions 1 and 2 of 12 Nov. Now was "the booked block, else the focus timer, else the chosen Next thing with Start", and Next was "the chosen Next thing, else the next booked item". Now: Now shows only what's running, Next thing is only the owner's choice, and "Up next in X min" moved from the Now card to its own agenda row.
 
 ## Calendar
 - **Blocks** are neutral cards with primary text on a neutral surface. The title comes first, then the time and chips.
@@ -68,7 +75,7 @@ No other colours carry meaning.
 
 ## One count, one check-in
 - **Needs attention** is the only count. One row per kind; the total is the sum of the rows, the same on Today and Overview.
-- **The weekday check-in** is one line above Now showing the first question, never a number. Answered or Later, it folds until the next check-in (08:00 / 17:00). It never pushes Now off the first screen.
+- **The weekday check-in** is one line at the top of Today showing the first question, never a number. Answered or Later, it folds until the next check-in (08:00 / 17:00). It never pushes the day off the first screen.
 - **Compass Library** links live in the menu, not on a page.
 
 ## Lists

@@ -61,7 +61,7 @@ function openLabel(question: CommandCentreQuestion): string {
 }
 
 /**
- * The weekday check-in: one line above Now, only when a question is set.
+ * The weekday check-in: one line at the top of Today, only when a question is set.
  * Tap to answer. Answered or "Later", it folds away until the next check-in
  * (morning 08:00, evening 17:00, Adelaide). It is a question, never a count.
  */

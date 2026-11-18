@@ -10,6 +10,7 @@ process.env.STEADIER_SCREEN_GUIDE_PATH = path.join(ROOT, "docs/Screen-Guide.md")
 const BUILT_LABELS = new Set([
   "☰", // the menu icon
   "Needs attention (n)", // "Needs attention" + count
+  "Free · 2h 15m", // "Free · {length}" on Today's agenda
   "Step n of 10", // "Step {n} of {total}"
   "Add Pillar", // "Add {level}"
   "Add Value Goal",

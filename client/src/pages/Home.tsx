@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import LinkCheckView, { LINK_CHECK_INFO, linkCheckSpeech } from "../components/steadier/LinkCheckView";
 import { linkCheckCount } from "../domain/linkCheck";
-import { pastDueOffToday, todayPlan, todayTaskIds } from "../domain/todayPlan";
+import { captureAtText, pastDueOffToday, todayPlan, todayTaskIds } from "../domain/todayPlan";
 import TodayPlanView from "../components/steadier/TodayPlanView";
 import OverviewView, { type AttentionItem } from "../components/steadier/OverviewView";
 import { kindCounts } from "../domain/todayStates";
@@ -2542,6 +2542,7 @@ export default function Home() {
                     onMutate={store.mutate}
                     onChoose={chooseNextThing}
                     onOpenList={openList}
+                    onAddAt={minute => openCapture(false, "", captureAtText(minute))}
                   />
                 )}
                 {view === "attention" && todayTab === "overview" && (

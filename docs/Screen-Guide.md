@@ -20,15 +20,19 @@ Job: the parts that are on every page.
 
 ## Screen: Today
 
-Job: doing. Three words only: Now · Next · Later, in time order.
+Job: doing. Top to bottom: Now, Next thing, Any time today, the week, then the day in time order.
 Get there: bottom bar › **Today** (1st). Or ☰ › **My life today**.
-- Check-in line (above Now, weekdays from 08:00 and 17:00, only when there's a question): tap it to answer, or tap **Later**. Stays here.
-- **Needs attention (n)**: opens Overview with its list. Leads to: Screen: Overview.
-- Now card: the booked block running now, your focus, your Next thing, or **Up next in X min**. Buttons: **Start** (starts the focus timer, stays here), **Done** (ticks it off, stays here), **Finished early**. With nothing booked, tap a task in the card to pick a Next thing, then **Make it my Next thing**.
-- Next and Later rows: tap a row to open it. Leads to: Sheet: Task.
-- A grey "leave by 10:35" line shows on a booked task at a saved place that has an Allow to get there time.
+- Check-in line (at the top, weekdays from 08:00 and 17:00, only when there's a question): tap it to answer, or tap **Later**. Stays here.
+- **Needs attention (n)**: under the check-in line. Opens Overview with its list. Leads to: Screen: Overview.
+- Now (only while something is running): the booked block in progress, and your focus timer if it's on a different task (both show, each labelled). Buttons: **Done** (ticks it off, stays here), **Finished early** on a booking, **Return to focus** on the focus card. Nothing running = no Now.
+- Next thing · your choice: the one you chose, with **Start** (starts the focus timer, stays here) and **Change**. None chosen: **Choose…**, tap a task, check its first small action, then **Make it my Next thing**. Stays here.
+- Any time today: tasks dated today with no clock time. Tap the circle to tick one off, or the row to open it. Leads to: Sheet: Task.
+- Week strip: Mon–Sun with today highlighted and a grey mark for booked time. Display only.
+- Agenda: today's bookings in time order, with the red now line. Tap a row to open it (leads to Sheet: Task), or its circle to tick it off. Past and done rows are faded.
+- A row such as "Comwireit Cleaning in 1h 22m" sits above the next booking, with "leave by 10:35" in grey at a saved place that has an Allow to get there time.
+- **Free · 2h 15m** rows mark gaps of over an hour. **+ Add** opens capture with "today at" and that time filled in. Leads to: Sheet: Capture.
 - A list chip such as "Packing 3/7" opens that list. Leads to: Screen: Lists.
-- Slipped row (past its likely finish): **Keep going** (stretches today's block to its likely finish, stays here), **Move** (opens the task to change its time, leads to Sheet: Task editor), **Drop** (off today, kept in All work).
+- Slipped row (past its likely finish, in the agenda): **Keep going** (stretches today's block to its likely finish, stays here), **Move** (opens the task to change its time, leads to Sheet: Task editor), **Drop** (off today, kept in All work).
 - Blocked row: **Move it** or **Remove prerequisite**.
 
 ### Walk: Move today's block

@@ -53,7 +53,7 @@ describe("Today check-in line", () => {
     expect(render(new Date("2026-11-04T08:00:00+10:30"), [])).toBe("");
   });
 
-  it("sits above Now, so Now stays on the first screen", () => {
+  it("sits at the top, above Next thing, so the day stays on the first screen", () => {
     const html = renderToStaticMarkup(
       <TodayPlanView
         workspace={workspace()}
@@ -75,6 +75,6 @@ describe("Today check-in line", () => {
       />
     );
     expect(html.indexOf("checkin-slot")).toBeGreaterThan(-1);
-    expect(html.indexOf("checkin-slot")).toBeLessThan(html.indexOf(">Now<"));
+    expect(html.indexOf("checkin-slot")).toBeLessThan(html.indexOf("Next thing · your choice"));
   });
 });

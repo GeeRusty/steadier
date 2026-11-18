@@ -313,7 +313,7 @@ function buildQuestions(
 }
 
 /**
- * The weekday check-in (shown as one line above Now on Today).
+ * The weekday check-in (shown as one line at the top of Today).
  * Current check-in information, selected from existing Steadier rules.
  * All dates are Adelaide-local; this function never changes the workspace.
  */

@@ -12066,6 +12066,49 @@ button.today-visual-agenda-item:hover { border-color: #75a08a; background: rgba(
 .tp-empty { align-items: flex-start; }
 .tp-link { border: 0; background: none; padding: 10px 0; min-height: 44px; color: var(--primary); font: inherit; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
 .tp-attention { display: flex; align-items: center; justify-content: space-between; min-height: 52px; margin-top: 8px; padding: 0 4px; border: 0; border-top: 1px solid var(--tp-line); border-bottom: 1px solid var(--tp-line); background: none; color: var(--tp-strong); font: inherit; font-size: 15px; font-weight: 500; text-align: left; }
+/* Today timeline (18 Nov): Now · Next thing · Any time today · week strip · agenda. */
+.tp > .tp-attention { margin-top: 0; }
+.tp-next-empty { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
+.tp-anytime { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.tp-anytime-row { flex-direction: row; align-items: center; }
+.tp-anytime-row > .tp-row-main { flex: 1 1 auto; min-width: 0; }
+.tp-anytime-row .tp-time:empty { display: none; }
+.tp-anytime-row .tp-open { display: none; }
+.tp-circle { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 0; background: none; padding: 0; border-radius: 22px; }
+.tp-circle-ring { fill: none; stroke: var(--tp-btn-line); stroke-width: 1.6; }
+.tp-circle-fill { fill: var(--muted-foreground); }
+.tp-circle-tick { fill: none; stroke: var(--card); stroke-width: 2; }
+.tp-week { list-style: none; margin: 4px 0 0; padding: 4px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; background: var(--card); border: 1px solid var(--tp-line); border-radius: 12px; }
+.tp-week-day { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 52px; border-radius: 8px; font-size: 13px; color: var(--muted-foreground); }
+.tp-week-day b { font-size: 15px; font-weight: 600; color: var(--tp-strong); }
+.tp-week-today { background: #1E3F35; color: #CFE0D6; }
+.tp-week-today b { color: #FFFFFF; }
+.tp-week-mark { display: block; height: 3px; border-radius: 2px; background: var(--tp-btn-line); }
+.tp-week-today .tp-week-mark { background: #CFE0D6; }
+.tp-agenda { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.tp-ag-slot { display: flex; align-items: stretch; }
+.tp-ag-time { width: 48px; flex: none; box-sizing: border-box; padding: 10px 8px 0 0; text-align: right; font-size: 13px; color: var(--muted-foreground); }
+.tp-ag-cell { flex: 1 1 auto; min-width: 0; border-left: 1px solid var(--tp-line); padding: 3px 0 3px 10px; display: flex; flex-direction: column; gap: 6px; }
+.tp-ag-card { position: relative; display: flex; align-items: flex-start; gap: 4px; background: var(--card); border: 1px solid var(--tp-line); border-radius: 10px; box-sizing: border-box; }
+.tp-ag-card.tp-green { border-left: 5px solid var(--tp-green); }
+.tp-ag-card.tp-suggested { border: 1.5px dashed var(--tp-btn-line); }
+.tp-ag-card.tp-suggested.tp-green { border-left: 5px solid var(--tp-green); }
+.tp-ag-card.tp-faded > .tp-ag-main { opacity: 0.55; }
+.tp-ag-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 4px 8px 10px; border: 0; background: none; color: inherit; font: inherit; text-align: left; min-height: 44px; border-radius: 10px; }
+.tp-ag-title { font-size: 18px; font-weight: 600; line-height: 1.3; color: var(--tp-strong); }
+.tp-ag-card .tp-circle { margin: 2px 2px 0 0; }
+.tp-ag-past .tp-ag-card, .tp-ag-past .tp-ag-time { opacity: 0.5; }
+.tp-ag-nowcross { position: absolute; left: -11px; right: 0; height: 2px; margin-top: -1px; background: var(--tp-red); pointer-events: none; }
+.tp-ag-nowcross::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 4px; background: var(--tp-red); }
+.tp-ag-nowline { display: flex; align-items: center; height: 18px; margin: 2px 0; }
+.tp-ag-nowline .tp-ag-time { padding: 0 8px 0 0; color: var(--tp-red); font-weight: 600; }
+.tp-ag-redline { flex: 1 1 auto; height: 2px; background: var(--tp-red); position: relative; }
+.tp-ag-redline::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 4px; background: var(--tp-red); }
+.tp-ag-free { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 0 4px 0 10px; border-radius: 10px; background: var(--tp-chip-bg); color: var(--muted-foreground); font-size: 15px; }
+.tp-ag-add { min-height: 44px; padding: 0 10px; border: 0; background: none; color: var(--primary); font: inherit; font-size: 15px; font-weight: 600; }
+.tp-ag-soon { margin: 0; padding: 2px 0; font-size: 15px; color: var(--tp-strong); }
+.tp-ag-extra { padding: 0 0 4px; }
+.tp-ag-extra .tp-extra { padding: 0; }
 /* Phones use the bottom tabs for Today / Overview; wider screens keep the switch. */
 @media (max-width: 700px) {
   .today-switch-desktop { display: none; }
