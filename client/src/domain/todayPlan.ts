@@ -65,7 +65,7 @@ export type AgendaEntry =
       slipped: boolean;
       /** Slipped again after Keep going today. */
       again: boolean;
-      /** Where the red now line crosses a running block, 0–1. */
+      /** How far through a running block now is, 0–1 (null when not running). */
       nowAt: number | null;
     }
   | { kind: "free"; start: number; end: number }
@@ -363,8 +363,8 @@ export function todayPlan(workspace: Workspace, tasks: Task[], day: string, minu
   const soon = fixedItems.find(i => !i.done && i.row.start! > minute);
 
   const agenda: AgendaEntry[] = [];
-  const lineInBlock = items.some(i => i.nowAt !== null);
-  let linePlaced = lineInBlock;
+  // The red now line sits just after any running block (never across its text).
+  let linePlaced = false;
   for (const item of items) {
     if (!linePlaced && item.row.start! > minute) {
       agenda.push({ kind: "now", minute });

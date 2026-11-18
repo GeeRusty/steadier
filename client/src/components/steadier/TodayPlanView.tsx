@@ -429,6 +429,9 @@ export default function TodayPlanView(p: Props) {
   };
 
   const next = plan.next;
+  // The next booking's leave by shows once, on its "in X min" row.
+  const soonEntry = plan.agenda.find(e => e.kind === "soon");
+  const soonId = soonEntry && soonEntry.kind === "soon" ? soonEntry.row.task.id : null;
   const agendaItem = (e: Extract<AgendaEntry, { kind: "item" }>) => {
     const row = e.row;
     const range = e.fixed && row.start !== null && row.end !== null ? `${clockText(row.start)}–${clockText(row.end)} · ${delta(e.minutes)}` : row.timeText;
@@ -444,12 +447,9 @@ export default function TodayPlanView(p: Props) {
             <button type="button" className="tp-ag-main" onClick={() => p.onOpen(row.task)}>
               <span className="tp-ag-title">{row.task.title}</span>
               <span className="tp-meta">{range}</span>
-              {signals(row)}
+              {signals(row, row.task.id !== soonId)}
             </button>
             <DoneCircle done={e.done} title={row.task.title} disabled={p.readOnly} onDone={() => p.onDone(row.task.id)} />
-            {e.nowAt !== null && (
-              <span className="tp-ag-nowcross" style={{ top: `${Math.round(e.nowAt * 100)}%` }} role="img" aria-label={`Now ${clockText(minute)}`} />
-            )}
           </section>
           {e.slipped && (
             <div className="tp-extra tp-ag-extra">

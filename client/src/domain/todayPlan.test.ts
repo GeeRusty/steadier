@@ -63,8 +63,8 @@ describe("Today timeline: Now, Next thing, Any time today, agenda", () => {
     expect(plan.now.map(r => [r.task.title, r.mode])).toEqual([["Gutter clean", "block"]]);
     expect(plan.next).toBeNull();
     expect(plan.anyTime.map(r => r.task.title)).toEqual(["Car rego", "Water the pots"]);
-    // The now line crosses the running block, so there's no separate line.
-    expect(kinds(plan)).toEqual(["Gutter clean", "soon 66", "Ring council", "Pick up trailer", "free 120", "Site meeting"]);
+    // The now line sits just after the running block.
+    expect(kinds(plan)).toEqual(["Gutter clean", "now", "soon 66", "Ring council", "Pick up trailer", "free 120", "Site meeting"]);
     const running = plan.agenda.find(e => e.kind === "item" && e.row.task.id === a.id);
     expect(running).toMatchObject({ nowAt: 54 / 90, past: false });
     const ids = todayTaskIds(plan);
