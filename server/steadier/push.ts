@@ -27,8 +27,10 @@ export interface PushStore {
   devices(ownerId: number): Promise<PushSubscriptionRecord[]>;
   save(ownerId: number, sub: PushSubscriptionRecord): Promise<void>;
   remove(ownerId: number, endpoint: string): Promise<void>;
-  /** Marks a message sent; false when it already was. */
+  /** Holds a message while it's being sent; false when it was already sent or is being sent. */
   claim(ownerId: number, key: string): Promise<boolean>;
+  /** Gives a claim back when no phone accepted the message, so the next minute tries again. */
+  release(ownerId: number, key: string): Promise<void>;
   sentOk(endpoint: string): Promise<void>;
   prune(before: Date): Promise<void>;
 }
@@ -107,6 +109,11 @@ export function createDrizzlePushStore(): PushStore {
         if (code === "ER_DUP_ENTRY") return false;
         throw error;
       }
+    },
+    async release(ownerId, key) {
+      await (await db())
+        .delete(steadierPushSent)
+        .where(and(eq(steadierPushSent.ownerId, ownerId), eq(steadierPushSent.keyHash, sha256(key))));
     },
     async sentOk(endpoint) {
       await (await db())
@@ -190,7 +197,23 @@ export async function pushTick(
     if (!workspace) continue;
     for (const message of pushesDue(workspace, now)) {
       if (!(await store.claim(ownerId, message.key))) continue;
-      const { sent } = await sendToOwner(store, send, ownerId, pushPayload(message));
+      // The claim stops a second send while this one is in flight. It only
+      // stays once a push service has accepted the message for at least one
+      // phone; otherwise it's given back and the next minute tries again,
+      // for as long as the reminder is inside its 10-minute window. (If one
+      // phone of several accepted it, it isn't resent, so no phone rings twice.)
+      let sent = 0;
+      try {
+        sent = (await sendToOwner(store, send, ownerId, pushPayload(message))).sent;
+      } finally {
+        if (sent === 0) {
+          await store.release(ownerId, message.key).catch(error =>
+            console.error("Push retry hold couldn't be cleared:", error instanceof Error ? error.message : error)
+          );
+          if ((await store.devices(ownerId).catch(() => [])).length)
+            console.warn(`Push not accepted for owner ${ownerId}; will try again next minute.`);
+        }
+      }
       count += sent;
     }
   }
