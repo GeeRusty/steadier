@@ -1,8 +1,5 @@
 import { useRef, useState } from "react";
 import {
-  Bell,
-  CalendarClock,
-  Repeat,
   SkipForward,
   Sparkles,
   X,
@@ -13,8 +10,6 @@ import {
   adelaideClock,
   describeRepeat,
   emptyRepeat,
-  formatDuration,
-  formatTime,
   rescheduleOccurrenceSchedule,
   setFlexibleWindowSchedule,
   setFlexibleRecurrenceAnchor,
@@ -25,6 +20,7 @@ import {
   thisWeekendWindow,
   nextWeekWindow,
   describeFlexibleWindow,
+  slotRangeText,
   type RepeatFreq,
   type RepeatRule,
   type Reminder,
@@ -68,6 +64,7 @@ interface Props {
 }
 
 /** "When": planned slot, deadline time, reminders and repeat for one task. */
+/** "When", then Repeat (folded, with its summary), then Reminders. */
 export default function ScheduleEditor({ task, onChange, onSkip }: Props) {
   const s = task.schedule;
   const convertingWindowToFixedRef = useRef(false);
@@ -280,12 +277,17 @@ export default function ScheduleEditor({ task, onChange, onSkip }: Props) {
   const planned = s.flexibleWindow
     ? describeFlexibleWindow(s.flexibleWindow, today)
     : s.date
-      ? `${friendlyDate(s.date, today)}${s.time ? `, ${formatTime(s.time)}` : ""}${
-          s.time
-            ? ` for ${formatDuration(s.minutes ?? task.estimate ?? 15)}`
-            : ""
+      ? `${friendlyDate(s.date, today)}${
+          s.time ? ` · ${slotRangeText(s.time, s.minutes ?? task.estimate ?? 15)}` : ""
         }`
       : "Not planned";
+  const lengthMinutes = s.minutes ?? null;
+  const setLength = (hours: number | null, mins: number | null) => {
+    const h = hours ?? (lengthMinutes !== null ? Math.floor(lengthMinutes / 60) : 0);
+    const m = mins ?? (lengthMinutes !== null ? lengthMinutes % 60 : 0);
+    const total = h * 60 + m;
+    set({ minutes: total > 0 ? Math.max(1, Math.min(1440, total)) : null });
+  };
   const seriesStreak = streak(s);
   const seriesExhausted =
     !!rule &&
@@ -297,14 +299,14 @@ export default function ScheduleEditor({ task, onChange, onSkip }: Props) {
 
   return (
     <section className="schedule-editor" aria-labelledby="when-title">
-      <h3 id="when-title">
-        <CalendarClock size={18} /> When
-        <span className="schedule-summary">{planned}</span>
+      <h3 id="when-title" className="when-head">
+        <span className="when-label">When</span>
+        <span className="when-summary">{planned}</span>
       </h3>
 
       <div className="quick-when">
         <label className="field">
-          Type when (optional)
+          <span className="sr-only">Type when</span>
           <div className="quick-when-row">
             <input
               value={phrase}
@@ -315,7 +317,7 @@ export default function ScheduleEditor({ task, onChange, onSkip }: Props) {
                   applyPhrase();
                 }
               }}
-              placeholder="e.g. tomorrow 3pm for 30 min every Tue"
+              placeholder='Type when, e.g. "tomorrow 3pm for 2h"'
               aria-label="Type when in plain words"
             />
             <button
@@ -333,48 +335,6 @@ export default function ScheduleEditor({ task, onChange, onSkip }: Props) {
             {phraseNote}
           </p>
         )}
-      </div>
-
-      {rule && (
-        <p className="small muted">
-          Change the day or time above to reschedule only this occurrence. The
-          repeat pattern and usual time stay unchanged; edit the Repeat settings
-          below to change future occurrences. Save changes to confirm.
-        </p>
-      )}
-      <div className="timing-mode">
-        <span className="field-label" id="timing-mode-label">
-          Change timing
-        </span>
-        <div
-          className="segmented"
-          role="group"
-          aria-labelledby="timing-mode-label"
-        >
-          <button
-            type="button"
-            className={!s.flexibleWindow ? "on" : ""}
-            aria-pressed={!s.flexibleWindow}
-            onClick={chooseFixedTiming}
-          >
-            Fixed date/time
-          </button>
-          <button
-            type="button"
-            className={s.flexibleWindow ? "on" : ""}
-            aria-pressed={!!s.flexibleWindow}
-            onClick={() =>
-              chooseWindow(
-                s.flexibleWindow ?? {
-                  startDate: s.date ?? today,
-                  endDate: s.date ?? today,
-                }
-              )
-            }
-          >
-            Flexible time window
-          </button>
-        </div>
       </div>
 
       {s.flexibleWindow ? (
@@ -489,7 +449,7 @@ export default function ScheduleEditor({ task, onChange, onSkip }: Props) {
         <>
           <div className="schedule-grid">
             <label className="field">
-              {rule ? "This occurrence day" : "Planned day"}
+              {rule ? "This one's day" : "Day"}
               <input
                 type="date"
                 value={s.date ?? ""}
@@ -497,7 +457,7 @@ export default function ScheduleEditor({ task, onChange, onSkip }: Props) {
               />
             </label>
             <label className="field">
-              {rule ? "This occurrence time" : "Start time"}
+              Start
               <input
               type="time"
               step={300}
@@ -506,68 +466,44 @@ export default function ScheduleEditor({ task, onChange, onSkip }: Props) {
               onChange={e => set({ time: e.target.value || null })}
               />
             </label>
-            <label className="field">
-              Length (min)
-              <input
-                type="number"
-                min={5}
-                max={1440}
-                step={5}
-                value={s.minutes ?? ""}
-                placeholder={String(task.estimate || 15)}
-                onChange={e =>
-                  set({
-                    minutes: e.target.value
-                      ? Math.max(1, Math.min(1440, Number(e.target.value)))
-                      : null,
-                  })
-                }
-              />
-            </label>
-            <label className="field">
-              Deadline time
-              <input
-                type="time"
-                step={300}
-                value={s.deadlineTime ?? ""}
-                disabled={!task.deadline}
-                title={task.deadline ? "" : "Set a real deadline first"}
-                onChange={e => set({ deadlineTime: e.target.value || null })}
-              />
-            </label>
+            <fieldset className="field length-field">
+              <legend>Length</legend>
+              <span className="length-inputs">
+                <input
+                  type="number"
+                  min={0}
+                  max={24}
+                  aria-label="Length, hours"
+                  value={lengthMinutes !== null ? Math.floor(lengthMinutes / 60) : ""}
+                  placeholder={String(Math.floor((task.estimate || 15) / 60))}
+                  onChange={e => setLength(e.target.value === "" ? 0 : Math.max(0, Math.min(24, Number(e.target.value))), null)}
+                />
+                <span aria-hidden="true">h</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={59}
+                  step={5}
+                  aria-label="Length, minutes"
+                  value={lengthMinutes !== null ? lengthMinutes % 60 : ""}
+                  placeholder={String((task.estimate || 15) % 60)}
+                  onChange={e => setLength(null, e.target.value === "" ? 0 : Math.max(0, Math.min(59, Number(e.target.value))))}
+                />
+                <span aria-hidden="true">min</span>
+              </span>
+            </fieldset>
           </div>
-          <label className="check-line tone-toggle">
+          <label className="booked-switch">
+            <span>Booked on the calendar</span>
             <input
               type="checkbox"
+              role="switch"
               checked={s.fixed === true}
               onChange={e => set({ fixed: e.target.checked })}
             />
-            <span>
-              Booked anchor
-              <small className="muted">
-                {" "}— explicitly show this commitment on the clock/calendar. The planner will never book a task by itself.
-              </small>
-            </span>
           </label>
-          {s.fixed === true && (
-            <label className="check-line tone-toggle">
-              <input
-                type="checkbox"
-                checked={s.majorAnchor === true}
-                onChange={e => set({ majorAnchor: e.target.checked })}
-              />
-              <span>
-                Major anchor
-                <small className="muted">
-                  {" "}— show this booked item in Month
-                </small>
-              </span>
-            </label>
-          )}
-          {!s.fixed && (s.date || s.time) && (
-            <p className="small muted">
-              This date/time is not a calendar booking until you select Booked anchor.
-            </p>
+          {rule && (s.date || s.time) && (
+            <p className="small muted">Changing the day or time moves only this one.</p>
           )}
           {(s.date || s.time) && (
             <button
@@ -583,104 +519,47 @@ export default function ScheduleEditor({ task, onChange, onSkip }: Props) {
         </>
       )}
 
-      <div className="schedule-block">
-        <h4>
-          <Bell size={16} /> Reminders
-        </h4>
-        {s.flexibleWindow ? (
-          <p className="small muted">
-            The window dates create no reminders or alarms. Explicit reminders for a separate hard deadline remain attached to that deadline.
-          </p>
-        ) : (
-          s.reminders.length === 0 && (
-            <p className="small muted">No reminders.</p>
-          )
-        )}
-        <ul className="chip-list">
-          {visibleReminders.map(r => (
-              <li key={r.id} className="chip">
-                {reminderLabel(r)}
-                {anchorAvailable.slot && anchorAvailable.deadline && (
-                  <button
-                    type="button"
-                    className="chip-switch"
-                    onClick={() =>
-                      set({
-                        reminders: s.reminders.map(x =>
-                          x.id === r.id
-                            ? {
-                                ...x,
-                                anchor:
-                                  x.anchor === "slot" ? "deadline" : "slot",
-                              }
-                            : x
-                        ),
-                      })
-                    }
-                    aria-label={`Anchor to ${r.anchor === "slot" ? "deadline" : "planned time"}`}
-                  >
-                    {r.anchor === "slot" ? "→ deadline" : "→ planned"}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="chip-remove"
-                  aria-label={`Remove reminder ${reminderLabel(r)}`}
-                  onClick={() =>
-                    set({ reminders: s.reminders.filter(x => x.id !== r.id) })
-                  }
-                >
-                  <X size={13} />
-                </button>
-              </li>
-            ))}
-        </ul>
-        {canAddReminder && (
-          <div className="quick-when-row">
-            <select
-              value={reminderChoice}
-              onChange={e => setReminderChoice(e.target.value)}
-              aria-label={s.flexibleWindow ? "Hard deadline reminder time" : "Reminder time"}
-            >
-              {REMINDER_PRESETS.map(p => (
-                <option key={p.minutes} value={p.minutes}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="button secondary"
-              onClick={addReminder}
-              disabled={!canAddReminder}
-            >
-              {s.flexibleWindow ? "Add deadline reminder" : "Add reminder"}
-            </button>
-          </div>
-        )}
-        {!s.flexibleWindow &&
-          !anchorAvailable.slot &&
-          !anchorAvailable.deadline && (
-            <p className="small muted">Plan a day or set a deadline first.</p>
-          )}
-        {!s.flexibleWindow && s.reminders.length > 0 && (
-          <p className="small muted">
-            Reminders ring in Steadier while it's open, and on your phone
-            through the Google Calendar link (Settings → Calendar alarms).
-          </p>
-        )}
-        {s.flexibleWindow && !anchorAvailable.deadline && (
-          <p className="small muted">
-            Set a separate hard deadline to add an explicit deadline reminder.
-          </p>
-        )}
+      <div className="timing-mode">
+        <span className="field-label" id="timing-mode-label">
+          Change timing
+        </span>
+        <div
+          className="segmented"
+          role="group"
+          aria-labelledby="timing-mode-label"
+        >
+          <button
+            type="button"
+            className={!s.flexibleWindow ? "on" : ""}
+            aria-pressed={!s.flexibleWindow}
+            onClick={chooseFixedTiming}
+          >
+            Fixed date/time
+          </button>
+          <button
+            type="button"
+            className={s.flexibleWindow ? "on" : ""}
+            aria-pressed={!!s.flexibleWindow}
+            onClick={() =>
+              chooseWindow(
+                s.flexibleWindow ?? {
+                  startDate: s.date ?? today,
+                  endDate: s.date ?? today,
+                }
+              )
+            }
+          >
+            Flexible time window
+          </button>
+        </div>
       </div>
 
-      <div className="schedule-block">
-        <h4>
-          <Repeat size={16} /> Repeat
-          <span className="schedule-summary">{describeRepeat(rule)}</span>
-        </h4>
+
+      <details className="schedule-block repeat-block">
+        <summary>
+          <span className="when-label">Repeat</span>
+          <span className="schedule-summary">{rule ? describeRepeat(rule) : "Does not repeat"}</span>
+        </summary>
         <div className="schedule-grid">
           <label className="field">
             Repeats
@@ -991,7 +870,99 @@ export default function ScheduleEditor({ task, onChange, onSkip }: Props) {
             (keeps the series going)
           </button>
         )}
+      </details>
+
+      <div className="schedule-block">
+        <h4 className="when-label">Reminders</h4>
+        {s.flexibleWindow ? (
+          <p className="small muted">
+            The window dates create no reminders or alarms. Explicit reminders for a separate hard deadline remain attached to that deadline.
+          </p>
+        ) : (
+          s.reminders.length === 0 && (
+            <p className="small muted">No reminders.</p>
+          )
+        )}
+        <ul className="chip-list">
+          {visibleReminders.map(r => (
+              <li key={r.id} className="chip">
+                {reminderLabel(r)}
+                {anchorAvailable.slot && anchorAvailable.deadline && (
+                  <button
+                    type="button"
+                    className="chip-switch"
+                    onClick={() =>
+                      set({
+                        reminders: s.reminders.map(x =>
+                          x.id === r.id
+                            ? {
+                                ...x,
+                                anchor:
+                                  x.anchor === "slot" ? "deadline" : "slot",
+                              }
+                            : x
+                        ),
+                      })
+                    }
+                    aria-label={`Anchor to ${r.anchor === "slot" ? "deadline" : "planned time"}`}
+                  >
+                    {r.anchor === "slot" ? "→ deadline" : "→ planned"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="chip-remove"
+                  aria-label={`Remove reminder ${reminderLabel(r)}`}
+                  onClick={() =>
+                    set({ reminders: s.reminders.filter(x => x.id !== r.id) })
+                  }
+                >
+                  <X size={13} />
+                </button>
+              </li>
+            ))}
+        </ul>
+        {canAddReminder && (
+          <div className="quick-when-row">
+            <select
+              value={reminderChoice}
+              onChange={e => setReminderChoice(e.target.value)}
+              aria-label={s.flexibleWindow ? "Hard deadline reminder time" : "Reminder time"}
+            >
+              {REMINDER_PRESETS.map(p => (
+                <option key={p.minutes} value={p.minutes}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="button secondary"
+              onClick={addReminder}
+              disabled={!canAddReminder}
+            >
+              {s.flexibleWindow ? "Add deadline reminder" : "Add reminder"}
+            </button>
+          </div>
+        )}
+        {!s.flexibleWindow &&
+          !anchorAvailable.slot &&
+          !anchorAvailable.deadline && (
+            <p className="small muted">Plan a day or set a deadline first.</p>
+          )}
+        {!s.flexibleWindow && s.reminders.length > 0 && (
+          <p className="small muted">
+            Rings in Steadier while it's open, and as a phone notification
+            when it's closed (⋮ › Notifications).
+          </p>
+        )}
+        {s.flexibleWindow && !anchorAvailable.deadline && (
+          <p className="small muted">
+            Set a separate hard deadline to add an explicit deadline reminder.
+          </p>
+        )}
       </div>
+
     </section>
   );
 }

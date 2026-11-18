@@ -3271,6 +3271,15 @@ export default function Home() {
                 onOpenTask={openTaskView}
                 onAddSubtask={newSubtask}
                 places={placesOf(store.workspace)}
+                lists={
+                  <ParentLists
+                    workspace={store.workspace}
+                    target={{ kind: "task", id: selectedTask.id }}
+                    readOnly={store.readOnly}
+                    onMutate={listMutate}
+                    onOpenList={openList}
+                  />
+                }
                 onManagePlaces={() => {
                   closeTaskPanel();
                   navigate("near");

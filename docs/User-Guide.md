@@ -46,6 +46,13 @@ The **Today** tab is for doing. From the top: **Now**, **Next thing**, **Any tim
 
 **Signals (everywhere):** a green left bar means it serves an Imperative. Dashed means suggested (tap to confirm). Faded with dots means not set up. Grey chips show only what's off normal: ⏱ +20m / −10m (only at 10 minutes or more), slipped, overdue 2d, moved 3×, quiet 9d, review due. A chip turns red only when it will clash with a fixed booking or deadline. The broken-link icon means a project, or a task in it, is missing its Goal Outcome or Imperative link (also in Link check). The old shape-and-colour arrows are gone.
 
+### Editing a task
+Open a task and tap **Edit**. Changes save as you go: the line under the title says **Saved**. There's no save button.
+- The done circle sits left of the title, as on every row. The **i** on the right holds voice: anything you dictate waits as a **Voice draft, not saved yet** until you tap **Keep it** (or **Undo**).
+- From the top: **When** (summary, type when, then day, start and length in hours and minutes, and **Booked on the calendar**), **Repeat** (tap its summary, e.g. "Every Wed", to change it, skip one or set when it ends), **Reminders**, **Place**, **Next physical step** (tick **Title is the step** when the title says it all), **Where it belongs** (tap its summary to change Imperative, project, catch-all, role and attention pattern), then notes, subtasks, small steps and lists.
+- **More** holds the rest: **Finish by** (one date and time), **Not before** (hidden from your lists until then; it replaces Available from and Set aside until), **Start preparing from** (offered as preparation, nothing hidden), **Next review**, context, workflow, waiting on, prerequisites, decision outcome, pin, Major anchor, evidence of progress and activity.
+- Repeating tasks don't get a Next review date, so they never show "review due".
+
 ### Overview
 Overview is for seeing, top to bottom:
 - **Needs attention (n):** one row per kind (Review due, Link check, Weekly review, Sort, Unplaced, Upkeep due, Past due, Claude requests). Upkeep due opens in place to list each item. Only rows above zero show, and the total matches Today's.

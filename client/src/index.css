@@ -12608,3 +12608,45 @@ a.nav-item { text-decoration: none; }
 .nt-times { justify-content: flex-start; flex-wrap: wrap; }
 .nt-times label { display: flex; align-items: center; gap: 8px; }
 .nt-times input { min-height: 40px; border: 1px solid var(--tp-btn-line); border-radius: 8px; padding: 0 8px; font: inherit; background: var(--card); color: var(--tp-strong); }
+
+/* Task editor (18 Nov): done circle left of the title, When / Repeat / Reminders, Where it belongs, More. */
+.te-title-row { display: flex; align-items: center; gap: 4px; }
+.te-done { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 0; background: none; padding: 0; border-radius: 22px; }
+.te-done-ring { fill: none; stroke: var(--tp-btn-line); stroke-width: 1.6; }
+.te-done-fill { fill: var(--muted-foreground); }
+.te-done-tick { fill: none; stroke: var(--card); stroke-width: 2; }
+.te-title { flex: 1 1 auto; min-width: 0; }
+.te-title input { width: 100%; min-height: 48px; box-sizing: border-box; font-size: 18px; font-weight: 600; }
+.te-info { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 0; background: none; color: var(--muted-foreground); border-radius: 8px; }
+.te-done-note { margin: -4px 0 0 48px; }
+.te-draft { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1.5px dashed var(--tp-btn-line); border-radius: 10px; background: var(--card); }
+.te-draft-actions { display: flex; gap: 8px; }
+.te-voice { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px 12px; border: 1px solid var(--tp-line); border-radius: 10px; background: var(--card); margin-bottom: 12px; }
+.when-head { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0 0 8px; }
+.when-label { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; color: var(--muted-foreground); margin: 0; }
+.when-summary { font-size: 16px; font-weight: 600; color: var(--tp-strong); }
+.length-field { border: 0; padding: 0; margin: 0; min-width: 0; }
+.length-field legend { padding: 0; }
+.length-inputs { display: flex; align-items: center; gap: 4px; }
+.length-inputs input { width: 3.6em; min-width: 0; }
+.booked-switch { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; font-size: 15px; }
+.booked-switch input { width: 22px; height: 22px; flex: none; margin: 0; }
+.schedule-editor .schedule-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 8px; }
+.schedule-editor .schedule-grid .length-field { grid-column: 1 / -1; }
+.schedule-editor .schedule-grid .field input { width: 100%; box-sizing: border-box; }
+.schedule-editor .schedule-grid .length-inputs input { width: 4.2em; }
+.repeat-block > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; cursor: pointer; }
+.repeat-block > summary .schedule-summary { font-weight: 600; color: var(--tp-strong); }
+.te-step { display: flex; flex-direction: column; gap: 4px; margin: 12px 0; }
+.te-step textarea { width: 100%; box-sizing: border-box; }
+.te-belongs > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; cursor: pointer; }
+.te-belongs > summary .schedule-summary { font-weight: 600; color: var(--tp-strong); }
+.te-belongs.te-green { border-left: 5px solid var(--tp-green); padding-left: 10px; }
+.compass-section--flat { display: flex; flex-direction: column; gap: 8px; }
+.te-more > summary { font-weight: 600; min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+.te-pair { display: flex; gap: 8px; }
+.te-pair input[type="date"] { flex: 1.4 1 0; min-width: 0; }
+.te-pair input[type="time"] { flex: 1 1 0; min-width: 0; }
+.te-lists { margin: 8px 0; }
+.te-step .check-line, .te-more .check-line { display: flex; flex-direction: row; align-items: center; gap: 8px; min-height: 44px; font-size: 15px; }
+.te-step .check-line input, .te-more .check-line input { width: 22px; height: 22px; flex: none; margin: 0; }

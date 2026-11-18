@@ -61,7 +61,8 @@ describe('local calendar engine', () => {
       state: 'ready',
       deadline: '2026-03-24',
       startDate: '2026-03-24',
-      reviewDate: '2026-03-24',
+      // Repeats don't get a Next review (owner, 18 Nov).
+      reviewDate: null,
       dependencies: [],
       completedAt: null,
     });

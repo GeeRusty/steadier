@@ -798,7 +798,7 @@ export function skipOccurrence(task: Task, now?: string): Task | null {
     {
       deadline: move(task.deadline),
       startDate: move(task.startDate),
-      reviewDate: move(task.reviewDate),
+      reviewDate: null,
       preparationDate: move(task.preparationDate),
       deferredUntil: null,
       schedule: {
@@ -848,7 +848,9 @@ function nextOccurrenceTask(
     // As before: the next occurrence stays quiet until its day.
     startDate: nextDate,
     deadline: move(source.deadline),
-    reviewDate: nextDate,
+    // A repeat's next one is not a review: it never gets a "Next review" date
+    // (owner, 18 Nov), so repeats don't show "review due".
+    reviewDate: null,
     deferredUntil: null,
     preparationDate: move(source.preparationDate),
     progressEvidence: "",

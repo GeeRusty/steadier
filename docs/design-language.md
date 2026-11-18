@@ -50,6 +50,11 @@ No other colours carry meaning.
 - **Order is by time only.** No priority, scores or ranking, anywhere.
 - **Decision change, 18 Nov 2026:** replaces decisions 1 and 2 of 12 Nov. Now was "the booked block, else the focus timer, else the chosen Next thing with Start", and Next was "the chosen Next thing, else the next booked item". Now: Now shows only what's running, Next thing is only the owner's choice, and "Up next in X min" moved from the Now card to its own agenda row.
 
+## Task editor
+- Order (owner, 18 Nov): title with the done circle on its left · When (summary, type when, day / start / length in h and min, Booked switch) · Repeat (summary, tap to open) · Reminders · Place · Next physical step ("Title is the step" tick) · Where it belongs (summary, tap to open) · Notes, subtasks, small steps, lists · More (folded).
+- One save model: autosave with "Saved". The only thing that waits is a voice draft (dashed, **Keep it** / **Undo**). Explanations sit behind the **i**.
+- Times read "9am–4pm · 7h", never "9:00–4:00". "Finish by" is one date-and-time row. "Not before" covers both old hide-until dates; "Start preparing from" stays separate because it hides nothing.
+
 ## Calendar
 - **Blocks** are neutral cards with primary text on a neutral surface. The title comes first, then the time and chips.
 - **Colour:** the green left bar is for Imperative work only. Blue/lavender fills and lock icons are gone.

@@ -196,28 +196,34 @@ export function TaskCompassFields({
   imperatives,
   suggestion,
   hasProject,
+  hideDecision = false,
 }: {
   compass: TaskCompass;
   onChange: (compass: TaskCompass) => void;
   imperatives: Imperative[];
   suggestion: CatchAll | null;
   hasProject: boolean;
+  /** Inside the task editor's "Where it belongs": no fold of its own, and the decision sits in More. */
+  hideDecision?: boolean;
 }) {
   const unplaced =
     !hasProject &&
     compass.imperativeIds.length === 0 &&
     compass.catchAll === null;
+  const Wrap = hideDecision ? "div" : "details";
   return (
-    <details
-      className="detail-section compass-section"
-      open={unplaced || !!compass.decision}
+    <Wrap
+      className={hideDecision ? "compass-section compass-section--flat" : "detail-section compass-section"}
+      {...(hideDecision ? {} : { open: unplaced || !!compass.decision })}
     >
-      <summary>
-        Compass · {unplaced ? "unplaced" : "placed"}
-        {compass.decision
-          ? ` · ${DECISION_LABEL[compass.decision.outcome]}${compass.decision.confirmed ? "" : " (suggested)"}`
-          : ""}
-      </summary>
+      {!hideDecision && (
+        <summary>
+          Compass · {unplaced ? "unplaced" : "placed"}
+          {compass.decision
+            ? ` · ${DECISION_LABEL[compass.decision.outcome]}${compass.decision.confirmed ? "" : " (suggested)"}`
+            : ""}
+        </summary>
+      )}
       {unplaced && (
         <p className="small unplaced-note">
           Nothing links this yet. Link it to an Imperative or project, or file
@@ -285,10 +291,12 @@ export function TaskCompassFields({
           </button>
         </p>
       )}
-      <DecisionField
-        decision={compass.decision}
-        onChange={decision => onChange({ ...compass, decision })}
-      />
-    </details>
+      {!hideDecision && (
+        <DecisionField
+          decision={compass.decision}
+          onChange={decision => onChange({ ...compass, decision })}
+        />
+      )}
+    </Wrap>
   );
 }

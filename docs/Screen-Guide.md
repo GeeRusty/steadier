@@ -38,7 +38,7 @@ Get there: bottom bar › **Today** (1st). Or ☰ › **My life today**.
 ### Walk: Move today's block
 - Step 1. On Today, tap the block's row. You should see its task sheet slide up.
 - Step 2. Tap **Edit** at the bottom of the sheet. You should see the task editor.
-- Step 3. Find **When**. Either type the new time in plain words, for example "today 3pm", or change **Start time** (and **Planned day** for another day).
+- Step 3. Find **When**. Either type the new time in plain words, for example "today 3pm", or change **Start** (and **Day** for another day).
 - Step 4. Wait for **Saved** at the bottom, then tap **Close**. You should be back on Today with the block at its new time.
 - If the block has already slipped, its row shows **Move**: tap it to go straight to step 3, or tap **Keep going** to stretch it instead.
 
@@ -94,8 +94,16 @@ Opens over the page when you tap a task.
 
 ## Sheet: Task editor
 
-- **When**: type a date and time in plain words. **Planned day** and **Start time** set them directly.
-- It saves by itself: the bottom says **Saving…**, then **Saved**.
+Job: change one task. It saves by itself: the line under the title says **Saving…**, then **Saved**.
+- Top: the done circle (left), the title, and the **i** (right), which opens voice: **Speak task update**, the dictation notes and **Read next step**.
+- Voice draft: anything you dictate waits in a dashed box, **Voice draft, not saved yet**. **Keep it** saves it; **Undo** puts the task back.
+- **When**: the summary (e.g. "Wed 25 Nov · 9am–4pm · 7h"), a box to type when in plain words, then **Day** (or **This one's day** on a repeat), **Start** and **Length** in hours and minutes. **Booked on the calendar** makes it a booking on Today and the Calendar. **Fixed date/time** or **Flexible time window** switches the kind of timing.
+- **Repeat**: shows its summary (e.g. "Every Wed"); tap to open the settings, including **Skip this week's instance** and **Ends on** / **Maximum occurrences (optional)**.
+- **Reminders**: add one, for example 15 min before. They ring in Steadier while it's open, and as a phone notification when it's closed.
+- **Place**, then **Next physical step**: tick **Title is the step** when the title says it all; untick to write a different step.
+- **Where it belongs**: shows where it sits (an Imperative, project or catch-all); tap to open Imperatives, project, catch-all, **Role**, **Attention pattern** and why it belongs. A green bar means it serves an Imperative.
+- **Notes**, **Subtasks**, **Small steps** and attached lists.
+- **More** (folded): **Finish by** (date and time), **Not before** (hidden from your lists until then), **Start preparing from**, **Next review**, minutes for the next step (only when it isn't booked with a length), Context, Workflow, **Waiting on**, prerequisites, **Decision outcome**, **Pin to attention**, **Major anchor (show in Month)**, **Evidence of progress** and **Activity**.
 - **Close** (bottom): back to where you were.
 
 ## Sheet: Capture

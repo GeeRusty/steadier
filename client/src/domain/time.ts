@@ -747,6 +747,24 @@ export function formatTime(time: string | null): string {
   return `${hour12}${m ? `:${String(m).padStart(2, "0")}` : ""} ${h < 12 ? "am" : "pm"}`;
 }
 
+/** "9am", "4:30pm": a clock time without the space. */
+export function clockAmPm(time: string): string {
+  return formatTime(time).replace(" ", "");
+}
+
+/** "7h", "1h 30m", "45m". */
+export function lengthText(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h ? `${h}h${m ? ` ${m}m` : ""}` : `${m}m`;
+}
+
+/** "9am–4pm · 7h" for a slot starting at `time` and lasting `minutes`. */
+export function slotRangeText(time: string, minutes: number): string {
+  const end = Math.min(24 * 60 - 1, timeToMinutes(time) + minutes);
+  return `${clockAmPm(time)}–${clockAmPm(minutesToTime(end))} · ${lengthText(minutes)}`;
+}
+
 export function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} min`;
   const h = Math.floor(minutes / 60);

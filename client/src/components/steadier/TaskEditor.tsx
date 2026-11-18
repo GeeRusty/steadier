@@ -3,8 +3,8 @@ import { ROLE_LABEL, taskRowIsLinked } from "../../domain/linkCheck";
 import { removeSmallStep } from "../../domain/smallSteps";
 import WhyLine from "./WhyLine";
 import type { ChainStep } from "../../domain/goals";
-import { TaskCompassFields } from "./CompassFields";
-import { suggestCatchAll, type Imperative } from "../../domain/compass";
+import { DecisionField, TaskCompassFields } from "./CompassFields";
+import { CATCH_ALL_LABEL, suggestCatchAll, type Imperative } from "../../domain/compass";
 import { downloadPrivate } from "../../lib/cloudApi";
 import { formatAdelaide } from "../../../../shared/time";
 import {
@@ -23,10 +23,11 @@ import {
   isNativeVoiceDraftEvent,
 } from "../../domain/nativeVoice";
 import { useVoice } from "../../hooks/useVoice";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Check,
   CornerDownRight,
+  Info,
   Mic,
   Plus,
   Square,
@@ -34,8 +35,6 @@ import {
   Volume2,
 } from "lucide-react";
 import TimeChips from "./TimeChips";
-import TimingShapeMark from "./TimingShapeMark";
-import TaskDetailDoneControl from "./TaskDetailDoneControl";
 import {
   MAX_SUBTASK_DEPTH,
   ancestorsOf,
@@ -121,6 +120,8 @@ interface Props {
   onReopenDropped?: (id: string) => boolean;
   /** Saved places for location reminders (v2.7). */
   places?: Place[];
+  /** Lists attached to this task (the same block as on the task sheet). */
+  lists?: ReactNode;
   /** Open Near me to add or manage places. */
   onManagePlaces?: () => void;
 }
@@ -155,6 +156,7 @@ export default function TaskEditor({
   onDeleteSubtask,
   onReopenDropped,
   places = [],
+  lists,
   onManagePlaces,
 }: Props) {
   const [draft, setDraft] = useState<Task>(() => structuredClone(task));
@@ -210,7 +212,7 @@ export default function TaskEditor({
     if (
       dirty &&
       !window.confirm(
-        "Leave this task? Changes are saved automatically after a short pause. Any voice draft or change still marked Not saved will remain unsaved."
+        "Leave this task? A voice draft you haven't kept, or a change marked Not saved, won't be saved."
       )
     )
       return;
@@ -275,6 +277,69 @@ export default function TaskEditor({
   );
   const [step, setStep] = useState("");
   const [error, setError] = useState("");
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const sameText = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+  /** "Title is the step": the next step is the title itself (kept in step while you rename). */
+  const titleIsStep = !!draft.nextAction.trim() && sameText(draft.nextAction, draft.title);
+  const changeTitle = (title: string) =>
+    setDraft(d => ({
+      ...d,
+      title,
+      ...(d.nextAction.trim() && sameText(d.nextAction, d.title) ? { nextAction: title } : {}),
+    }));
+  const keepVoiceDraft = () => {
+    voiceDraftPendingRef.current = false;
+    setVoiceDraftPending(false);
+    setVoiceDraftNote("");
+  };
+  const undoVoiceDraft = () => {
+    autosaveRef.current?.cancel();
+    setDraft(structuredClone(task));
+    keepVoiceDraft();
+  };
+  const linkedImperatives = (draft.compass.imperativeIds ?? [])
+    .map(id => (imperatives ?? []).find(i => i.id === id)?.title)
+    .filter((t): t is string => !!t);
+  const belongsProject = draft.projectId ? projects.find(p => p.id === draft.projectId)?.title : undefined;
+  const belongsSummary =
+    linkedImperatives.join(", ") ||
+    belongsProject ||
+    (draft.compass.catchAll ? CATCH_ALL_LABEL[draft.compass.catchAll] : "") ||
+    "Not placed yet";
+  const belongsGreen = linkedImperatives.length > 0 && !draft.compass.imperativesSuggested;
+  /** Available from and Set aside until both hide a task until a date: one field, the later of the two. */
+  const notBefore =
+    [draft.startDate, draft.deferredUntil].filter((d): d is string => !!d).sort().at(-1) ?? null;
+  const doneNote = draft.schedule.flexibleWindow
+    ? (() => {
+        const w = draft.schedule.flexibleWindow!;
+        const status = flexibleCompletionNote(draft.schedule, adelaideClock().date)?.status;
+        const span = w.startDate === w.endDate ? w.startDate : `${w.startDate} to ${w.endDate}`;
+        const again = draft.schedule.repeat ? " Marks this one only." : "";
+        if (status === "late") return `Window ${span} closed; recorded as late.${again}`;
+        if (status === "early") return `Window ${span} not open yet.${again}`;
+        return `Window ${span}; on time through ${w.endDate}.${again}`;
+      })()
+    : draft.schedule.repeat
+      ? "Done finishes only this one; the next stays scheduled."
+      : undefined;
+  const markDone = () => {
+    autosaveRef.current?.cancel();
+    const valid = validated(draft, true);
+    if (!valid) return;
+    if (hasUnconfirmedSuggestion(valid)) {
+      const detail = "Confirm or reject the suggested link or placement before marking this task Done.";
+      setError(detail);
+      setAutosaveState("not-saved");
+      setAutosaveDetail(detail);
+      return;
+    }
+    const accepted = onDone(task.id, valid);
+    if (accepted === false) {
+      setAutosaveState("not-saved");
+      setAutosaveDetail("Not saved. Your edits are still open; check sync and try again.");
+    }
+  };
   useEffect(() => {
     if (taskVoice.listening || !voiceCaptureRequested) return;
     const transcript = taskVoice.finalTranscript.trim();
@@ -360,7 +425,7 @@ export default function TaskEditor({
       ? parsed.understood.join(" · ")
       : "task title";
     setVoiceDraftNote(
-      `Editable voice draft applied (${understood}). Review the fields, then choose Save changes; nothing has been saved yet.`
+      `Heard: ${understood}. Check it, then Keep it.`
     );
     setVoiceCaptureRequested(false);
   }, [
@@ -461,7 +526,7 @@ export default function TaskEditor({
     if (block) {
       const detail =
         block === "voice-draft"
-          ? "Voice text is still an editable draft. Review it and tap Save changes."
+          ? "Voice draft: check it, then tap Keep it."
           : block === "empty-title"
             ? "A non-empty title is required; the blank draft was not saved."
           : block === "conflict"
@@ -581,7 +646,7 @@ export default function TaskEditor({
       if (block === "voice-draft") {
         setAutosaveState("not-saved");
         setAutosaveDetail(
-          "Voice text is an editable draft. Review it and tap Save changes; it will not autosave."
+          "Voice draft: check it, then tap Keep it."
         );
       } else if (block === "empty-title") {
         setAutosaveState("not-saved");
@@ -634,24 +699,6 @@ export default function TaskEditor({
 
   useEffect(() => () => autosaveRef.current?.cancel(), []);
 
-  const save = () => {
-    autosaveRef.current?.cancel();
-    const valid = validated(draft, true);
-    if (!valid) return;
-    if (hasUnconfirmedSuggestion(valid)) {
-      const detail =
-        "Confirm or reject the suggested link or placement before saving this task.";
-      setError(detail);
-      setAutosaveState("not-saved");
-      setAutosaveDetail(detail);
-      return;
-    }
-    const accepted = onSave(valid);
-    if (accepted === false) {
-      setAutosaveState("not-saved");
-      setAutosaveDetail("Not saved. Your edits are still open; check sync and try again.");
-    }
-  };
   return (
     <Dialog open onOpenChange={open => !open && leave(onClose)}>
       <DialogContent
@@ -669,106 +716,81 @@ export default function TaskEditor({
           setVoiceDraftPending(true);
           autosaveRef.current?.cancel();
           setVoiceDraftNote(
-            "Native voice text is an editable draft. Review it, then tap Save changes."
+            "Voice text went in. Check it, then Keep it."
           );
         }}
       >
-        <div className="eyebrow">
-          RESPONSIBILITY DETAIL <TimingShapeMark task={draft} />
-        </div>
-        <DialogTitle className="dialog-heading">
-          Make the next step clear.
-        </DialogTitle>
-        <DialogDescription>
-          Everything you need to pick this up again, in one place.
-        </DialogDescription>
-        <div className="task-title-done-row">
-          <label className="field task-detail-title-field">
-            Responsibility
+        <DialogTitle className="sr-only">Edit task</DialogTitle>
+        <DialogDescription className="sr-only">Changes save as you go.</DialogDescription>
+        <div className="te-title-row">
+          <button
+            type="button"
+            className="te-done"
+            data-task-autosave-exempt
+            aria-label={task.state === "done" ? `${draft.title} is done` : `Mark ${draft.title} done`}
+            disabled={task.state === "done" || changedElsewhere}
+            onClick={markDone}
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+              {task.state === "done" ? (
+                <>
+                  <circle cx="12" cy="12" r="10" className="te-done-fill" />
+                  <path d="M7 12.5l3 3 7-7" className="te-done-tick" />
+                </>
+              ) : (
+                <circle cx="12" cy="12" r="10" className="te-done-ring" />
+              )}
+            </svg>
+          </button>
+          <label className="te-title">
+            <span className="sr-only">Title</span>
             <input
               id="task-editor-responsibility"
               form="task-editor-form"
               ref={titleInputRef}
               value={draft.title}
-              onChange={e => patch("title", e.target.value)}
+              onChange={e => changeTitle(e.target.value)}
               onInputCapture={event => {
                 if (!isNativeVoiceDraftEvent(event.nativeEvent)) return;
                 voiceDraftPendingRef.current = true;
                 setVoiceDraftPending(true);
                 autosaveRef.current?.cancel();
-                setVoiceDraftNote(
-                  "Native voice text was inserted into the title only. Review the title, set any timing or effort below, then choose Save changes."
-                );
+                setVoiceDraftNote("Voice text went into the title. Check it, then Keep it.");
               }}
               required
               maxLength={240}
             />
           </label>
-          <TaskDetailDoneControl
-            taskTitle={draft.title}
-            checked={task.state === "done"}
-            disabled={task.state === "done" || changedElsewhere}
-            onChange={() => {
-              autosaveRef.current?.cancel();
-              const valid = validated(draft, true);
-              if (!valid) return;
-              if (hasUnconfirmedSuggestion(valid)) {
-                const detail =
-                  "Confirm or reject the suggested link or placement before marking this task Done.";
-                setError(detail);
-                setAutosaveState("not-saved");
-                setAutosaveDetail(detail);
-                return;
-              }
-              const accepted = onDone(task.id, valid);
-              if (accepted === false) {
-                setAutosaveState("not-saved");
-                setAutosaveDetail(
-                  "Not saved. Your edits are still open; check sync and try again."
-                );
-              }
-            }}
-            note={
-              draft.schedule.flexibleWindow
-                ? (() => {
-                    const w = draft.schedule.flexibleWindow!;
-                    const status = flexibleCompletionNote(
-                      draft.schedule,
-                      adelaideClock().date
-                    )?.status;
-                    const span =
-                      w.startDate === w.endDate
-                        ? w.startDate
-                        : `${w.startDate} to ${w.endDate}`;
-                    const again = draft.schedule.repeat
-                      ? " Marks this one only."
-                      : "";
-                    if (status === "late")
-                      return `Window ${span} closed; recorded as late.${again}`;
-                    if (status === "early")
-                      return `Window ${span} not open yet.${again}`;
-                    return `Window ${span}; on time through ${w.endDate}.${again}`;
-                })()
-                : draft.schedule.repeat
-                  ? "Marking Done completes only this occurrence; the next one stays scheduled."
-                  : undefined
-            }
-          />
+          <button
+            type="button"
+            className="te-info"
+            aria-label="Voice and dictation"
+            aria-expanded={voiceOpen}
+            onClick={() => setVoiceOpen(v => !v)}
+          >
+            <Info size={18} aria-hidden="true" />
+          </button>
         </div>
-        <div
-          className={`task-autosave-status is-${autosaveState}`}
-          role="status"
-          aria-live="polite"
-        >
-          <strong>
-            {autosaveState === "saving"
-              ? "Saving…"
-              : autosaveState === "saved"
-                ? "Saved"
-                : "Not saved"}
-          </strong>
-          {autosaveDetail && <span>{autosaveDetail}</span>}
-        </div>
+        {doneNote && <p className="te-done-note small muted">{doneNote}</p>}
+        {voiceDraftPending ? (
+          <div className="te-draft" role="status" aria-live="polite">
+            <strong>Voice draft, not saved yet</strong>
+            <span className="small muted">{voiceDraftNote || "Check it, then keep it."}</span>
+            <div className="te-draft-actions">
+              <button type="button" className="button primary small-button" data-task-autosave-exempt onClick={keepVoiceDraft}>
+                Keep it
+              </button>
+              <button type="button" className="button secondary small-button" data-task-autosave-exempt onClick={undoVoiceDraft}>
+                Undo
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className={`task-autosave-status is-${autosaveState}`} role="status" aria-live="polite">
+            <strong>{autosaveState === "saving" ? "Saving…" : autosaveState === "saved" ? "Saved" : "Not saved"}</strong>
+            <span>{autosaveDetail || (autosaveState === "saved" ? "changes save as you go" : "")}</span>
+          </div>
+        )}
         {draft.parent && (
           <div
             className={`subtask-crumb${draft.parent.suggested ? " suggested" : ""}`}
@@ -815,7 +837,6 @@ export default function TaskEditor({
                 >
                   Reject
                 </button>
-                <span className="small muted">Saved when you press Save.</span>
               </span>
             )}
           </div>
@@ -862,10 +883,11 @@ export default function TaskEditor({
           id="task-editor-form"
           onSubmit={e => {
             e.preventDefault();
-            save();
+            autosaveRef.current?.flush();
           }}
         >
-          <div className="voice-control task-edit-voice">
+          {(voiceOpen || taskVoice.listening) && (
+            <div className="voice-control task-edit-voice te-voice">
             {taskVoice.supported ? (
               <button
                 type="button"
@@ -896,7 +918,7 @@ export default function TaskEditor({
                     input.value.length
                   );
                   setVoiceDraftNote(
-                    "Title focused. In the Android app’s Tools/Voice panel, start dictation, review/edit the draft, then tap Place in open field. It inserts text only; Save changes is still required."
+                    "Title focused. In the Android app’s Voice panel, dictate, then tap Place in open field. Then check it and tap Keep it."
                   );
                 }}
               >
@@ -912,50 +934,143 @@ export default function TaskEditor({
                 ? "Listening. Only final speech is applied after listening ends."
                 : voiceDraftNote ||
                   (taskVoice.supported
-                    ? "Optional browser dictation fills an editable draft. Review it before saving."
+                    ? "Speak a change; it becomes a draft for you to check, then Keep it."
                     : nativeVoiceFallback
                       ? "Focus the title, then use the app’s opt-in Voice panel to place a reviewed draft here."
                       : "Edit the title and timing manually in this browser.")}
             </span>
-          </div>
-          <p className="small muted">
-            Browser dictation may process audio with its provider. Native app
-            dictation inserts text into the focused title only. Review the
-            title, timing and effort, then choose Save changes; nothing is saved
-            automatically from voice.
-          </p>
+              <p className="small muted">
+                Browser dictation may process audio with its provider. The
+                Android app's Voice panel puts text into the title only. Either
+                way it's a draft: nothing saves until you tap Keep it.
+              </p>
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => onRead(`${draft.title}. Next action: ${draft.nextAction || "Clarify the next small step."}`)}
+              >
+                <Volume2 size={14} /> Read next step
+              </button>
           {!taskVoice.supported && !nativeVoiceFallback && (
-            <p className="notice small">
-              Speech recognition is not available here. You can edit manually,
-              or use a keyboard microphone where supported.
+                <p className="notice small">
+                  Speech recognition is not available here. You can edit manually,
+                  or use a keyboard microphone where supported.
+                </p>
+              )}
+              {taskVoice.error && (
+                <p className="error" role="alert">
+                  {taskVoice.error}
+                </p>
+              )}
+            </div>
+          )}
+          <ScheduleEditor
+            task={draft}
+            onChange={change => setDraft(d => ({ ...d, ...change }))}
+            onSkip={() => {
+              const skipped = skipOccurrence(draft);
+              if (skipped) {
+                setDraft(skipped);
+                setError("");
+              } else setError("This was the last one in the series, so there is nothing to skip to.");
+            }}
+          />
+            {draft.schedule.flexibleWindow && (
+              <div className="window-readout">
+                <p className="small muted">
+                  {flexibleWindowState(
+                    draft.schedule.flexibleWindow,
+                    adelaideClock().date
+                  ) === "expired"
+                    ? "Needs rescheduling. The task stays open and unchanged until you decide what to do."
+                    : `Flexible window: ${describeFlexibleWindow(
+                        draft.schedule.flexibleWindow,
+                        adelaideClock().date
+                      )}${
+                        draft.schedule.minutes
+                          ? ` · ${formatDuration(draft.schedule.minutes)} explicit effort`
+                          : " · no effort estimate entered"
+                      }`}
+                </p>
+                {speechSupported ? (
+                  <button
+                    type="button"
+                    className="text-button"
+                    onClick={readFlexibleWindow}
+                  >
+                    <Volume2 size={14} /> Read window aloud
+                  </button>
+                ) : (
+                  <span className="small muted" role="status">
+                    Read-aloud is not available in this browser.
+                  </span>
+                )}
+              </div>
+            )}
+          {draft.schedule.skipped.length > task.schedule.skipped.length && (
+            <p className="small muted" role="status">
+              This one is skipped; the repeat series carries on.
             </p>
           )}
-          {taskVoice.error && (
-            <p className="error" role="alert">
-              {taskVoice.error}
+          <div className="field place-field">
+            <label htmlFor="task-place">Place</label>
+            <select
+              id="task-place"
+              value={draft.placeId ?? ""}
+              onChange={e =>
+                setDraft(d => setTaskPlace(d, e.target.value || null, places))
+              }
+            >
+              <option value="">No place</option>
+              {places.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <p className="small muted">
+              {places.length
+                ? "Shown in Near me, and reminds you when you arrive while Steadier is open."
+                : "Save places such as Bunnings or Work in Near me, then pick one here."}
+              {onManagePlaces && (
+                <>
+                  {" "}
+                  <button
+                    type="button"
+                    className="text-button"
+                    onClick={() => leave(onManagePlaces)}
+                  >
+                    Manage places
+                  </button>
+                </>
+              )}
             </p>
-          )}
-          <label className="field featured-field">
-            Next physical step
-            <textarea
-              value={draft.nextAction}
-              onChange={e => patch("nextAction", e.target.value)}
-              placeholder="Something small and specific you can actually begin."
-              maxLength={1000}
-              rows={2}
-            />
-          </label>
-          <details
-            className="detail-section life-identity"
-            open={!!draft.role || !!draft.projectId}
-          >
+          </div>
+          <section className="te-step">
+            <h3 className="when-label">Next physical step</h3>
+            <label className="check-line">
+              <input
+                type="checkbox"
+                checked={titleIsStep}
+                onChange={e => patch("nextAction", e.target.checked ? draft.title : "")}
+              />{" "}
+              Title is the step
+            </label>
+            {!titleIsStep && (
+              <textarea
+                aria-label="Next physical step"
+                value={draft.nextAction}
+                onChange={e => patch("nextAction", e.target.value)}
+                placeholder="Something small and specific you can actually begin."
+                maxLength={1000}
+                rows={2}
+              />
+            )}
+          </section>
+          <details className={`detail-section te-belongs${belongsGreen ? " te-green" : ""}`}>
             <summary>
-              Its place in My Life ·{" "}
-              {draft.labelSource === "suggested"
-                ? "suggested, editable"
-                : draft.labelSource === "confirmed"
-                  ? "chosen by me"
-                  : "can be clarified later"}
+              <span className="when-label">Where it belongs</span>
+              <span className="schedule-summary">{belongsSummary}</span>
             </summary>
             <p className="small muted">
               Imperative work is what you have chosen to move. Support keeps
@@ -1070,291 +1185,47 @@ export default function TaskEditor({
                   "Clarify in Projects & outcomes."}
               </p>
             )}
-          </details>
           {whyFor && (
-            <WhyLine
-              text={whyFor(draft.projectId)}
-              onRead={onRead}
-              chains={whyChains?.(draft.projectId)}
-              onOpenGoal={
-                onOpenGoal
-                  ? id => {
-                      // Do not lose unsaved edits silently.
-                      if (
-                        JSON.stringify(draft) !== JSON.stringify(task) &&
-                        !window.confirm(
-                          "Leave this task without saving your changes?"
+              <WhyLine
+                text={whyFor(draft.projectId)}
+                onRead={onRead}
+                chains={whyChains?.(draft.projectId)}
+                onOpenGoal={
+                  onOpenGoal
+                    ? id => {
+                        // Do not lose unsaved edits silently.
+                        if (
+                          JSON.stringify(draft) !== JSON.stringify(task) &&
+                          !window.confirm(
+                            "Leave this task without saving your changes?"
+                          )
                         )
-                      )
-                        return;
-                      onOpenGoal(id);
-                    }
-                  : undefined
-              }
-            />
-          )}
-          <TaskCompassFields
-            compass={draft.compass}
-            onChange={compass => patch("compass", compass)}
-            imperatives={imperatives}
-            suggestion={suggestCatchAll(draft)}
-            hasProject={!!draft.projectId}
-          />
-          <div className="form-pair">
-            <label className="field">
-              Workflow
-              <select
-                value={draft.state}
-                onChange={e => patch("state", e.target.value as TaskState)}
-              >
-                {STATES.filter(s => s !== "done" || task.state === "done").map(
-                  s => (
-                    <option key={s} value={s}>
-                      {stateLabel(s)}
-                    </option>
-                  )
-                )}
-              </select>
-            </label>
-          </div>
-          <div className="check-line">
-            <label>
-              <input
-                type="checkbox"
-                checked={draft.pinned}
-                onChange={e => patch("pinned", e.target.checked)}
-              />{" "}
-              Pin to attention
-            </label>
-          </div>
-          <div className="form-pair">
-            <ScheduleEditor
-              task={draft}
-              onChange={change => setDraft(d => ({ ...d, ...change }))}
-              onSkip={() => {
-                const skipped = skipOccurrence(draft);
-                if (skipped) {
-                  setDraft(skipped);
-                  setError("");
-                } else
-                  setError(
-                    "This was the last one in the series, so there is nothing to skip to."
-                  );
-              }}
-            />
-            {draft.schedule.flexibleWindow && (
-              <div className="window-readout">
-                <p className="small muted">
-                  {flexibleWindowState(
-                    draft.schedule.flexibleWindow,
-                    adelaideClock().date
-                  ) === "expired"
-                    ? "Needs rescheduling. The task stays open and unchanged until you decide what to do."
-                    : `Flexible window: ${describeFlexibleWindow(
-                        draft.schedule.flexibleWindow,
-                        adelaideClock().date
-                      )}${
-                        draft.schedule.minutes
-                          ? ` · ${formatDuration(draft.schedule.minutes)} explicit effort`
-                          : " · no effort estimate entered"
-                      }`}
-                </p>
-                {speechSupported ? (
-                  <button
-                    type="button"
-                    className="text-button"
-                    onClick={readFlexibleWindow}
-                  >
-                    <Volume2 size={14} /> Read window aloud
-                  </button>
-                ) : (
-                  <span className="small muted" role="status">
-                    Read-aloud is not available in this browser.
-                  </span>
-                )}
-              </div>
-            )}
-            {draft.schedule.skipped.length > task.schedule.skipped.length && (
-              <p className="small muted" role="status">
-                This occurrence is marked to skip in the draft. Tap Save changes
-                to apply it; the repeat series will continue.
-              </p>
-            )}
-            <label className="field">
-              {draft.schedule.flexibleWindow
-                ? "Hard deadline (separate from window)"
-                : "Real finish-by deadline"}
-              <input
-                type="date"
-                value={draft.deadline || ""}
-                onChange={e => patch("deadline", e.target.value || null)}
-              />
-              {draft.schedule.flexibleWindow && (
-                <span className="small muted">
-                  This genuine finish-by date stays separate from availability
-                  and remains unchanged unless you edit or remove it.
-                </span>
-              )}
-            </label>
-            <label className="field">
-              Preparation / attention from
-              <input
-                aria-label="Preparation date"
-                type="date"
-                value={draft.preparationDate || ""}
-                onChange={e =>
-                  setDraft(d => ({
-                    ...d,
-                    preparationDate: e.target.value || null,
-                    preparationSource: "confirmed",
-                  }))
+                          return;
+                        onOpenGoal(id);
+                      }
+                    : undefined
                 }
               />
-              <span className="small muted">
-                {draft.preparationDate &&
-                draft.preparationSource === "suggested"
-                  ? "Suggested preparation, not a deadline. Confirm or change it."
-                  : "A planning date, separate from the real deadline."}
-              </span>
-              {draft.preparationDate &&
-                draft.preparationSource === "suggested" && (
-                  <button
-                    type="button"
-                    className="text-button"
-                    onClick={() => patch("preparationSource", "confirmed")}
-                  >
-                    Use this preparation date
-                  </button>
-                )}
-            </label>
-            <label className="field">
-              Next review, not a deadline
-              <input
-                type="date"
-                value={draft.reviewDate || ""}
-                onChange={e => patch("reviewDate", e.target.value || null)}
-              />
-            </label>
-            <label className="field">
-              Available from
-              <input
-                type="date"
-                value={draft.startDate || ""}
-                onChange={e => patch("startDate", e.target.value || null)}
-              />
-            </label>
-            <label className="field">
-              Set aside until
-              <input
-                type="date"
-                value={draft.deferredUntil || ""}
-                onChange={e => patch("deferredUntil", e.target.value || null)}
-              />
-            </label>
-            <label className="field">
-              Minutes for this next step
-              <input
-                type="number"
-                min={0}
-                max={1440}
-                value={draft.estimate}
-                onChange={e => patch("estimate", Number(e.target.value))}
-              />
-            </label>
-            <label className="field">
-              Context
-              <select
-                value={draft.context}
-                onChange={e => patch("context", e.target.value as Context)}
-              >
-                <option value="anywhere">Anywhere</option>
-                <option value="home">At home</option>
-                <option value="computer">At computer</option>
-                <option value="out">Out & about</option>
-              </select>
-            </label>
-          </div>
+            )}
+            <TaskCompassFields
+              compass={draft.compass}
+              onChange={compass => patch("compass", compass)}
+              imperatives={imperatives}
+              suggestion={suggestCatchAll(draft)}
+              hasProject={!!draft.projectId}
+              hideDecision
+            />
+          </details>
           <label className="field">
-            Waiting on / what would unblock this?
-            <input
-              value={draft.waitingFor}
-              onChange={e => patch("waitingFor", e.target.value)}
-              placeholder="A person, reply, part or decision."
-              maxLength={500}
+            Notes
+            <textarea
+              value={draft.notes}
+              onChange={e => patch("notes", e.target.value)}
+              maxLength={10000}
+              rows={3}
+              placeholder="Where you left things, useful details, or a link."
             />
           </label>
-          <details className="detail-section">
-            <summary>
-              Prerequisites · {draft.dependencies.length} selected
-            </summary>
-            <p className="small muted">
-              Incomplete prerequisites keep this out of ready starts. Finishing
-              the last one releases it.
-            </p>
-            <div className="dependency-list">
-              {tasks
-                .filter(t => t.id !== task.id && t.state !== "done")
-                .map(t => (
-                  <label key={t.id}>
-                    <input
-                      type="checkbox"
-                      checked={draft.dependencies.includes(t.id)}
-                      onChange={e =>
-                        patch(
-                          "dependencies",
-                          e.target.checked
-                            ? [...draft.dependencies, t.id]
-                            : draft.dependencies.filter(id => id !== t.id)
-                        )
-                      }
-                    />
-                    {t.title}
-                  </label>
-                ))}
-              {draft.dependencies
-                .filter(id => tasks.find(t => t.id === id)?.state === "done")
-                .map(id => (
-                  <p key={id} className="small">
-                    <Check size={14} /> Completed:{" "}
-                    {tasks.find(t => t.id === id)?.title}
-                  </p>
-                ))}
-            </div>
-          </details>
-          <div className="field place-field">
-            <label htmlFor="task-place">Place</label>
-            <select
-              id="task-place"
-              value={draft.placeId ?? ""}
-              onChange={e =>
-                setDraft(d => setTaskPlace(d, e.target.value || null, places))
-              }
-            >
-              <option value="">No place</option>
-              {places.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <p className="small muted">
-              {places.length
-                ? "Shown in Near me, and reminds you when you arrive while Steadier is open."
-                : "Save places such as Bunnings or Work in Near me, then pick one here."}
-              {onManagePlaces && (
-                <>
-                  {" "}
-                  <button
-                    type="button"
-                    className="text-button"
-                    onClick={() => leave(onManagePlaces)}
-                  >
-                    Manage places
-                  </button>
-                </>
-              )}
-            </p>
-          </div>
           <details
             className="detail-section subtasks-section"
             open={children.length > 0 || !!draft.parent}
@@ -1561,49 +1432,205 @@ export default function TaskEditor({
               </button>
             </div>
           </details>
-          <label className="field">
-            Notes
-            <textarea
-              value={draft.notes}
-              onChange={e => patch("notes", e.target.value)}
-              maxLength={10000}
-              rows={3}
-              placeholder="Where you left things, useful details, or a link."
-            />
-          </label>
-          <label className="field">
-            What changed / evidence of progress
-            <textarea
-              aria-label="Responsibility progress evidence"
-              value={draft.progressEvidence}
-              onChange={e => patch("progressEvidence", e.target.value)}
-              rows={2}
-              maxLength={2000}
-              placeholder="e.g. The work surface is now accessible. This is more useful than a completion count."
-            />
-          </label>
-          <details className="detail-section">
-            <summary>Activity & current state</summary>
+          {lists && <div className="te-lists">{lists}</div>}
+          <details className="detail-section te-more">
+            <summary>More</summary>
+            <div className="field">
+              <span id="te-finish-by">
+                {draft.schedule.flexibleWindow ? "Hard deadline (separate from the window)" : "Finish by"}
+              </span>
+              <span className="te-pair" role="group" aria-labelledby="te-finish-by">
+                <input
+                  type="date"
+                  aria-label="Finish by date"
+                  value={draft.deadline || ""}
+                  onChange={e =>
+                    setDraft(d => ({
+                      ...d,
+                      deadline: e.target.value || null,
+                      schedule: e.target.value ? d.schedule : { ...d.schedule, deadlineTime: null },
+                    }))
+                  }
+                />
+                <input
+                  type="time"
+                  step={300}
+                  aria-label="Finish by time"
+                  value={draft.schedule.deadlineTime ?? ""}
+                  disabled={!draft.deadline}
+                  onChange={e => setDraft(d => ({ ...d, schedule: { ...d.schedule, deadlineTime: e.target.value || null } }))}
+                />
+              </span>
+            </div>
+            <label className="field">
+              Not before
+              <input
+                type="date"
+                value={notBefore ?? ""}
+                onChange={e => setDraft(d => ({ ...d, startDate: e.target.value || null, deferredUntil: null }))}
+              />
+              <span className="small muted">Hidden from your lists until then.</span>
+            </label>
+            <label className="field">
+              Start preparing from
+              <input
+                aria-label="Preparation date"
+                type="date"
+                value={draft.preparationDate || ""}
+                onChange={e =>
+                  setDraft(d => ({
+                    ...d,
+                    preparationDate: e.target.value || null,
+                    preparationSource: "confirmed",
+                  }))
+                }
+              />
+              <span className="small muted">
+                {draft.preparationDate && draft.preparationSource === "suggested"
+                  ? "Suggested, not a deadline. Confirm or change it."
+                  : "Offered as preparation from then; nothing is hidden."}
+              </span>
+              {draft.preparationDate && draft.preparationSource === "suggested" && (
+                <button type="button" className="text-button" onClick={() => patch("preparationSource", "confirmed")}>
+                  Use this preparation date
+                </button>
+              )}
+            </label>
+            <label className="field">
+              Next review
+              <input
+                type="date"
+                value={draft.reviewDate || ""}
+                onChange={e => patch("reviewDate", e.target.value || null)}
+              />
+            </label>
+            {!(draft.schedule.fixed && draft.schedule.minutes) && (
+              <label className="field">
+                Minutes for the next step
+                <input
+                  type="number"
+                  min={0}
+                  max={1440}
+                  value={draft.estimate}
+                  onChange={e => patch("estimate", Number(e.target.value))}
+                />
+                <span className="small muted">Used as the length if you book it without one.</span>
+              </label>
+            )}
+            <div className="form-pair">
+              <label className="field">
+                Context
+                <select value={draft.context} onChange={e => patch("context", e.target.value as Context)}>
+                  <option value="anywhere">Anywhere</option>
+                  <option value="home">At home</option>
+                  <option value="computer">At computer</option>
+                  <option value="out">Out & about</option>
+                </select>
+              </label>
+              <label className="field">
+                Workflow
+                <select value={draft.state} onChange={e => patch("state", e.target.value as TaskState)}>
+                  {STATES.filter(s => s !== "done" || task.state === "done").map(s => (
+                    <option key={s} value={s}>
+                      {stateLabel(s)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <label className="field">
+              Waiting on
+              <input
+                value={draft.waitingFor}
+                onChange={e => patch("waitingFor", e.target.value)}
+                placeholder="A person, reply, part or decision."
+                maxLength={500}
+              />
+            </label>
+            <details className="detail-section">
+              <summary>Prerequisites · {draft.dependencies.length} selected</summary>
+            <p className="small muted">
+                Incomplete prerequisites keep this out of ready starts. Finishing
+                the last one releases it.
+              </p>
+              <div className="dependency-list">
+                {tasks
+                  .filter(t => t.id !== task.id && t.state !== "done")
+                  .map(t => (
+                    <label key={t.id}>
+                      <input
+                        type="checkbox"
+                        checked={draft.dependencies.includes(t.id)}
+                        onChange={e =>
+                          patch(
+                            "dependencies",
+                            e.target.checked
+                              ? [...draft.dependencies, t.id]
+                              : draft.dependencies.filter(id => id !== t.id)
+                          )
+                        }
+                      />
+                      {t.title}
+                    </label>
+                  ))}
+                {draft.dependencies
+                  .filter(id => tasks.find(t => t.id === id)?.state === "done")
+                  .map(id => (
+                    <p key={id} className="small">
+                      <Check size={14} /> Completed:{" "}
+                      {tasks.find(t => t.id === id)?.title}
+                    </p>
+                  ))}
+              </div>
+            </details>
+            <DecisionField decision={draft.compass.decision} onChange={decision => patch("compass", { ...draft.compass, decision })} />
+            <label className="check-line">
+              <input type="checkbox" checked={draft.pinned} onChange={e => patch("pinned", e.target.checked)} /> Pin to attention
+            </label>
+            {draft.schedule.fixed === true && (
+              <label className="check-line">
+                <input
+                  type="checkbox"
+                  checked={draft.schedule.majorAnchor === true}
+                  onChange={e => setDraft(d => ({ ...d, schedule: { ...d.schedule, majorAnchor: e.target.checked } }))}
+                />{" "}
+                Major anchor (show in Month)
+              </label>
+            )}
+            <label className="field">
+              Evidence of progress
+              <textarea
+                aria-label="Responsibility progress evidence"
+                value={draft.progressEvidence}
+                onChange={e => patch("progressEvidence", e.target.value)}
+                rows={2}
+                maxLength={2000}
+                placeholder="What changed, e.g. the work surface is now clear."
+              />
+            </label>
+            <details className="detail-section">
+              <summary>Activity</summary>
             <p className="small">
-              {stateLabel(derivedState(task, tasks))} · {deadlineLabel(task)}
-            </p>
-            {draft.history
-              .slice()
-              .reverse()
-              .slice(0, 12)
-              .map((h, i) => (
-                <p key={i} className="small history">
-                  <time dateTime={h.at}>{formatAdelaide(h.at)}</time>
-                  {h.text.startsWith("Claude: ") ? (
-                    <>
-                      <span className="badge claude-chip">Made by Claude</span>{" "}
-                      {h.text.slice("Claude: ".length)}
-                    </>
-                  ) : (
-                    h.text
-                  )}
-                </p>
-              ))}
+                {stateLabel(derivedState(task, tasks))} · {deadlineLabel(task)}
+              </p>
+              {draft.history
+                .slice()
+                .reverse()
+                .slice(0, 12)
+                .map((h, i) => (
+                  <p key={i} className="small history">
+                    <time dateTime={h.at}>{formatAdelaide(h.at)}</time>
+                    {h.text.startsWith("Claude: ") ? (
+                      <>
+                        <span className="badge claude-chip">Made by Claude</span>{" "}
+                        {h.text.slice("Claude: ".length)}
+                      </>
+                    ) : (
+                      h.text
+                    )}
+                  </p>
+                ))}
+            </details>
           </details>
           {error && (
             <p role="alert" className="error">
@@ -1611,32 +1638,8 @@ export default function TaskEditor({
             </p>
           )}
           <div className="dialog-actions">
-            <button
-              type="button"
-              className="button secondary"
-              onClick={() =>
-                onRead(
-                  `${draft.title}. Next action: ${draft.nextAction || "Clarify the next small step."}`
-                )
-              }
-            >
-              <Volume2 size={16} />
-              Read next step
-            </button>
-            <button
-              type="button"
-              className="button secondary"
-              data-task-autosave-exempt
-              onClick={() => leave(onClose)}
-            >
+            <button type="button" className="button secondary" data-task-autosave-exempt onClick={() => leave(onClose)}>
               Close
-            </button>
-            <button
-              type="submit"
-              className="button primary"
-              data-task-autosave-exempt
-            >
-              Save changes
             </button>
           </div>
         </form>
