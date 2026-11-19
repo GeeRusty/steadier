@@ -28,9 +28,9 @@ export interface CompassKeyInfo {
   revokedAt: string | null;
   /** "steadier:read" or "steadier:read steadier:write". */
   scope: string;
-  connectorActor?: "claude" | "chatgpt" | "grok" | "connector";
+  connectorActor?: "claude" | "chatgpt" | "grok" | "manus" | "connector";
 }
-export type ConnectorActor = "claude" | "chatgpt" | "grok" | "connector";
+export type ConnectorActor = "claude" | "chatgpt" | "grok" | "manus" | "connector";
 export type ChangeActor = ConnectorActor | "owner";
 /** A dated server snapshot of the whole workspace, taken before a change. */
 export interface WorkspaceBackupSummary {

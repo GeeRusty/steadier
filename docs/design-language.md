@@ -103,7 +103,7 @@ No other colours carry meaning.
 
 ## Front of Mind
 - **One list, calm:** no counts that nag; Overview's row has no number.
-- **Two chips at most**, only what's off normal: added by Claude, suggested: Let go (dashed), quiet Nd (after 30 days).
+- **Two chips at most**, only what's off normal: added by AI, suggested: Let go (dashed), quiet Nd (after 30 days).
 - **Four actions, the same everywhere:** Make it a task · Promote to Imperative · Keep · Let go. Promote is a draft; Imperatives change only in the Weekly Review.
 - **Claude adds, rewords (History kept) and suggests.** Only the owner decides.
 - **Idea in + saves on Create or on close** (2026-11-16). If the draft had already autosaved as a task, that task is removed, so an idea never stays behind as a task. Voice and review-only drafts still need Create.

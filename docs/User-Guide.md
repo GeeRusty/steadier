@@ -41,7 +41,7 @@ The **Today** tab is for doing. From the top: **Now**, **Next thing**, **Any tim
 - **Leave by:** a booked task at a saved place that has an **Allow to get there** time shows "leave by 10:35" in grey, until its start. Set the time per place under Near me › Your places. Places without one show nothing.
 - **Slipped:** a block past its likely finish stays at full strength in your day and shows **Keep going** (stretches it to its likely finish), **Move** or **Drop** (off today, kept in All work). If it slips again and you leave it, it's listed in the Weekly Review (Capacity step).
 - **Blocked by:** a booked task waiting on an unfinished prerequisite offers **Move it** or **Remove prerequisite**.
-- **Needs attention (n)** opens Overview: past-due work, review due, Sort, Link check, unplaced, Claude requests. This is the only count in Steadier: one row per kind, and the total is the sum of the rows (a task can count in more than one row).
+- **Needs attention (n)** opens Overview: past-due work, review due, Sort, Link check, unplaced, AI requests. This is the only count in Steadier: one row per kind, and the total is the sum of the rows (a task can count in more than one row).
 - Tap any row to open its sheet: notes, outcome, prerequisites, subtasks. The **i** button explains the signals.
 
 **Signals (everywhere):** a green left bar means it serves an Imperative. Dashed means suggested (tap to confirm). Faded with dots means not set up. Grey chips show only what's off normal: ⏱ +20m / −10m (only at 10 minutes or more), slipped, overdue 2d, moved 3×, quiet 9d, review due. A chip turns red only when it will clash with a fixed booking or deadline. The broken-link icon means a project, or a task in it, is missing its Goal Outcome or Imperative link (also in Link check). The old shape-and-colour arrows are gone.
@@ -55,7 +55,7 @@ Open a task and tap **Edit**. Changes save as you go: the line under the title s
 
 ### Overview
 Overview is for seeing, top to bottom:
-- **Needs attention (n):** one row per kind (Review due, Link check, Weekly review, Sort, Unplaced, Upkeep due, Past due, Claude requests). Upkeep due opens in place to list each item. Only rows above zero show, and the total matches Today's.
+- **Needs attention (n):** one row per kind (Review due, Link check, Weekly review, Sort, Unplaced, Upkeep due, Past due, AI requests). Upkeep due opens in place to list each item. Only rows above zero show, and the total matches Today's.
 - **Next thing:** your chosen one, and the Pool to choose from (Not now, Still on and Drop work as before).
 - **Today:** booked count and free time, with a thin strip of your day and the red now mark. Tap it for Calendar.
 - **Moving:** up to three active projects with their signals, then **All projects**.
@@ -84,7 +84,7 @@ What's on your mind that isn't a task yet: ideas, concerns, things you're weighi
   - **Promote to Imperative:** saves a draft on the item only. Your next Weekly Review's Imperatives step offers **Add as Imperative** or **Not now**. Nothing changes your Imperatives until you say yes there.
   - **Keep:** it stays, marked as looked at today.
   - **Let go:** it moves under **Let go** with its history, and **Bring back** returns it.
-- **Chips** show only what's off normal, two at most: **added by Claude** (until you Keep it), **suggested: Let go** (dashed, with Let go and Keep), and **quiet Nd** after 30 days without being looked at.
+- **Chips** show only what's off normal, two at most: **added by AI** (until you Keep it), **suggested: Let go** (dashed, with Let go and Keep), and **quiet Nd** after 30 days without being looked at.
 - **History** on each item shows every change, including earlier wording.
 - Tasks dropped to Someday in the Weekly Review, and held obligation tasks, stay tasks: All work's **Someday** filter shows them.
 
@@ -149,7 +149,7 @@ Bills, licences, renewals, insurance and tax dates, with lead time to prepare. I
 - **Cancel by:** a type for trials and subscriptions you may not want. Its date is the last day to cancel, and it reminds you 3 days before by default. Once you've dealt with it, tap **Done**. If you decide to keep it, change its type to Renewal.
 - **Scan a bill:** take or pick a photo of a bill. Your server reads the text, removes anything that looks like account details, then sends only that cleaned text to Claude to pick out the provider, what it's for, amount, due date, how often and any renewal or cancel-by date. The photo is deleted as soon as it's read and is never stored or sent anywhere. You check every field, then **Save draft**. If the bill shows a second date, you can tick to add it too. (A photo you picked from your gallery stays in your gallery.)
 - **Never stored:** account, card, BSB and reference numbers, biller codes, logins, passwords and addresses are thrown away from scans and from anything Claude adds. You'll see how many were removed. Pay using the bill or your bank app.
-- **From Claude:** Claude can suggest an obligation (`add_my_life_obligation`). It arrives as a draft marked **Suggested by Claude · confirm**, with no reminder until you save it yourself.
+- **From Claude:** Claude can suggest an obligation (`add_my_life_obligation`). It arrives as a draft marked **Suggested by AI · confirm**, with no reminder until you save it yourself.
 - **Hide amounts from AI** (on by default): Claude can't see or add amounts. Scanned amounts still come from the cleaned text, so check them.
 - There's no fortnightly option; a fortnightly bill is set to Does not repeat.
 - **For an asset:** registration, insurance and the like can be linked to an asset (Freelander 2, the shack). They stay here and show on the asset's page; nothing is copied.
@@ -195,6 +195,7 @@ Retired 17 Nov: no longer in the menu. Anything saved in it is kept, and the pag
 Sync status, conflicts and connections. It shows the server revision, the last confirmed server update, and the time of the latest saved record.
 - Make sure **Use shared personal space** is chosen, so your phone and other devices share one copy on the server.
 - If the status strip mentions "this browser", your changes are only on this device.
+- **Manus** connects with a private key instead of a sign-in. Choose **Read only** or **Read and changes**, then **Create a key for Manus**, and paste it into Manus's custom MCP server as the Authorization header (Bearer, a space, the key). Manus gets the same limits as Claude: a backup before every change, suggestions you confirm, no direct deletes, amounts hidden while that setting is on, account details stripped. Its changes say "Manus" in history ("Made by Manus" in a task's activity). **Revoke** in the key list cuts it off at once; keys last 90 days.
 
 ### Server sheet
 A spreadsheet-style snapshot of the last saved server copy, which you can view or download. It isn't a live editor.
@@ -233,7 +234,7 @@ Things you can say:
 
 Claude can see your Front of Mind and which tasks are set up, and can suggest a Place or First step, but only you can make a task ready. Tasks Claude creates start as faded cards.
 
-In any chat you can say "add that as an idea" and Claude adds it to Front of Mind, labelled **added by Claude** until you Keep it, with a backup saved first. Claude reads Front of Mind before advising. It can change an item's wording (the earlier wording stays in History) and suggest Let go (dashed), but only you can Keep, Let go, make a task or promote.
+In any chat you can say "add that as an idea" and Claude (or another connected AI) adds it to Front of Mind, labelled **added by AI** until you Keep it, with a backup saved first. Claude reads Front of Mind before advising. It can change an item's wording (the earlier wording stays in History) and suggest Let go (dashed), but only you can Keep, Let go, make a task or promote.
 
 Claude can read your Link check. It can suggest a link between a task or project and an Imperative, but the link waits for your **Confirm**. Only you can choose Not yet, make a project Support, or step an Imperative down.
 

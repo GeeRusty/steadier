@@ -94,7 +94,7 @@ describe("owner actions and Claude's limits", () => {
   const claude = addFrontOfMind(base, "i2", "Paul Weller UK tour", AT, { by: "claude" });
 
   it("Claude's items are labelled until Keep; Keep marks looked at", () => {
-    expect(chipsFor(claude.frontOfMind!.items[1], TODAY).map(c => c.text)).toEqual(["added by Claude"]);
+    expect(chipsFor(claude.frontOfMind!.items[1], TODAY).map(c => c.text)).toEqual(["added by AI"]);
     expect(openItems(claude)[0].id).toBe("i2");
     const kept = keepItem(claude, "i2", "2026-11-15T09:00:00+10:30");
     expect(kept.frontOfMind!.items[1]).toMatchObject({ claudeLabel: false, lookedAt: "2026-11-15T09:00:00+10:30" });
@@ -117,9 +117,9 @@ describe("owner actions and Claude's limits", () => {
   it("quiet after 30 days; at most two chips", () => {
     const old = addFrontOfMind(ws(), "o", "Buy land", "2026-09-01T09:00:00+10:30", { by: "claude" });
     const s = suggestLetGo(old, "o", "x", AT);
-    expect(chipsFor(s.frontOfMind!.items[0], TODAY).map(c => c.text)).toEqual(["added by Claude", "suggested: Let go"]);
-    expect(chipsFor(old.frontOfMind!.items[0], "2026-10-01").map(c => c.text)).toEqual(["added by Claude"]);
-    expect(chipsFor(old.frontOfMind!.items[0], "2026-10-02").map(c => c.text)).toEqual(["added by Claude", "quiet 31d"]);
+    expect(chipsFor(s.frontOfMind!.items[0], TODAY).map(c => c.text)).toEqual(["added by AI", "suggested: Let go"]);
+    expect(chipsFor(old.frontOfMind!.items[0], "2026-10-01").map(c => c.text)).toEqual(["added by AI"]);
+    expect(chipsFor(old.frontOfMind!.items[0], "2026-10-02").map(c => c.text)).toEqual(["added by AI", "quiet 31d"]);
   });
 
   it("Promote is a draft only; Imperatives change only on Add as Imperative", () => {

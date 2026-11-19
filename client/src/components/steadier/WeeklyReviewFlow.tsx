@@ -686,7 +686,7 @@ export default function WeeklyReviewFlow({
                   <FrontOfMindChips item={item} today={today} />
                 </span>
                 <span className="lv-meta">{frontOfMindMeta(item, today)}</span>
-                {item.letGoSuggestion?.reason && <span className="lv-meta fm-suggestion">Claude suggests letting this go: “{item.letGoSuggestion.reason}”</span>}
+                {item.letGoSuggestion?.reason && <span className="lv-meta fm-suggestion">AI suggests letting this go: “{item.letGoSuggestion.reason}”</span>}
                 {!readOnly && (
                   <FrontOfMindActions
                     chosen={draft.fom?.[item.id] ?? null}

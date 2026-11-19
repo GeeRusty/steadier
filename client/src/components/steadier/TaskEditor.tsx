@@ -1620,14 +1620,17 @@ export default function TaskEditor({
                 .map((h, i) => (
                   <p key={i} className="small history">
                     <time dateTime={h.at}>{formatAdelaide(h.at)}</time>
-                    {h.text.startsWith("Claude: ") ? (
+                    {(() => {
+                    const made = /^(Claude|ChatGPT|Grok|Manus|MCP connector): /.exec(h.text);
+                    return made ? (
                       <>
-                        <span className="badge claude-chip">Made by Claude</span>{" "}
-                        {h.text.slice("Claude: ".length)}
+                        <span className="badge claude-chip">Made by {made[1]}</span>{" "}
+                        {h.text.slice(made[0].length)}
                       </>
                     ) : (
                       h.text
-                    )}
+                    );
+                  })()}
                   </p>
                 ))}
             </details>

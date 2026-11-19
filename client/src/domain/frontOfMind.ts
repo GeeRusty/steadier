@@ -112,7 +112,7 @@ export type Chip = { text: string; dashed: boolean };
 /** At most two, only what's off normal. */
 export function chipsFor(item: FrontOfMindItem, today: string): Chip[] {
   const chips: Chip[] = [];
-  if (item.claudeLabel) chips.push({ text: "added by Claude", dashed: false });
+  if (item.claudeLabel) chips.push({ text: "added by AI", dashed: false });
   if (item.letGoSuggestion) chips.push({ text: "suggested: Let go", dashed: true });
   const quiet = quietDays(item, today);
   if (quiet > QUIET_DAYS) chips.push({ text: `quiet ${quiet}d`, dashed: false });

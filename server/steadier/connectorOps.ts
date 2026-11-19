@@ -57,6 +57,8 @@ export function connectorName(actor: ConnectorActor): string {
     ? "ChatGPT"
     : actor === "grok"
     ? "Grok"
+    : actor === "manus"
+    ? "Manus"
     : actor === "claude"
       ? "Claude"
       : "MCP connector";

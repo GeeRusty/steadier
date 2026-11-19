@@ -434,7 +434,7 @@ async function approve(
   baseUrl: string,
   ticket: string,
   access: "read" | "write" = "read",
-  connectorActor: "claude" | "chatgpt" | "grok" | "connector" = "connector"
+  connectorActor: "claude" | "chatgpt" | "grok" | "manus" | "connector" = "connector"
 ): Promise<{ code: string; state: string | null }> {
   const response = await fetch(
     `${baseUrl}/api/compass/oauth/requests/${ticket}/decision`,
@@ -457,7 +457,7 @@ async function issueCode(
   baseUrl: string,
   client: { clientId: string; redirectUri: string },
   verifier = "v".repeat(64),
-  connectorActor: "claude" | "chatgpt" | "grok" | "connector" = "claude"
+  connectorActor: "claude" | "chatgpt" | "grok" | "manus" | "connector" = "claude"
 ): Promise<{ code: string; verifier: string }> {
   const authorization = await startAuthorization(baseUrl, client, { verifier });
   const approved = await approve(
@@ -603,6 +603,32 @@ describe("Compass OAuth", () => {
     expect(await response.json()).toMatchObject({ scope: COMPASS_READ_WRITE_SCOPE });
     const key = [...repository.keys.values()][0]!;
     expect(key.connectorActor).toBe("grok");
+    expect(key.scope).toBe(COMPASS_READ_WRITE_SCOPE);
+  });
+
+  it("lets the owner label a Manus connection Manus, with read and changes", async () => {
+    const { baseUrl, repository } = await setup();
+    const manus = await registerClient(baseUrl, {
+      clientName: "Manus",
+      redirectUri: "https://manus.im/connectors/oauth/callback",
+      scope: COMPASS_READ_WRITE_SCOPE,
+    });
+    const authorization = await startAuthorization(baseUrl, manus, {
+      scope: COMPASS_READ_WRITE_SCOPE,
+    });
+    const approved = await approve(baseUrl, authorization.ticket, "write", "manus");
+    const response = await redeem(baseUrl, {
+      grant_type: "authorization_code",
+      client_id: manus.clientId,
+      code: approved.code,
+      redirect_uri: manus.redirectUri,
+      code_verifier: authorization.verifier,
+      resource: COMPASS_MCP_URL,
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ scope: COMPASS_READ_WRITE_SCOPE });
+    const key = [...repository.keys.values()][0]!;
+    expect(key.connectorActor).toBe("manus");
     expect(key.scope).toBe(COMPASS_READ_WRITE_SCOPE);
   });
 

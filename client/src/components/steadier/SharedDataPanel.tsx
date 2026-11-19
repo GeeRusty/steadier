@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import type { useSharedWorkspace } from "../../hooks/useSharedWorkspace";
 import type { CompassKeyInfo } from "../../../../shared/cloud";
+import { COMPASS_MCP_URL } from "../../../../shared/compassConnection";
 import { startLogin } from "../../const";
 import { exportBackup } from "../../domain/transfer";
 import { latestRecordAt } from "../../domain/commandCentre";
@@ -112,6 +113,9 @@ export default function SharedDataPanel({
   const [reveal, setReveal] = useState(false);
   const [revokeId, setRevokeId] = useState<number | null>(null);
   const [consent, setConsent] = useState(false);
+  const [manusAccess, setManusAccess] = useState<"read" | "write">("read");
+  const [manusConsent, setManusConsent] = useState(false);
+  const [tokenFrom, setTokenFrom] = useState<"manus" | "compass">("compass");
   const [tokenOwner, setTokenOwner] = useState<number | null>(null);
   const origin = window.location.origin;
   const emptyServer =
@@ -165,6 +169,48 @@ export default function SharedDataPanel({
     );
     if (accountRef.current === owner) setKeys(v.keys);
   }
+
+  const tokenBox = (newToken && tokenOwner === c.user?.id && (
+          <div className="notice">
+            <strong>Shown once — keep this key private</strong>
+            <label className="field">
+              New private key
+              <input
+                className="private-token"
+                type={reveal ? "text" : "password"}
+                readOnly
+                value={newToken}
+                autoComplete="off"
+              />
+            </label>
+            <div className="backup-actions">
+              <button
+                className="button secondary"
+                onClick={() =>
+                  void copyPrivate(newToken)
+                    .then(() =>
+                      setMessage(
+                        "Private key copied. Store it only in your AI's authentication settings."
+                      )
+                    )
+                    .catch(e => setError(e.message))
+                }
+              >
+                <ClipboardCopy size={16} />
+                Copy private key
+              </button>
+              <button
+                className="text-button"
+                onClick={() => setReveal(!reveal)}
+              >
+                {reveal ? "Hide" : "Reveal"}
+              </button>
+              <button className="text-button" onClick={() => setNewToken("")}>
+                Clear from this screen
+              </button>
+            </div>
+          </div>
+        ));
 
   return (
     <div className="shared-data-view">
@@ -462,6 +508,94 @@ export default function SharedDataPanel({
       <ClaudeSetup />
       <ChatGPTSetup voice={voice} />
       <ClaudeChangesPanel store={store} voice={voice} />
+      <section className="settings-section" aria-labelledby="manus-key-title">
+        <div className="section-heading">
+          <h2 id="manus-key-title">
+            <KeyRound size={21} /> Manus
+          </h2>
+          <span className="badge">Key in a header</span>
+        </div>
+        <p>
+          Manus connects with a private key instead of a sign-in. Everything it
+          changes is labelled “Manus” in history, with a backup saved first; it
+          can only suggest links and deletes for you to confirm, and amounts stay
+          hidden while “hide amounts from AI” is on.
+        </p>
+        <p className="small muted">
+          MCP server URL: <code>{COMPASS_MCP_URL}</code>
+        </p>
+        <fieldset className="field">
+          <legend>Access</legend>
+          <label className="checkbox-line">
+            <input
+              type="radio"
+              name="manus-access"
+              checked={manusAccess === "read"}
+              onChange={() => setManusAccess("read")}
+            />
+            Read only
+          </label>
+          <label className="checkbox-line">
+            <input
+              type="radio"
+              name="manus-access"
+              checked={manusAccess === "write"}
+              onChange={() => setManusAccess("write")}
+            />
+            Read and changes
+          </label>
+        </fieldset>
+        <label className="checkbox-line">
+          <input
+            type="checkbox"
+            checked={manusConsent}
+            onChange={e => setManusConsent(e.target.checked)}
+          />
+          I understand Manus can read my saved tasks, notes and projects
+          {manusAccess === "write" ? ", and make the changes I ask for," : ""} and I'll
+          keep the key only in Manus's connector settings.
+        </label>
+        <div className="backup-actions">
+          <button
+            className="button primary"
+            disabled={!c.active || c.pending || !manusConsent || busy || !c.user}
+            onClick={async () => {
+              const owner = c.user?.id;
+              setBusy(true);
+              setError("");
+              try {
+                const v = await ownedJSON<{
+                  token: string;
+                  info: CompassKeyInfo;
+                }>("/api/steadier/compass-keys", {
+                  method: "POST",
+                  body: JSON.stringify({ label: "Manus", provider: "manus", access: manusAccess }),
+                });
+                setNewToken(v.token);
+                setTokenOwner(owner || null);
+                setReveal(false);
+                await reloadKeys();
+                setManusConsent(false);
+                setTokenFrom("manus");
+                setMessage(
+                  `Manus key created (${manusAccess === "write" ? "read and changes" : "read only"}, 90 days). Copy it now; the server keeps only its fingerprint.`
+                );
+              } catch (e) {
+                setError(e instanceof Error ? e.message : "Key could not be created.");
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Create a key for Manus
+          </button>
+        </div>
+        {tokenFrom === "manus" && tokenBox}
+        <p className="small muted">
+          To cut Manus off, tap Revoke next to “Manus” in the key list below.
+          Keys last 90 days.
+        </p>
+      </section>
       <section className="settings-section">
         <div className="section-heading">
           <h2>
@@ -515,6 +649,7 @@ export default function SharedDataPanel({
                   method: "POST",
                   body: JSON.stringify({ label: keyLabel.trim() || "Compass" }),
                 });
+                setTokenFrom("compass");
                 setNewToken(v.token);
                 setTokenOwner(owner || null);
                 setReveal(false);
@@ -559,47 +694,7 @@ export default function SharedDataPanel({
             Copy API description
           </button>
         </div>
-        {newToken && tokenOwner === c.user?.id && (
-          <div className="notice">
-            <strong>Shown once — keep this key private</strong>
-            <label className="field">
-              New private key
-              <input
-                className="private-token"
-                type={reveal ? "text" : "password"}
-                readOnly
-                value={newToken}
-                autoComplete="off"
-              />
-            </label>
-            <div className="backup-actions">
-              <button
-                className="button secondary"
-                onClick={() =>
-                  void copyPrivate(newToken)
-                    .then(() =>
-                      setMessage(
-                        "Private key copied. Store it only in your AI's authentication settings."
-                      )
-                    )
-                    .catch(e => setError(e.message))
-                }
-              >
-                <ClipboardCopy size={16} />
-                Copy private key
-              </button>
-              <button
-                className="text-button"
-                onClick={() => setReveal(!reveal)}
-              >
-                {reveal ? "Hide" : "Reveal"}
-              </button>
-              <button className="text-button" onClick={() => setNewToken("")}>
-                Clear from this screen
-              </button>
-            </div>
-          </div>
-        )}
+        {tokenFrom === "compass" && tokenBox}
         {!!keys.length && (
           <div className="key-list">
             {keys.map(k => (
@@ -639,7 +734,7 @@ export default function SharedDataPanel({
             aria-label="Revoke Compass access"
           >
             <p>
-              Revoke this key now? Any AI using it will lose read access. You
+              Revoke this key now? Any AI using it loses access straight away. You
               can issue another key later.
             </p>
             <button
@@ -654,7 +749,7 @@ export default function SharedDataPanel({
                   setNewToken("");
                   await reloadKeys();
                   setRevokeId(null);
-                  setMessage("Key revoked. It can no longer read the server.");
+                  setMessage("Key revoked. It can no longer reach the server.");
                 } catch (e) {
                   setError(e instanceof Error ? e.message : "Revoke failed.");
                 } finally {

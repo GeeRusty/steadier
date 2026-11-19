@@ -234,7 +234,7 @@ class MemoryStore implements SteadierRepository, WorkspaceChangeRepository {
   addKey(
     token: string,
     scope: string,
-    connectorActor?: "claude" | "chatgpt" | "grok" | "connector"
+    connectorActor?: "claude" | "chatgpt" | "grok" | "manus" | "connector"
   ) {
     this.keys.push({
       id: this.keys.length + 1,
@@ -1169,7 +1169,7 @@ describe("connector Compass tools", () => {
 describe("ChatGPT and Claude connector parity", () => {
   for (const scope of ["steadier:read", "steadier:read steadier:write"]) {
     it(`exposes identical tools and input schemas for "${scope}"`, async () => {
-      const shape = async (actor: "claude" | "chatgpt" | "grok") => {
+      const shape = async (actor: "claude" | "chatgpt" | "grok" | "manus") => {
         const store = new MemoryStore();
         store.addKey(WRITE_TOKEN, scope, actor);
         const client = await connect(store, WRITE_TOKEN);
@@ -1188,6 +1188,8 @@ describe("ChatGPT and Claude connector parity", () => {
       expect(chatgpt).toEqual(claude);
       // Grok gets exactly what Claude gets: every area, every tool.
       expect(await shape("grok")).toEqual(claude);
+      // Manus too: the same tools and limits, only the label differs.
+      expect(await shape("manus")).toEqual(claude);
     });
   }
 });
@@ -1227,6 +1229,45 @@ describe("Grok connector provenance", () => {
     });
     expect(deletion.isError).toBeFalsy();
     expect(store.pending[0]).toMatchObject({ requestedBy: "grok", status: "pending" });
+    expect(store.stored!.workspace.tasks.some(t => t.id === newTask.id)).toBe(true);
+  });
+});
+
+describe("Manus connector provenance", () => {
+  it("labels Manus's tasks, Front of Mind, bills and delete requests as Manus", async () => {
+    const store = new MemoryStore();
+    store.addKey(WRITE_TOKEN, "steadier:read steadier:write", "manus");
+    const client = await connect(store, WRITE_TOKEN);
+
+    const created = await client.callTool({
+      name: "create_my_life_task",
+      arguments: { title: "Manus-created task" },
+    });
+    expect(created.isError).toBeFalsy();
+    expect(store.backups.every(b => b.actor === "manus")).toBe(true);
+    const newTask = store.stored!.workspace.tasks.at(-1)!;
+    expect(newTask.history.at(-1)?.text).toMatch(/^Manus: Created this task\./);
+
+    const fom = await client.callTool({
+      name: "add_my_life_front_of_mind",
+      arguments: { text: "Ring the plumber" },
+    });
+    expect(fom.isError).toBeFalsy();
+    expect(store.backups.map(b => b.reason)).toContainEqual(expect.stringMatching(/^Manus: added/));
+
+    const bill = await client.callTool({
+      name: "add_my_life_obligation",
+      arguments: { provider: "Water", kind: "bill", due_date: "2026-12-01" },
+    });
+    expect(bill.isError).toBeFalsy();
+    expect(store.backups.map(b => b.reason)).toContainEqual(expect.stringMatching(/^Manus: suggested obligation/));
+
+    const deletion = await client.callTool({
+      name: "request_my_life_delete",
+      arguments: { kind: "task", id: newTask.id, reason: "Owner asked to remove it" },
+    });
+    expect(deletion.isError).toBeFalsy();
+    expect(store.pending[0]).toMatchObject({ requestedBy: "manus", status: "pending" });
     expect(store.stored!.workspace.tasks.some(t => t.id === newTask.id)).toBe(true);
   });
 });
@@ -1626,12 +1667,12 @@ describe("Task card and Ideas connector rules", () => {
 
     const read = await client.callTool({ name: "read_my_life_front_of_mind", arguments: {} });
     const items = (read.structuredContent as { items: { wording: string; labels: string[]; history: unknown[] }[] }).items;
-    expect(items[0]).toMatchObject({ wording: "Trailer hire on weekends", labels: ["added by Claude", "suggested: Let go"] });
+    expect(items[0]).toMatchObject({ wording: "Trailer hire on weekends", labels: ["added by AI", "suggested: Let go"] });
     expect(items[0].history.length).toBeGreaterThan(1);
 
     const context = await client.callTool({ name: "read_my_life_context", arguments: {} });
     const ctx = context.structuredContent as { frontOfMind: { wording: string; labels: string[] }[]; workspace: Record<string, unknown> };
-    expect(ctx.frontOfMind).toEqual([{ itemId: item.id, wording: "Trailer hire on weekends", labels: ["added by Claude", "suggested: Let go"] }]);
+    expect(ctx.frontOfMind).toEqual([{ itemId: item.id, wording: "Trailer hire on weekends", labels: ["added by AI", "suggested: Let go"] }]);
     expect(ctx.workspace.frontOfMind).toBeUndefined();
     expect(JSON.stringify(ctx)).not.toContain("Trailer hire side business");
 

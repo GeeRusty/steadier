@@ -57,7 +57,7 @@ export function Chips({ item, today }: { item: FrontOfMindItem; today: string })
 }
 
 export function metaLine(item: FrontOfMindItem, today: string): string {
-  const parts = [`added ${dayText(item.createdAt, today)}${item.addedBy === "claude" ? " by Claude" : ""}`];
+  const parts = [`added ${dayText(item.createdAt, today)}${item.addedBy === "claude" ? " by AI" : ""}`];
   if (item.lookedAt) parts.push(`looked at ${dayText(item.lookedAt, today)}`);
   return parts.join(" · ");
 }
@@ -74,7 +74,7 @@ export default function FrontOfMindView({ workspace, readOnly, onMutate, onMakeT
     if (!readRef) return;
     readRef.current = () =>
       items.length
-        ? `Front of Mind. ${items.map(i => `${i.text}${i.claudeLabel ? ", added by Claude" : ""}${i.letGoSuggestion ? ", Claude suggests letting it go" : ""}.`).join(" ")}`
+        ? `Front of Mind. ${items.map(i => `${i.text}${i.claudeLabel ? ", added by AI" : ""}${i.letGoSuggestion ? ", AI suggests letting it go" : ""}.`).join(" ")}`
         : "Front of Mind is empty.";
     return () => {
       readRef.current = null;
@@ -160,7 +160,7 @@ function Row({
       </button>
       {item.letGoSuggestion && (
         <div className="fm-suggestion">
-          <span className="lv-meta">Claude suggests letting this go, {dayText(item.letGoSuggestion.at, today)}:</span>
+          <span className="lv-meta">AI suggests letting this go, {dayText(item.letGoSuggestion.at, today)}:</span>
           {item.letGoSuggestion.reason && <span>“{item.letGoSuggestion.reason}”</span>}
           {!readOnly && (
             <span className="lv-row-actions">
@@ -188,7 +188,7 @@ function Row({
               onLetGo={() => change((w, at) => letGo(w, item.id, at))}
             />
           )}
-          {item.claudeLabel && mode === null && <span className="lv-meta">Keep removes the “added by Claude” label.</span>}
+          {item.claudeLabel && mode === null && <span className="lv-meta">Keep removes the “added by AI” label.</span>}
           {mode === "edit" && (
             <form
               className="lv-form"

@@ -46,7 +46,7 @@ Get there: bottom bar › **Today** (1st). Or ☰ › **My life today**.
 
 Job: seeing.
 Get there: bottom bar › **Overview** (2nd). Or tap **Needs attention (n)** on Today.
-- Needs attention rows (only rows above zero): **Review due** (leads to Screen: Review due), **Link check** (Screen: Link check), **Weekly review** (Screen: Weekly Review), **Sort (not set up)** (Screen: Sort), **Unplaced** (opens the unplaced list), **Upkeep due** (opens in place; each item leads to Screen: Assets & Upkeep), **Past due** and Claude requests.
+- Needs attention rows (only rows above zero): **Review due** (leads to Screen: Review due), **Link check** (Screen: Link check), **Weekly review** (Screen: Weekly Review), **Sort (not set up)** (Screen: Sort), **Unplaced** (opens the unplaced list), **Upkeep due** (opens in place; each item leads to Screen: Assets & Upkeep), **Past due** and AI requests.
 - Next thing: your chosen one. The Pool under it has **Not now**, **Still on** and **Drop** on each task.
 - **Today**: booked count and free time, with a strip of the day. Leads to: Screen: Calendar.
 - **Moving**: up to three active projects, then All projects. Leads to: Screen: Projects.
@@ -360,6 +360,14 @@ Get there: ☰ › **Backups & trial**, or ☰ › **App options** › **Backups
 
 Get there: ☰ › **Server & Compass**, or App options › **Connection**.
 - Sync with the server, conflicts, the latest record time, and connector access.
+- **Manus**: choose **Read only** or **Read and changes**, tick the box, then **Create a key for Manus**. The key shows once with **Copy private key**. It lasts 90 days. **Revoke** next to "Manus" in the key list cuts it off at once.
+
+### Walk: Connect Manus
+- Step 1. Open ☰ › **Server & Compass** and find **Manus**.
+- Step 2. Choose **Read only**, tick the box, and tap **Create a key for Manus**.
+- Step 3. Tap **Copy private key**.
+- Step 4. In Manus, add a custom MCP server: paste the MCP server URL shown, and add a header named Authorization with the value Bearer, a space, then the key.
+- Step 5. In Steadier, tap **Clear from this screen**.
 
 ## Screen: Older pages
 

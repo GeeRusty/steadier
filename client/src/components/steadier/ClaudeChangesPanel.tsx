@@ -41,6 +41,8 @@ function who(actor: WorkspaceBackupSummary["actor"]): string {
       ? "ChatGPT"
       : actor === "grok"
       ? "Grok"
+      : actor === "manus"
+      ? "Manus"
       : actor === "claude"
         ? "Claude"
         : "MCP connector";
@@ -51,6 +53,8 @@ function requestedBy(request: PendingDeleteRequest): string {
     ? "ChatGPT"
     : request.requestedBy === "grok"
     ? "Grok"
+    : request.requestedBy === "manus"
+    ? "Manus"
     : request.requestedBy === "connector"
       ? "MCP connector"
       : "Claude";
@@ -427,7 +431,7 @@ export default function ClaudeChangesPanel({
                 <p className="small">
                   Snapshot taken before:{" "}
                   {backup.reason.replace(
-                    /^(Claude|ChatGPT|Grok|MCP connector): /,
+                    /^(Claude|ChatGPT|Grok|Manus|MCP connector): /,
                     ""
                   )}
                 </p>

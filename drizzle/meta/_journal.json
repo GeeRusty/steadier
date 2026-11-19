@@ -71,6 +71,13 @@
       "when": 1795400000000,
       "tag": "0009_push_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1795500000000,
+      "tag": "0010_manus_connector_label",
+      "breakpoints": true
     }
   ]
 }

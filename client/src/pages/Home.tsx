@@ -2156,7 +2156,7 @@ export default function Home() {
       { key: "pastdue", label: "Past due", count: pastDueOffToday(tasks, clock.date, onToday).length, onOpen: () => openAll("pastdue") },
       {
         key: "claude",
-        label: "Claude requests",
+        label: "AI requests",
         count: pendingDeleteCount,
         onOpen: () => document.getElementById("overview-claude")?.scrollIntoView({ behavior: "smooth", block: "start" }),
       },

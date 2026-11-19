@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import type { CloudRecord } from "../../shared/cloud";
+import { COMPASS_READ_SCOPE, COMPASS_READ_WRITE_SCOPE } from "../../shared/compassConnection";
 import { sdk } from "../_core/sdk";
 import { parseNear, searchPlaces } from "./placeSearch";
 import { compassContext, workspaceSheetCsv } from "./projections";
@@ -174,15 +175,35 @@ function requireCookieWriteRequest(request: Request): void {
   }
 }
 
-function parseKeyRequest(body: unknown): string {
+/**
+ * A key request: a label, and optionally a provider and access level. Only a
+ * Manus key may carry "Read and changes"; plain keys stay read-only as before.
+ */
+function parseKeyRequest(body: unknown): {
+  label: string;
+  provider: "manus" | null;
+  access: "read" | "write";
+} {
   if (typeof body !== "object" || body === null || Array.isArray(body)) {
     throw new ValidationError("request body must be a JSON object.");
   }
   const keys = Object.keys(body);
-  if (keys.some(key => key !== "label")) {
+  if (keys.some(key => !["label", "provider", "access"].includes(key))) {
     throw new ValidationError("Compass key request has unsupported fields.");
   }
-  return assertCompassLabel((body as { label?: unknown }).label);
+  const raw = body as { label?: unknown; provider?: unknown; access?: unknown };
+  if (raw.provider !== undefined && raw.provider !== "manus") {
+    throw new ValidationError("provider must be manus when given.");
+  }
+  if (raw.access !== undefined && raw.access !== "read" && raw.access !== "write") {
+    throw new ValidationError("access must be read or write.");
+  }
+  const provider = raw.provider === "manus" ? "manus" : null;
+  const access = raw.access === "write" ? "write" : "read";
+  if (access === "write" && !provider) {
+    throw new ValidationError("Only a Manus key can include changes.");
+  }
+  return { label: assertCompassLabel(raw.label), provider, access };
 }
 
 function parsePositiveId(value: string): number {
@@ -344,10 +365,19 @@ export function registerSteadierRoutes(
       const user = await requireSignedInUser(request, authenticateSession);
       requireExpectedOwner(request, user);
       requireCookieWriteRequest(request);
-      const label = parseKeyRequest(request.body);
+      const { label, provider, access } = parseKeyRequest(request.body);
       response
         .status(201)
-        .json(await createCompassKey(repository, user.id, label));
+        .json(
+          await createCompassKey(
+            repository,
+            user.id,
+            label,
+            new Date(),
+            access === "write" ? COMPASS_READ_WRITE_SCOPE : COMPASS_READ_SCOPE,
+            provider ? { connectorActor: provider } : {}
+          )
+        );
     })
   );
 

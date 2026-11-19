@@ -70,6 +70,8 @@ class MemoryRepository implements SteadierRepository {
     label: string;
     createdAt: Date;
     expiresAt: Date;
+    scope?: string;
+    connectorActor?: CompassKeyInfo["connectorActor"];
   }): Promise<CompassKeyInfo> {
     const stored: StoredCompassKey = {
       id: this.nextKeyId++,
@@ -80,6 +82,8 @@ class MemoryRepository implements SteadierRepository {
       expiresAt: key.expiresAt.toISOString(),
       lastUsedAt: null,
       revokedAt: null,
+      scope: key.scope ?? "steadier:read",
+      ...(key.connectorActor ? { connectorActor: key.connectorActor } : {}),
     };
     this.keys.set(stored.id, stored);
     const { userId: _userId, tokenHash: _tokenHash, ...info } = stored;
@@ -438,6 +442,33 @@ describe("Steadier private server routes", () => {
     const key = await keyResponse.json();
     expect(key.token).toMatch(/^stdr_/);
     expect(key.info.label).toBe("My Compass");
+
+    // A Manus key: labelled Manus, read-only by default, changes only when asked.
+    const manusRead = await fetch(`${baseUrl}/api/steadier/compass-keys`, {
+      method: "POST",
+      headers: writeHeaders,
+      body: JSON.stringify({ label: "Manus", provider: "manus", access: "read" }),
+    });
+    expect(manusRead.status).toBe(201);
+    const manusReadKey = await manusRead.json();
+    expect(manusReadKey.info.scope).toBe("steadier:read");
+    expect(manusReadKey.info.connectorActor).toBe("manus");
+    const manusWrite = await fetch(`${baseUrl}/api/steadier/compass-keys`, {
+      method: "POST",
+      headers: writeHeaders,
+      body: JSON.stringify({ label: "Manus", provider: "manus", access: "write" }),
+    });
+    expect(manusWrite.status).toBe(201);
+    expect((await manusWrite.json()).info.scope).toBe("steadier:read steadier:write");
+    // A plain key can't ask for changes, and no other provider is accepted.
+    for (const body of [{ label: "X", access: "write" }, { label: "X", provider: "grok" }]) {
+      const refused = await fetch(`${baseUrl}/api/steadier/compass-keys`, {
+        method: "POST",
+        headers: writeHeaders,
+        body: JSON.stringify(body),
+      });
+      expect(refused.status).toBe(400);
+    }
 
     const sessionProjection = await fetch(`${baseUrl}/api/steadier/sheet`, {
       headers: signedInHeaders,

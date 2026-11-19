@@ -760,7 +760,7 @@ export default function ObligationsView({
                     )}
                     {obligation.suggestedBy === "claude" && (
                       <span className="state-tag obligation-suggested">
-                        Suggested by Claude · confirm
+                        Suggested by AI · confirm
                       </span>
                     )}
                     <span

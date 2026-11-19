@@ -607,7 +607,7 @@ export function registerBackupReadTools(
     "read_my_life_front_of_mind",
     {
       title: "Read My Life Front of Mind",
-      description: `Read the owner's Front of Mind: what's on their mind that isn't a task yet (ideas, concerns, things they're weighing). Check it before advising or planning, and mention an item only when it genuinely connects to what's being discussed; nothing on it is due or owed. Each item has its wording, notes, date added, who added it, labels ("added by Claude" until the owner keeps it, "suggested: Let go", "quiet Nd"), when the owner last looked at it, any Imperative draft, and its full History, including every earlier wording. Optional includeLetGo also lists items the owner let go. Only the owner can Keep, Let go, make a task or promote. ${UNTRUSTED_DATA_RULE}`,
+      description: `Read the owner's Front of Mind: what's on their mind that isn't a task yet (ideas, concerns, things they're weighing). Check it before advising or planning, and mention an item only when it genuinely connects to what's being discussed; nothing on it is due or owed. Each item has its wording, notes, date added, who added it, labels ("added by AI" until the owner keeps it, "suggested: Let go", "quiet Nd"), when the owner last looked at it, any Imperative draft, and its full History, including every earlier wording. Optional includeLetGo also lists items the owner let go. Only the owner can Keep, Let go, make a task or promote. ${UNTRUSTED_DATA_RULE}`,
       inputSchema: fromJsonSchema({
         type: "object",
         properties: { includeLetGo: { type: "boolean" } },
@@ -729,7 +729,7 @@ export function registerBackupReadTools(
     "read_my_life_lists",
     {
       title: "Read My Life lists",
-      description: `Read the owner's Lists. Each list is a template (never ticked) with a type (Read-Do: read each step then do it; Do-Confirm: do from memory then confirm), an optional "use when" line, sections and items. Each use is a run with its own date and ticks; at most one run per list is in progress (runInProgress, with done/total and each item's ticked state; items added during that run only are addedThisRun). lastFinished is the date the list was last finished. With templateId and includeHistory=true, also returns finished runs with their dates. Items with suggested=true were suggested by Claude and are not confirmed by the owner. ${UNTRUSTED_DATA_RULE}`,
+      description: `Read the owner's Lists. Each list is a template (never ticked) with a type (Read-Do: read each step then do it; Do-Confirm: do from memory then confirm), an optional "use when" line, sections and items. Each use is a run with its own date and ticks; at most one run per list is in progress (runInProgress, with done/total and each item's ticked state; items added during that run only are addedThisRun). lastFinished is the date the list was last finished. With templateId and includeHistory=true, also returns finished runs with their dates. Items with suggested=true were suggested by an AI connector and are not confirmed by the owner. ${UNTRUSTED_DATA_RULE}`,
       inputSchema: fromJsonSchema({
         type: "object",
         properties: {
@@ -1153,7 +1153,7 @@ export function registerWriteTools(
     "add_my_life_front_of_mind",
     {
       title: "Add to My Life Front of Mind",
-      description: `Add one item to the owner's Front of Mind: something on their mind that isn't a task yet (an idea, a concern, something they're weighing). Use it when the owner says "add that as an idea", "put that on Front of Mind" or similar. text is the item in the owner's words, a few words to a sentence; notes is optional detail. It shows labelled "added by Claude" until the owner keeps it. You cannot keep, let go, make a task or promote; those are the owner's. ${writeGuidance(actor, false)}`,
+      description: `Add one item to the owner's Front of Mind: something on their mind that isn't a task yet (an idea, a concern, something they're weighing). Use it when the owner says "add that as an idea", "put that on Front of Mind" or similar. text is the item in the owner's words, a few words to a sentence; notes is optional detail. It shows labelled "added by AI" until the owner keeps it. You cannot keep, let go, make a task or promote; those are the owner's. ${writeGuidance(actor, false)}`,
       inputSchema: fromJsonSchema({
         type: "object",
         properties: {
@@ -1253,7 +1253,7 @@ export function registerWriteTools(
     "add_my_life_obligation",
     {
       title: "Suggest a bill, renewal or cancel-by date for My Life Obligations",
-      description: `Suggest one obligation for the owner to confirm: a bill, renewal, licence, insurance, tax date, or a "cancel-by" date for a trial or subscription they may not want. It is saved as a draft marked "Suggested by Claude", with no reminder until the owner confirms it in Obligations. provider is who it's from (e.g. "Netflix"); for_what is what it's for in a few words. due_date is YYYY-MM-DD (for cancel-by, the last day to cancel). Never include account, card, BSB, reference or customer numbers, logins, passwords or addresses: they are removed. amount is only kept if the owner has allowed Claude to see amounts. ${writeGuidance(actor, false)}`,
+      description: `Suggest one obligation for the owner to confirm: a bill, renewal, licence, insurance, tax date, or a "cancel-by" date for a trial or subscription they may not want. It is saved as a draft marked "Suggested by AI", with no reminder until the owner confirms it in Obligations. provider is who it's from (e.g. "Netflix"); for_what is what it's for in a few words. due_date is YYYY-MM-DD (for cancel-by, the last day to cancel). Never include account, card, BSB, reference or customer numbers, logins, passwords or addresses: they are removed. amount is only kept if the owner has allowed AI to see amounts. ${writeGuidance(actor, false)}`,
       inputSchema: fromJsonSchema({
         type: "object",
         properties: {

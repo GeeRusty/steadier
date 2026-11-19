@@ -492,6 +492,7 @@ function parseDecision(body: unknown): {
     connectorActor !== "claude" &&
     connectorActor !== "chatgpt" &&
     connectorActor !== "grok" &&
+    connectorActor !== "manus" &&
     connectorActor !== "connector"
   ) {
     throw new HttpError(400, { code: "INVALID_REQUEST" });
@@ -535,6 +536,8 @@ function connectorDisplayName(actor: ConnectorActor): string {
     ? "ChatGPT"
     : actor === "grok"
     ? "Grok"
+    : actor === "manus"
+    ? "Manus"
     : actor === "claude"
       ? "Claude"
       : "MCP connector";

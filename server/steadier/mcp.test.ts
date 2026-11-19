@@ -504,7 +504,11 @@ describe("native Compass MCP route", () => {
     expect(
       (await post(endpoint, TOKEN_ONE, "http://app.grok.com")).status
     ).toBe(403);
-    for (const origin of ["https://grok.com", "https://app.grok.com", "https://x.ai"]) {
+    expect(
+      (await post(endpoint, TOKEN_ONE, "https://manus.im.attacker.example"))
+        .status
+    ).toBe(403);
+    for (const origin of ["https://grok.com", "https://app.grok.com", "https://x.ai", "https://manus.im", "https://api.manus.im"]) {
       expect((await post(endpoint, TOKEN_ONE, origin)).status).not.toBe(403);
     }
 

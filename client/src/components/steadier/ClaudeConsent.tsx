@@ -119,6 +119,8 @@ export default function ClaudeConsent({
       ? "ChatGPT"
       : connectorActor === "grok"
       ? "Grok"
+      : connectorActor === "manus"
+      ? "Manus"
       : connectorActor === "claude"
         ? "Claude"
         : "MCP connector";
@@ -245,6 +247,16 @@ export default function ClaudeConsent({
                   onChange={() => setConnectorActor("grok")}
                 />
                 Grok (I started and recognize this connection)
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="compass-audit-label"
+                  value="manus"
+                  checked={connectorActor === "manus"}
+                  onChange={() => setConnectorActor("manus")}
+                />
+                Manus (I started and recognize this connection)
               </label>
               <label>
                 <input
